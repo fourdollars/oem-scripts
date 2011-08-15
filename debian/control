@@ -1,0 +1,20 @@
+Source: oem-scripts
+Section: admin
+Vcs-Bzr: lp:oem-dev-tools
+Priority: extra
+Build-Depends: debhelper (>= 6),
+ python,
+ python-support (>= 0.6.4),
+ python-distutils-extra (>= 2.10)
+Standards-Version: 3.8.3
+Maintainer: Alex Wolfson <alex.wolfson@canonical.com>
+XS-Python-Version: current
+
+Package: oem-scripts
+Architecture: all
+Depends: ${misc:Depends},
+ python (<< 3.0), python (>= 2.6),
+ python-distutils-extra,
+Description: Short OEM related scripts
+ Short OEM related scripts can go here. 
+ Also there is a meta package oem-dev-tools that installs all scripts
