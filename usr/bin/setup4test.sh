@@ -36,11 +36,31 @@
 #synergyc HOSTIP
 
 
-PCTESTS=pctests
-
 USAGE(){
-	echo -e "\nUsage: $(basename $0) {--localip|--lip} local_IP {--remoteuser|--ru} remote_USER {--remotepassword|--rp} remote_PASSWORD {--remoteip|--rip} remote_IP \n $(basename $0) --localip 10.0.1.123 --remoteuser u --rp u --rip 10.0.1.14"
+    echo -e "\nUsage: $(basename $0) {--localip|--lip} local_IP \n \
+    {--remoteuser|--ru} remote_USER \n \
+    {--remotepassword|--rp} remote_PASSWORD \n \
+    {--remoteip|--rip} remote_IP \n \
+    [--alsa]  #install tools for debugging sound \n \
+    [--hexr]  #install hexr \n \
+    [--stap]  #install system tap \n \
+    [--staprt] #install system tap runtime \nExample:\n \
+    $(basename $0) --localip 10.0.1.123 --remoteuser u --rp u --rip 10.0.1.14"
 }
+
+if [ $# == 0 ] ; then USAGE; exit; fi
+
+trap  cleanup 1 2 3 6
+
+cleanup()
+{
+  echo "Caught Signal ... cleaning up."
+  echo "Done cleanup ... quitting."
+  exit 1
+}
+
+
+PCTESTS=pctests
 
 #execute a command on the remote pc
 remote_cmd(){
@@ -49,6 +69,9 @@ ssh -t $remote_user@$remote_ip $1
 checkbox=
 alsa=
 hexr=
+stap=
+staprt=
+par=1
 while [ "x$1" != "x" ]
 do
   case "$1" in
@@ -56,11 +79,15 @@ do
     --ru|--remoteuser) shift; remote_user=$1; echo -e "remoteuser=$remote_user"; shift;;
     --rp|--remotepassword) shift; remote_password=$1; echo -e "remotepassword=$remote_password"; shift;;
     --rip|--remoteip) shift; remote_ip=$1; echo -e "remoteip=$remote_ip"; shift;;
-    --cb|--checkbox) shift; checkbox=true; echo -e "checkbox=$checkbox";;
+    --cb|--checkbox) shift; checkbox=true; echo -e "checkbox=$checkbox, but it is not implemented yet";;
     --alsa) shift; alsa=true; echo -e "alsa=$alsa";;
     --hexr) shift; hexr=true; echo -e "hexr=$hexr";;
-    *) echo "parameter $1 is undefined"; USAGE; exit 1;;
+    --stap) shift; stap=true; echo -e "stap=$stap";;
+    --staprt) shift; staprt=true; echo -e "staprt=$staprt";;
+    -h|--help|--h) USAGE; exit 1 ;;
+    *) echo -e "parameter $1 is not supported"; USAGE; exit 1;;
   esac
+  par=par+1
 done
 if ! [ $local_ip -o $remote_user -o $remote_passwd -o $remote_ip ] ; then
     echo "One of the parameters is missing"
@@ -158,4 +185,11 @@ if [ $hexr ] ; then
     remote_cmd "sudo apt-get install -y dmidecode pciutils usbutils"
     remote_cmd "wget -O upload-hw.py https://hexr.canonical.com/assets/upload-hw.py"
     remote_cmd "chmod +x upload-hw.py"
+fi
+if [ $stap ] ; then
+    remote_cmd "sudo apt-get install -y systemtap systemtap-doc"
+fi
+if [ x$staprt == xtrue -o x$stap == xtrue ] ; then
+    remote_cmd "sudo apt-get install -y systemtap-runtime"
+    remote_cmd "sudo usermod -G stapdev,stapusr $remote_user"
 fi

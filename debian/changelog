@@ -1,3 +1,10 @@
+oem-scripts (0.2) natty; urgency=low
+
+  * changed script names to use '-' instead of '_'
+  * added the option of installing system tap to setup4test.sh
+
+ -- Alex Wolfson <alex.wolfson@canonical.com>  Tue, 16 Aug 2011 17:00:56 -0400
+
 oem-scripts (0.1) natty; urgency=low
 
   * Initial release
