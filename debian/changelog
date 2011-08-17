@@ -1,3 +1,9 @@
+oem-scripts (0.3) natty; urgency=low
+
+  * in setup4test.sh changed the location of pctests to ~/pctests
+
+ -- Alex Wolfson <alex.wolfson@canonical.com>  Wed, 17 Aug 2011 15:46:59 -0400
+
 oem-scripts (0.2) natty; urgency=low
 
   * changed script names to use '-' instead of '_'

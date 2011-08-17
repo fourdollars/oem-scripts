@@ -60,7 +60,7 @@ cleanup()
 }
 
 
-PCTESTS=pctests
+PCTESTS=~/pctests
 
 #execute a command on the remote pc
 remote_cmd(){
