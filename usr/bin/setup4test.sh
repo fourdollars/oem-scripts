@@ -109,9 +109,7 @@ local_hostname=$(hostname)
 echo local_hostname=$local_hostname
 echo remote_hostname=$remote_hostname
 
-mkdir -p pctests/$remote_hostname
-
-
+mkdir -p $PCTESTS/$remote_hostname
 
 #install synergy and additional sw on testpc
 remote_cmd "sudo apt-get install -y synergy mc sshfs"
@@ -187,7 +185,8 @@ if [ $hexr ] ; then
     remote_cmd "chmod +x upload-hw.py"
 fi
 if [ $stap ] ; then
-    remote_cmd "sudo apt-get install -y systemtap systemtap-doc"
+    remote_cmd "sudo apt-get install -y systemtap systemtap-doc elfutils"
+apt-get install -y elfutils
 fi
 if [ x$staprt == xtrue -o x$stap == xtrue ] ; then
     remote_cmd "sudo apt-get install -y systemtap-runtime"
