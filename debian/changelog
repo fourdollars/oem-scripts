@@ -1,3 +1,9 @@
+oem-scripts (0.3ubuntu1) natty; urgency=low
+
+  * setup4test added -a option to usrmod command, when setting up systemtap
+
+ -- Alex Wolfson <alex.wolfson@canonical.com>  Tue, 23 Aug 2011 13:44:57 -0400
+
 oem-scripts (0.3) natty; urgency=low
 
   * in setup4test.sh changed the location of pctests to ~/pctests

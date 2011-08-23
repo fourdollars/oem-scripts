@@ -190,5 +190,5 @@ apt-get install -y elfutils
 fi
 if [ x$staprt == xtrue -o x$stap == xtrue ] ; then
     remote_cmd "sudo apt-get install -y systemtap-runtime"
-    remote_cmd "sudo usermod -G stapdev,stapusr $remote_user"
+    remote_cmd "sudo usermod -a -G stapdev,stapusr $remote_user"
 fi
