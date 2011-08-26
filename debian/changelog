@@ -1,3 +1,9 @@
+oem-scripts (0.3ubuntu2) natty; urgency=low
+
+  * added copying system tap related scripts to remote /home/$USER/systemtap
+
+ -- Alex Wolfson <alex.wolfson@canonical.com>  Fri, 26 Aug 2011 16:38:15 -0400
+
 oem-scripts (0.3ubuntu1) natty; urgency=low
 
   * setup4test added -a option to usrmod command, when setting up systemtap

@@ -66,6 +66,10 @@ PCTESTS=~/pctests
 remote_cmd(){
 ssh -t $remote_user@$remote_ip $1
 }
+#local path, remote path 
+cpto_cmd(){
+scp $1 $remote_user@$remote_ip:$2 
+}
 checkbox=
 alsa=
 hexr=
@@ -185,8 +189,10 @@ if [ $hexr ] ; then
     remote_cmd "chmod +x upload-hw.py"
 fi
 if [ $stap ] ; then
+    remote_cmd "mkdir -p systemtap"
     remote_cmd "sudo apt-get install -y systemtap systemtap-doc elfutils"
-apt-get install -y elfutils
+    remote_cmd "sudo apt-get install -y elfutils"
+    cpto_cmd "setup-systemtap*.sh" systemtap
 fi
 if [ x$staprt == xtrue -o x$stap == xtrue ] ; then
     remote_cmd "sudo apt-get install -y systemtap-runtime"
