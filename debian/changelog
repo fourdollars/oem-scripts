@@ -1,3 +1,9 @@
+oem-scripts (0.3ubuntu4) natty; urgency=low
+
+  * setup-systemtap-mymodule.sh : added -h --help options
+
+ -- Alex Wolfson <alex.wolfson@canonical.com>  Sat, 27 Aug 2011 22:50:21 -0400
+
 oem-scripts (0.3ubuntu3) natty; urgency=low
 
   * setup4test added systemtap related scripts to bzr
