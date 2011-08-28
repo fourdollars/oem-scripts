@@ -1,3 +1,9 @@
+oem-scripts (0.3ubuntu3) natty; urgency=low
+
+  * setup4test added systemtap related scripts to bzr
+
+ -- Alex Wolfson <alex.wolfson@canonical.com>  Sat, 27 Aug 2011 21:51:43 -0400
+
 oem-scripts (0.3ubuntu2) natty; urgency=low
 
   * added copying system tap related scripts to remote /home/$USER/systemtap
