@@ -1,3 +1,9 @@
+oem-scripts (0.3ubuntu6) natty; urgency=low
+
+  * renamed system tap scripts again from systemtap-... to stap-...
+
+ -- Alex Wolfson <alex.wolfson@canonical.com>  Mon, 29 Aug 2011 14:25:04 -0400
+
 oem-scripts (0.3ubuntu5) natty; urgency=low
 
   * systemtap and setup4test.sh: renamed systemtap scripts to systemtap-dbgsym.sh
