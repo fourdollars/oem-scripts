@@ -11,10 +11,10 @@
 
 
 USAGE(){
-    echo -e "\nUsage: $(basename $0) PASS_TO_THE_TOP_OF_KERNEL_TREE REATIVE_PASS_TO_MODULES_DIR"
-    echo -e "$(basename $0) /build/buildd/linux-2.6.35 sound/pci/hda\n"
+    echo -e "\nUsage: $(basename $0) ABSOLUTE_PASS_TO_THE_TOP_OF_KERNEL_TREE REATIVE_PASS_TO_MODULES_DIR\n\n You don't have to have the whole kernel tree. Examples:"
+    echo -e "$(basename $0) /build/buildd/linux-2.6.35 sound/pci/hda"
+    echo -e "$(basename $0) `pwd` sound/pci/hda\n"
 }
-echo $#
 if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]] || [[ $# -lt 2 ]] ; then
     USAGE; exit 1
 fi

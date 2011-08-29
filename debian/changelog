@@ -1,3 +1,10 @@
+oem-scripts (0.3ubuntu5) natty; urgency=low
+
+  * systemtap and setup4test.sh: renamed systemtap scripts to systemtap-dbgsym.sh
+    and systemtap-build-mymodule.sh
+
+ -- Alex Wolfson <alex.wolfson@canonical.com>  Mon, 29 Aug 2011 14:18:29 -0400
+
 oem-scripts (0.3ubuntu4) natty; urgency=low
 
   * setup-systemtap-mymodule.sh : added -h --help options
