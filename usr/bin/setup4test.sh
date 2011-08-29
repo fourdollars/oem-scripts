@@ -191,7 +191,7 @@ fi
 if [ $stap ] ; then
     remote_cmd "mkdir -p systemtap"
     remote_cmd "sudo apt-get install -y systemtap systemtap-doc elfutils"
-    cpto_cmd "systemtap-*.sh"  systemtap
+    cpto_cmd "stap-*.sh"  systemtap
 fi
 if [ x$staprt == xtrue -o x$stap == xtrue ] ; then
     remote_cmd "sudo apt-get install -y systemtap-runtime"

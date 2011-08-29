@@ -1,3 +1,9 @@
+oem-scripts (0.3ubuntu7) natty; urgency=low
+
+  * changed setup4test.sh to reflect renaming of systemtap-... to stap-...
+
+ -- Alex Wolfson <alex.wolfson@canonical.com>  Mon, 29 Aug 2011 14:28:58 -0400
+
 oem-scripts (0.3ubuntu6) natty; urgency=low
 
   * renamed system tap scripts again from systemtap-... to stap-...
