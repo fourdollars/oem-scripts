@@ -1,3 +1,9 @@
+oem-scripts (0.4) natty; urgency=low
+
+  * Corrected the rev number
+
+ -- Alex Wolfson <alex.wolfson@canonical.com>  Fri, 09 Sep 2011 13:52:40 -0400
+
 oem-scripts (0.3ubuntu7) natty; urgency=low
 
   * changed setup4test.sh to reflect renaming of systemtap-... to stap-...
