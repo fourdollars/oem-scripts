@@ -25,7 +25,7 @@ class QuicklyRename(object):
     #A code to distiguish between text and binaries is taken from
     #http://code.activestate.com/recipes/173220-test-if-a-file-or-string-is-text-or-binary/
     #TODO:Unicode?
-    cfgfile = 'quickly_project_rename.cfg'
+    cfgfile = ' '
     text_characters = "".join(map(chr, range(32, 127)) + list("\n\r\t\b"))
     _null_trans = string.maketrans("", "")
 
@@ -55,11 +55,14 @@ class QuicklyRename(object):
         save_cwd = os.getcwd()
         os.chdir(path)
         try:
-            return os.listdir('.')
+
             p1 = subprocess.Popen(["bzr", "ls", "--ignored", "--unknown"], stdout=subprocess.PIPE)
             #p2 = subprocess.Popen(["grep", "^?"], stdin=p1.stdout, stdout=subprocess.PIPE)
             output = p1.communicate()[0]
-            return output.splitlines()
+            if 'Not a branch:' in output or "No command 'bzr' found" in output:
+                return os.listdir('.')
+            else:    
+                return output.splitlines()
         finally:
             os.chdir(save_cwd)   
     def substAll(self, s, subst_list):
@@ -105,25 +108,28 @@ class QuicklyRename(object):
         os.rename(file_name + "_new", file_name)
                                
 def main():
-    if len(sys.argv) != 2:
+    progname = sys.argv[0] 
+
+    if len(sys.argv) != 3:
         usage='''
-        USAGE: python quickly_project_rename PROJECT_DIRECTORY
+        USAGE: python {progname} configfile PROJECT_DIRECTORY
         
-        Put quickly_project_rename.cfg into PROJECT_DIRECTORY with lines:
+        configfile has lines
         OLD_NAME=NEW_NAME
         
-        like:
+        for example:
         
         old-name=new-name
         OldName=NewName
         Oldname=Newname
         old name=new name
-        '''
+        '''.format(progname=progname)
         print usage
         exit (1)
-    dir_to_process = sys.argv[1]
+    dir_to_process = sys.argv[2]
     subst_list=[]
-    fname=dir_to_process + '/' + QuicklyRename.cfgfile
+    QuicklyRename.cfgfile=sys.argv[1]
+    fname=QuicklyRename.cfgfile
     try:
         with open(fname) as conf_file:
             for line in conf_file:
@@ -131,7 +137,7 @@ def main():
                 if line != "": #last line with \n only
                     subst_list.append(line.split('='))
     except IOError as (errno, strerror):
-        print "open('{0}'), I/O error({1}): {2}".format(fname, errno, strerror)
+        print "Config file problem:open('{0}'), I/O error({1}): {2}".format(fname, errno, strerror)
         exit (1)
     #print subst_list
     #subst_list = (('apptime', 'apptimer'),('AppTime', 'AppTimer'), ('Apptime', 'Apptimer')) 
