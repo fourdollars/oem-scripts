@@ -194,6 +194,9 @@ if [ $stap ] ; then
     cpto_cmd "stap-*.sh"  systemtap
 fi
 if [ x$staprt == xtrue -o x$stap == xtrue ] ; then
-    remote_cmd "sudo apt-get install -y systemtap-runtime"
+    #TODO currently supports oneiric only - provides system tap 1.6
+    #TODO move to public place or preferable to oneiric repository
+    remote_cmd "sudo add-apt-repository ppa:awolfson/systemtap; sudo apt-get update"
+    remote_cmd "sudo apt-get install -y systemtap-runtime systemtap-client"
     remote_cmd "sudo usermod -a -G stapdev,stapusr $remote_user"
 fi

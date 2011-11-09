@@ -56,13 +56,13 @@ class QuicklyRename(object):
         os.chdir(path)
         try:
 
-            p1 = subprocess.Popen(["bzr", "ls", "--ignored", "--unknown"], stdout=subprocess.PIPE)
+            p1 = subprocess.Popen(["bzr", "ls", "--ignored", "--unknown"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             #p2 = subprocess.Popen(["grep", "^?"], stdin=p1.stdout, stdout=subprocess.PIPE)
-            output = p1.communicate()[0]
-            if 'Not a branch:' in output or "No command 'bzr' found" in output:
+            output = p1.communicate()
+            if 'Not a branch:' in output[1] or "No command 'bzr' found" in output[1]:
                 return os.listdir('.')
             else:    
-                return output.splitlines()
+                return output[0].splitlines()
         finally:
             os.chdir(save_cwd)   
     def substAll(self, s, subst_list):
