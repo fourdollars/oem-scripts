@@ -36,7 +36,6 @@ class QuicklyRename(object):
     def isText(self, s):
         if "\0" in s:
             return 0
-        
         if not s:  # Empty files are considered text
             return 1
 
@@ -54,15 +53,21 @@ class QuicklyRename(object):
         #TODO: some more bzr API way?
         save_cwd = os.getcwd()
         os.chdir(path)
+        listdir=os.listdir('.')
         try:
 
-            p1 = subprocess.Popen(["bzr", "ls", "--ignored", "--unknown"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p1 = subprocess.Popen(["bzr", "ls", "--versioned"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             #p2 = subprocess.Popen(["grep", "^?"], stdin=p1.stdout, stdout=subprocess.PIPE)
             output = p1.communicate()
             if 'Not a branch:' in output[1] or "No command 'bzr' found" in output[1]:
-                return os.listdir('.')
-            else:    
-                return output[0].splitlines()
+                notinbzr = listdir
+            else:
+                # bzr puts '/' in the end of directories, but os.listdir() does not
+                # so we remove the trailing slashes
+                bzrdir = output[0].splitlines()
+                bzrdirnoslash = [filename.rstrip('/') for filename in bzrdir]
+                notinbzr=set(listdir)-set(bzrdirnoslash)
+            return notinbzr
         finally:
             os.chdir(save_cwd)   
     def substAll(self, s, subst_list):
@@ -73,7 +78,6 @@ class QuicklyRename(object):
         save_cwd = os.getcwd()
         os.chdir(path)
         print "=> Processing directory <%s>" % path 
-        
         not_in_bzr = self.getNotInBzrFiles('.')
         print "not in bzr = ", not_in_bzr
 
@@ -95,7 +99,7 @@ class QuicklyRename(object):
     def renameFile(self, old_name, new_name, not_in_bzr):
         #Would me nice to use bzr API directly
         if old_name in not_in_bzr:
-            os.rename(old_name, new_name)        
+            os.rename(old_name, new_name)
         else:
             subprocess.call(("bzr", "mv", old_name, new_name))
     def renameInFile(self, file_name, subst_list):
@@ -106,7 +110,6 @@ class QuicklyRename(object):
                     line_w = self.substAll(line_r, subst_list)
                     fw.write (line_w)
         os.rename(file_name + "_new", file_name)
-                               
 def main():
     progname = sys.argv[0] 
 
