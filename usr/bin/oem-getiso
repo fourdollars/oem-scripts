@@ -1,0 +1,223 @@
+#!/usr/bin/env python
+# author: hychen <hychen@canonical.com>
+#
+#
+# Goal: download iso file from https://oem-share.canonical.com/oem/cesg-builds/ by rsync
+#
+# Notice: check https://wiki.canonical.com/CommercialEngineering/Infrastructure/OemShareSetup
+#         before use the tool
+#
+# Example 1:
+# oem-getiso https://oem-share.canonical.com/oem/cesg-builds/somerville-oneiric-amd64/20111115/1/images/iso/somerville-oneiric-amd64-iso-20111115-1.iso
+
+# Example 2:
+# oem-getiso https://oem-share.canonical.com/oem/cesg-builds/dell-bto-oneiric-pebble-beach/20111226/0/images/iso/dell-bto-oneiric-pebble-beach-X05-iso-20111226-0.iso
+
+# Example 3:
+# oem-getiso https://oem-share.canonical.com/partners/somerville-oneiric-amd64/images/20111116-1/iso/somerville-oneiric-amd64-iso-20111116-1.iso
+
+import os
+import copy
+import glob
+import subprocess
+
+__DEBUG__ = (os.getenv('RUNTEST') == 'true')
+
+class ImageURI(object):
+
+    def __init__(self,  project, date, buildorder):
+        self.project = project
+        self.date = date
+        self.buildorder = str(buildorder)
+        self.manifest_ver = None
+
+        # default value
+        self.siteurl = 'https://oem-share.canonical.com'
+        self.ispublished = False
+
+    @property
+    def rootdir(self):
+        self._rootdir = self.ispublished and 'partners' or '/oem/cesg-builds/'
+        return self._rootdir
+
+    @property
+    def isolink(self):
+        """
+        >>> ImageURI('somerville-oneiric-amd64', '20111115', 1).isolink
+        'https://oem-share.canonical.com/oem/cesg-builds/somerville-oneiric-amd64/20111115/1/images/iso/somerville-oneiric-amd64-iso-20111115-1.iso'
+        """
+        return "{}{}{}".format(self.siteurl, self.rootdir, self.imagepath)
+
+    @property
+    def imagepath(self):
+        if self.ispublished:
+            return os.path.join(self.project, 'images', '{}-{}'.format(self.date, self.buildorder), 'iso', self.isoname)
+        else:
+            return os.path.join(self.project, self.date, self.buildorder, 'images', 'iso', self.isoname)
+
+    @property
+    def isoname(self):
+        if self.manifest_ver:
+            self.project += '-' + self.manifest_ver
+        return '{}-iso-{}-{}.iso'.format(self.project, self.date, self.buildorder)
+
+    @classmethod
+    def from_url(cls, url):
+        """
+        >>> o = ImageURI.from_url('https://oem-share.canonical.com/oem/cesg-builds/somerville-oneiric-amd64/20111115/1/images/iso/somerville-oneiric-amd64-iso-20111115-1.iso')
+        >>> o.project
+        'somerville-oneiric-amd64'
+        >>> o.date
+        '20111115'
+        >>> n = ImageURI.from_url('https://oem-share.canonical.com/partners/somerville-oneiric-amd64/images/20111116-1/iso/somerville-oneiric-amd64-iso-20111116-1.iso')
+        >>> n.ispublished
+        True
+        >>> n.project
+        'somerville-oneiric-amd64'
+        >>> n.ispublished = False
+        >>> n.isolink
+        'https://oem-share.canonical.com/oem/cesg-builds/somerville-oneiric-amd64/20111116/1/images/iso/somerville-oneiric-amd64-iso-20111116-1.iso'
+        >>> n = ImageURI.from_url('https://oem-share.canonical.com/oem/cesg-builds/dell-bto-oneiric-pebble-beach/20111226/0/images/iso/dell-bto-oneiric-pebble-beach-X05-iso-20111226-0.iso')
+        >>> n.ispublished = False
+        >>> n.date
+        '20111226'
+        >>> n.project
+        'dell-bto-oneiric-pebble-beach'
+        >>> n.isoname
+        'dell-bto-oneiric-pebble-beach-X05-iso-20111226-0.iso'
+        """
+        def _parse(url):
+            from urlparse import urlparse
+            comps = urlparse(url).path.split('/')
+            published = (comps[1] == 'partners')
+            if published:
+                proj = comps[2]
+                (date, buildorder) = comps[4].split('-')
+            else:
+                (proj, date, buildorder) = (comps[3] , comps[4], comps[5])
+            if 'dell-bto' in proj:
+                manifest_ver = comps[8].split('-')[-4]
+            else:
+                manifest_ver = None
+            return (proj, date, buildorder, published, manifest_ver)
+        (project, date, buildorder, published, manifest_ver) = _parse(url)
+        obj = cls(project, date, buildorder)
+        obj.manifest_ver = manifest_ver
+        obj.ispublished = published
+        return obj
+
+    def topuburi(self):
+        obj = copy.copy(self)
+        obj.ispublished = True
+        return obj
+
+    def tobuilduri(self):
+        """
+        >>> o = ImageURI.from_url('https://oem-share.canonical.com/partners/somerville-oneiric-amd64/images/20111116-1/iso/somerville-oneiric-amd64-iso-20111116-1.iso')
+        >>> n = o.tobuilduri()
+        >>> n.ispublished
+        False
+        >>> n.isolink
+        'https://oem-share.canonical.com/oem/cesg-builds/somerville-oneiric-amd64/20111116/1/images/iso/somerville-oneiric-amd64-iso-20111116-1.iso'
+        """
+        obj = copy.copy(self)
+        obj.ispublished = False
+        return obj
+
+def __testself():
+    import doctest
+    doctest.testmod()
+
+class RsyncURI(object):
+
+    def __init__(self, imguri, username=None, siteurl=None):
+        self.imguri = imguri
+        self.siteurl = siteurl or 'oem-share.canonical.com'
+        self.username = username or os.getenv('USER')
+        self.rootdir = '/srv/oem-share.canonical.com/www'
+
+    @property
+    def isolink(self):
+        return '{}@{}:{}'.format(self.username, self.siteurl, self.imagepath)
+
+    @property
+    def imagepath(self):
+        return self.rootdir + os.path.join(self.imguri.rootdir, self.imguri.imagepath)
+
+    @classmethod
+    def from_imguri(cls, imguri):
+        """
+        >>> imguri = ImageURI.from_url('https://oem-share.canonical.com/partners/somerville-oneiric-amd64/images/20111116-1/iso/somerville-oneiric-amd64-iso-20111116-1.iso')
+        >>> nimguri = imguri.tobuilduri()
+        >>> rsyncuri = RsyncURI.from_imguri(nimguri)
+        >>> rsyncuri.imagepath
+        '/srv/oem-share.canonical.com/www/oem/cesg-builds/somerville-oneiric-amd64/20111116/1/images/iso/somerville-oneiric-amd64-iso-20111116-1.iso'
+        """
+        return cls(imguri)
+
+class RsyncDownloader(object):
+
+    def __init__(self, url):
+        """
+        >>> o = RsyncDownloader('https://oem-share.canonical.com/partners/somerville-oneiric-amd64/images/20111116-1/iso/somerville-oneiric-amd64-iso-20111116-1.iso')
+        Found url is a published iso link, covert it to a link in cesg-build server
+        """
+        self.imguri = ImageURI.from_url(url)
+        if self.imguri.ispublished:
+            print 'Found url is a published iso link, covert it to a link in cesg-build server'
+            self.imguri = self.imguri.tobuilduri()
+
+    def find_lastdownloadediso(self):
+        proj_isos = filter(lambda iso: self.imguri.project in iso, glob.glob('*.iso'))
+        try:
+            return sorted_isos(proj_isos)[-1]
+        except IndexError:
+            return None
+
+    def run(self):
+        self.lastiso = self.find_lastdownloadediso()
+        print 'Found last downloaded file:{}'.format(self.lastiso)
+        self.isolink = RsyncURI.from_imguri(self.imguri).isolink
+        self.dorsync()
+
+    def dorsync(self):
+        import os
+        filename = self.lastiso and self.lastiso or self.imguri.isoname
+        cmd = ['rsync', '-Pv',
+               self.isolink,
+               filename
+        ]
+        if __DEBUG__:
+            print ' '.join(cmd)
+        subprocess.call(cmd)
+        if filename != self.imguri.isoname:
+            os.rename(filename, self.imguri.isoname)
+
+def sorted_isos(isos):
+    """
+    >>> isos = ['somerville-oneiric-amd64-iso-20111116-1.iso', 'somerville-oneiric-amd64-iso-20111106-1.iso', 'somerville-oneiric-amd64-iso-20091116-3.iso']
+    >>> sorted_isos(isos)
+    ['somerville-oneiric-amd64-iso-20091116-3.iso', 'somerville-oneiric-amd64-iso-20111106-1.iso', 'somerville-oneiric-amd64-iso-20111116-1.iso']
+    """
+    def _f(e):
+        e = e.replace('.iso', '')
+        comps = e.split('-')
+        if comps[0] == 'dell':
+            (date, order) = (comps[7], comps[8])
+        else:
+            (date, order) = (comps[4], comps[5])
+        return int('{}{}'.format(date, order))
+    return sorted(isos, key=_f)
+
+if __name__ == '__main__':
+    if __DEBUG__:
+        print 'self test down, no error found!'
+        __testself()
+    else:
+        import sys
+        try:
+            url = sys.argv[1]
+            RsyncDownloader(url).run()
+        except IndexError, e:
+            print 'USAGE: oem-get-iso [iso_url]'
+            exit()
