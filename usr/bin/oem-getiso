@@ -1,27 +1,11 @@
 #!/usr/bin/env python
 # author: hychen <hychen@canonical.com>
-#
-#
-# Goal: download iso file from https://oem-share.canonical.com/oem/cesg-builds/ by rsync
-#
-# Notice: check https://wiki.canonical.com/CommercialEngineering/Infrastructure/OemShareSetup
-#         before use the tool
-#
-# Example 1:
-# oem-getiso https://oem-share.canonical.com/oem/cesg-builds/somerville-oneiric-amd64/20111115/1/images/iso/somerville-oneiric-amd64-iso-20111115-1.iso
-
-# Example 2:
-# oem-getiso https://oem-share.canonical.com/oem/cesg-builds/dell-bto-oneiric-pebble-beach/20111226/0/images/iso/dell-bto-oneiric-pebble-beach-X05-iso-20111226-0.iso
-
-# Example 3:
-# oem-getiso https://oem-share.canonical.com/partners/somerville-oneiric-amd64/images/20111116-1/iso/somerville-oneiric-amd64-iso-20111116-1.iso
-
 import os
 import copy
 import glob
 import subprocess
 
-__DEBUG__ = (os.getenv('RUNTEST') == 'true')
+__DEBUG__ = (os.getenv('DEBUG') == 'true')
 
 class ImageURI(object):
 
@@ -58,8 +42,10 @@ class ImageURI(object):
     @property
     def isoname(self):
         if self.manifest_ver:
-            self.project += '-' + self.manifest_ver
-        return '{}-iso-{}-{}.iso'.format(self.project, self.date, self.buildorder)
+            project = self.project + '-' + self.manifest_ver
+        else:
+            project = self.project
+        return '{}-iso-{}-{}.iso'.format(project, self.date, self.buildorder)
 
     @classmethod
     def from_url(cls, url):
@@ -152,6 +138,8 @@ class RsyncURI(object):
         >>> rsyncuri = RsyncURI.from_imguri(nimguri)
         >>> rsyncuri.imagepath
         '/srv/oem-share.canonical.com/www/oem/cesg-builds/somerville-oneiric-amd64/20111116/1/images/iso/somerville-oneiric-amd64-iso-20111116-1.iso'
+        >>> nimguri = ImageURI.from_url('https://oem-share.canonical.com/oem/cesg-builds/dell-bto-oneiric-pebble-beach/20120330/1/images/iso/dell-bto-oneiric-pebble-beach-A10-iso-20120330-1.iso')
+        >>> rsyncuri = RsyncURI.from_imguri(nimguri)
         """
         return cls(imguri)
 
@@ -183,6 +171,7 @@ class RsyncDownloader(object):
     def dorsync(self):
         import os
         filename = self.lastiso and self.lastiso or self.imguri.isoname
+        print 'Starting to download file:{}'.format(self.imguri.isoname)
         cmd = ['rsync', '-Pv',
                self.isolink,
                filename
@@ -211,7 +200,6 @@ def sorted_isos(isos):
 
 if __name__ == '__main__':
     if __DEBUG__:
-        print 'self test down, no error found!'
         __testself()
     else:
         import sys
