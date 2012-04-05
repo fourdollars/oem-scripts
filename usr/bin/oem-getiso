@@ -198,10 +198,13 @@ def sorted_isos(isos):
     """
     def _f(e):
         e = e.replace('.iso', '')
-        comps = e.split('-')
-        if comps[0] == 'dell':
-            (date, order) = (comps[7], comps[8])
+        if e.startswith('dell'):
+            e = e.replace('dell-bto-oneiric-', '')
+            comps = e.split('-iso-')
+            comps = comps[1].split('-')
+            (date, order) = (comps[0], comps[1])
         else:
+            comps = e.split('-')
             (date, order) = (comps[4], comps[5])
         return int('{}{}'.format(date, order))
     return sorted(isos, key=_f)
@@ -215,11 +218,9 @@ if __name__ == '__main__':
         __testself()
     else:
         import sys
-        if '-h' or '--help' in sys.argv:
+        try:
+            url = sys.argv[1]
+        except IndexError, e:
             print_usage()
         else:
-            try:
-                url = sys.argv[1]
-                RsyncDownloader(url).run()
-            except IndexError, e:
-                print_usage()
+            RsyncDownloader(url).run()
