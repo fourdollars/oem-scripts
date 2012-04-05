@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # author: hychen <hychen@canonical.com>
+#
+# Run self test: $ DEBUG=true oem-getiso
 import os
 import copy
 import glob
 import subprocess
+import logging
 
 __DEBUG__ = (os.getenv('DEBUG') == 'true')
 
@@ -21,7 +24,7 @@ class ImageURI(object):
 
     @property
     def rootdir(self):
-        self._rootdir = self.ispublished and 'partners' or '/oem/cesg-builds/'
+        self._rootdir = self.ispublished and '/partners' or '/oem/cesg-builds/'
         return self._rootdir
 
     @property
@@ -71,6 +74,7 @@ class ImageURI(object):
         'dell-bto-oneiric-pebble-beach'
         >>> n.isoname
         'dell-bto-oneiric-pebble-beach-X05-iso-20111226-0.iso'
+        >>> o = ImageURI.from_url('https://oem-share.canonical.com/partners/dell-bto-oneiric-audi-13-intel/images/20120316-3/iso/dell-bto-oneiric-audi-13-intel-A04-iso-20120316-3.iso')
         """
         def _parse(url):
             from urlparse import urlparse
@@ -82,7 +86,12 @@ class ImageURI(object):
             else:
                 (proj, date, buildorder) = (comps[3] , comps[4], comps[5])
             if 'dell-bto' in proj:
-                manifest_ver = comps[8].split('-')[-4]
+                manifest_ver_index = published and 6 or 8
+                try:
+                    manifest_ver = comps[manifest_ver_index].split('-')[-4]
+                except IndexError:
+                    logging.error('published:{0} manifest_ver_index:{1}'.format(published, manifest_ver_index))
+                    raise IndexError
             else:
                 manifest_ver = None
             return (proj, date, buildorder, published, manifest_ver)
@@ -169,7 +178,6 @@ class RsyncDownloader(object):
         self.dorsync()
 
     def dorsync(self):
-        import os
         filename = self.lastiso and self.lastiso or self.imguri.isoname
         print 'Starting to download file:{}'.format(self.imguri.isoname)
         cmd = ['rsync', '-Pv',
@@ -199,13 +207,19 @@ def sorted_isos(isos):
     return sorted(isos, key=_f)
 
 if __name__ == '__main__':
+    def print_usage():
+        print 'USAGE: oem-get-iso [iso_url]'
+
     if __DEBUG__:
+        print 'self testing...'
         __testself()
     else:
         import sys
-        try:
-            url = sys.argv[1]
-            RsyncDownloader(url).run()
-        except IndexError, e:
-            print 'USAGE: oem-get-iso [iso_url]'
-            exit()
+        if '-h' or '--help' in sys.argv:
+            print_usage()
+        else:
+            try:
+                url = sys.argv[1]
+                RsyncDownloader(url).run()
+            except IndexError, e:
+                print_usage()
