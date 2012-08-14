@@ -41,6 +41,7 @@ USAGE(){
     {--remoteuser|--ru} remote_USER \n \
     {--remotepassword|--rp} remote_PASSWORD \n \
     {--remoteip|--rip} remote_IP \n \
+    {--remotename|--rn} remote_NAME \n \
     [--alsa]  #install tools for debugging sound \n \
     [--hexr]  #install hexr \n \
     [--stap]  #install system tap \n \
@@ -83,6 +84,7 @@ do
     --ru|--remoteuser) shift; remote_user=$1; echo -e "remoteuser=$remote_user"; shift;;
     --rp|--remotepassword) shift; remote_password=$1; echo -e "remotepassword=$remote_password"; shift;;
     --rip|--remoteip) shift; remote_ip=$1; echo -e "remoteip=$remote_ip"; shift;;
+    --rn|--remotename) shift; remote_name=$1; echo -e "remotename=$remote_name"; shift;;
     --cb|--checkbox) shift; checkbox=true; echo -e "checkbox=$checkbox, but it is not implemented yet";;
     --alsa) shift; alsa=true; echo -e "alsa=$alsa";;
     --hexr) shift; hexr=true; echo -e "hexr=$hexr";;
@@ -108,7 +110,11 @@ userid=$(id -un)
 #ssh-keygen -t rsa 
 #setup keyless access on testpc
 ssh-copy-id $remote_user@$remote_ip
-remote_hostname=$(ssh $remote_user@$remote_ip hostname|cat -)
+if [ x${remote_name} != x ] ; then
+    remote_hostname=${remote_name}
+else
+    remote_hostname=$(ssh $remote_user@$remote_ip hostname|cat -)
+fi
 local_hostname=$(hostname)
 echo local_hostname=$local_hostname
 echo remote_hostname=$remote_hostname
@@ -117,6 +123,7 @@ mkdir -p $PCTESTS/$remote_hostname
 
 #install synergy and additional sw on testpc
 remote_cmd "sudo apt-get install -y synergy mc sshfs"
+fusermount -u $PCTESTS/$remote_hostname
 sshfs $remote_user@$remote_ip:/ $PCTESTS/$remote_hostname
 #Create conf files on Host. See:
 #http://synergy2.sourceforge.net/configuration.html
@@ -149,7 +156,7 @@ killall synergys
 synergys -c $PCTESTS/${remote_hostname}-synergy.cfg
 #start synergy on the testpc
 remote_cmd "killall synergyc"
-remote_cmd "synergyc $local_ip"
+remote_cmd "synergyc -n $remote_hostname $local_ip "
 if [ $alsa ] ; then
 
     #audio debugging

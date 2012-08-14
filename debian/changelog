@@ -1,10 +1,17 @@
-oem-scripts (0.5ubuntu2) oneiric; urgency=low
+oem-scripts (0.8) precise; urgency=low
+
+  * added an ability to name remote Laptop to setup4test.sh script (--rn|--remotenm)
+    it is used in synergy
+
+ -- Alex Wolfson <alex.wolfson@canonical.com>  Tue, 14 Aug 2012 16:20:08 -0400
+
+oem-scripts (0.7) oneiric; urgency=low
 
   * added oem-getiso script: download iso from oem-share by rsync
 
  -- Hsin-Yi Chen (hychen) <hychen@canonical.com>  Mon, 26 Dec 2011 17:15:28 +0800
 
-oem-scripts (0.5ubuntu1) oneiric; urgency=low
+oem-scripts (0.6) oneiric; urgency=low
 
   * added .bzr-builddeb
   * modified the algorithm to find not in bzr files. The old way had a bug
