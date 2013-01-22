@@ -195,6 +195,9 @@ def sorted_isos(isos):
     >>> isos = ['somerville-oneiric-amd64-iso-20111116-1.iso', 'somerville-oneiric-amd64-iso-20111106-1.iso', 'somerville-oneiric-amd64-iso-20091116-3.iso']
     >>> sorted_isos(isos)
     ['somerville-oneiric-amd64-iso-20091116-3.iso', 'somerville-oneiric-amd64-iso-20111106-1.iso', 'somerville-oneiric-amd64-iso-20111116-1.iso']
+    >>> isos = ['watauga2-precise-amd64-norecovery-iso-20130121-1.iso', 'watauga2-precise-amd64-norecovery-iso-20130121-0.iso']
+    >>> sorted_isos(isos)
+    ['watauga2-precise-amd64-norecovery-iso-20130121-0.iso', 'watauga2-precise-amd64-norecovery-iso-20130121-1.iso']
     """
     def _f(e):
         e = e.replace('.iso', '')
