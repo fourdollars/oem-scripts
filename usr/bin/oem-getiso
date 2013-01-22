@@ -204,8 +204,10 @@ def sorted_isos(isos):
             comps = comps[1].split('-')
             (date, order) = (comps[0], comps[1])
         else:
-            comps = e.split('-')
-            (date, order) = (comps[4], comps[5])
+            # Date and build number are guaranteed to be the last 2 fields
+            # in the name of an ISO produced by Offspring
+            comps = e.rsplit('-', 2)
+            (date, order) = (comps[1], comps[2])
         return int('{}{}'.format(date, order))
     return sorted(isos, key=_f)
 
