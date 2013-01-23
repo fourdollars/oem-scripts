@@ -178,6 +178,10 @@ class RsyncDownloader(object):
         self.dorsync()
 
     def dorsync(self):
+        if os.path.exists(self.imguri.isoname):
+            print "Image {} already be downloaded.".format(self.imguri.isoname)
+            exit()
+
         filename = self.lastiso and self.lastiso or self.imguri.isoname
         print 'Starting to download file:{}'.format(self.imguri.isoname)
         cmd = ['rsync', '-Pv',
@@ -196,7 +200,6 @@ def sorted_isos(isos):
     >>> sorted_isos(isos)
     ['somerville-oneiric-amd64-iso-20091116-3.iso', 'somerville-oneiric-amd64-iso-20111106-1.iso', 'somerville-oneiric-amd64-iso-20111116-1.iso']
     >>> isos = ['watauga2-precise-amd64-norecovery-iso-20130121-1.iso', 'watauga2-precise-amd64-norecovery-iso-20130121-0.iso']
-    >>> sorted_isos(isos)
     ['watauga2-precise-amd64-norecovery-iso-20130121-0.iso', 'watauga2-precise-amd64-norecovery-iso-20130121-1.iso']
     """
     def _f(e):
@@ -214,6 +217,38 @@ def sorted_isos(isos):
         return int('{}{}'.format(date, order))
     return sorted(isos, key=_f)
 
+def iso_of_bugdesc(desc):
+    """
+    >>> iso_of_bugdesc('Image: somerville-oneiric-amd64-20111116-1')
+    ('somerville-oneiric-amd64', '20111116', '1')
+    """
+    import re
+    ret = re.findall('Image:\s+((\S+)-(\d+)-(\d)).*', desc)
+    if ret:
+        return (ret[0][1], ret[0][2], ret[0][3])
+    else:
+        return ()
+
+def isourl_of_bug(q):
+    """
+    >>> isourl_of_bug(1100661)
+    'https://oem-share.canonical.com/partnersstella-anaheim-precise-amd64/images/20130116-0/iso/stella-anaheim-precise-amd64-iso-20130116-0.iso'
+    """
+    from launchpadlib.launchpad import Launchpad
+    cachedir = os.path.join(os.environ["HOME"], ".launchpadlib/cache")
+    try:
+        lp = Launchpad.login_with("oem-getiso", 'production', cachedir) 
+        found_iso = iso_of_bugdesc(lp.bugs[q].description)
+    except KeyboardInterrupt:
+        print "Terminated by user reqeust!"
+        exit()
+    if not found_iso:
+        return None
+    img = ImageURI(*found_iso)
+    # @FIXME: we can not rsync published iso now.
+    # img.ispublished = True
+    return img.isolink
+
 if __name__ == '__main__':
     def print_usage():
         print 'USAGE: oem-get-iso [iso_url]'
@@ -224,8 +259,19 @@ if __name__ == '__main__':
     else:
         import sys
         try:
-            url = sys.argv[1]
+            q = sys.argv[1]
         except IndexError, e:
             print_usage()
         else:
-            RsyncDownloader(url).run()
+            if q.isdigit():
+                print "find iso link for bug {}".format(q)
+                url = isourl_of_bug(q)
+                if not url:
+                    print "Could not find iso link for the bug {}".format(q)
+                    exit
+            else:
+                url = q
+            try:     
+                RsyncDownloader(url).run()
+            except KeyboardInterrupt:
+                exit()
