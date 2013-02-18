@@ -5,10 +5,13 @@
 import os
 import copy
 import glob
-import subprocess
 import logging
+import subprocess
+import sys
+from optparse import OptionParser
 
 __DEBUG__ = (os.getenv('DEBUG') == 'true')
+
 
 class ImageURI(object):
 
@@ -194,6 +197,44 @@ class RsyncDownloader(object):
         if filename != self.imguri.isoname:
             os.rename(filename, self.imguri.isoname)
 
+class ZsyncDownloader(object):
+    def __init__(self, url, auth_token):
+        self.imguri = ImageURI.from_url(url)
+        if self.imguri.ispublished:
+            print 'Found url is a published iso link, covert it to a link in cesg-build server'
+            self.imguri = self.imguri.tobuilduri()
+        self.auth_token = auth_token
+
+    def find_lastdownloadediso(self):
+        proj_isos = filter(lambda iso: self.imguri.project in iso, glob.glob('*.iso'))
+        try:
+            return sorted_isos(proj_isos)[-1]
+        except IndexError:
+            return None
+
+    def run(self):
+        self.lastiso = self.find_lastdownloadediso()
+        print 'Found last downloaded file:{}'.format(self.lastiso)
+        self.isolink = self.imguri
+        self.dozsync()
+
+    def dozsync(self):
+        if os.path.exists(self.imguri.isoname):
+            sys.exit("Image {} already be downloaded.".format(
+                self.imguri.isoname))
+
+        print 'Starting to download file:{}'.format(self.imguri.isoname)
+        cmd = ['zsync_curl',
+               self.imguri.isolink + '.zsync',
+               '-c pysid=' + self.auth_token
+        ]
+        if self.lastiso:
+            cmd.append('-i ' + self.lastiso)
+
+        if __DEBUG__:
+            print ' '.join(cmd)
+        subprocess.call(cmd)
+
 def sorted_isos(isos):
     """
     >>> isos = ['somerville-oneiric-amd64-iso-20111116-1.iso', 'somerville-oneiric-amd64-iso-20111106-1.iso', 'somerville-oneiric-amd64-iso-20091116-3.iso']
@@ -238,7 +279,7 @@ def isourl_of_bug(q):
     from launchpadlib.launchpad import Launchpad
     cachedir = os.path.join(os.environ["HOME"], ".launchpadlib/cache")
     try:
-        lp = Launchpad.login_with("oem-getiso", 'production', cachedir) 
+        lp = Launchpad.login_with("oem-getiso", 'production', cachedir)
         found_iso = iso_of_bugdesc(lp.bugs[q].description)
     except KeyboardInterrupt:
         print "Terminated by user reqeust!"
@@ -251,28 +292,48 @@ def isourl_of_bug(q):
     return img.isolink
 
 if __name__ == '__main__':
-    def print_usage():
-        print 'USAGE: oem-get-iso [iso_url]'
+    usage = "usage: %prog --method [rsync|zsync --auth_token " \
+            "<auth_token>] iso_url|bug_number"
+    parser = OptionParser(usage=usage)
+    parser.add_option(
+        "--method", dest="method", default="rsync", metavar="METHOD",
+        help="The METHOD of download.  Defaults to 'rsync'.")
+    parser.add_option(
+        "--auth_token", dest="auth_token", metavar="AUTH_TOKEN",
+        help="The authetication token needed to access oem-share.")
+    (options, args) = parser.parse_args()
 
     if __DEBUG__:
         print 'self testing...'
         __testself()
+        sys.exit()
+
+    if len(args) != 1:
+        sys.exit(parser.get_usage())
+
+    if args[0].isdigit():
+        bug = args[0]
+        print "find iso link for bug {}".format(bug)
+        url = isourl_of_bug(bug)
+        if not url:
+            sys.exit("Could not find iso link for the bug {}".format(bug))
     else:
-        import sys
+        url = args[0]
+
+    if options.method == "rsync":
         try:
-            q = sys.argv[1]
-        except IndexError, e:
-            print_usage()
-        else:
-            if q.isdigit():
-                print "find iso link for bug {}".format(q)
-                url = isourl_of_bug(q)
-                if not url:
-                    print "Could not find iso link for the bug {}".format(q)
-                    exit
-            else:
-                url = q
-            try:     
-                RsyncDownloader(url).run()
-            except KeyboardInterrupt:
-                exit()
+            RsyncDownloader(url).run()
+        except KeyboardInterrupt:
+            sys.exit()
+    elif options.method == "zsync":
+        if options.auth_token is None:
+            sys.exit(parser.get_usage())
+        if not os.path.exists("/usr/bin/zsync_curl"):
+            sys.exit(
+                "The zync-curl package must be installed to use this method.")
+        try:
+            ZsyncDownloader(url, options.auth_token).run()
+        except KeyboardInterrupt:
+            sys.exit()
+    else:
+        sys.exit(parser.get_usage())

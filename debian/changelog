@@ -1,3 +1,13 @@
+oem-scripts (0.9) precise; urgency=low
+
+  * added get-oemshare-auth-token to get am authentication token for oem-share
+    that can be used for command line scripts that need retrieve images
+
+  * added support for zsync-curl to oem-getiso so that images can be retrieved
+    with zsync over https.
+
+ -- Timothy Chavez <timothy.chavez@canonical.com>  Tue, 12 Feb 2013 12:42:13 -0600
+
 oem-scripts (0.8) precise; urgency=low
 
   * added an ability to name remote Laptop to setup4test.sh script (--rn|--remotenm)
