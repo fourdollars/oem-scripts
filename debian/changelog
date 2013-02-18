@@ -1,12 +1,17 @@
 oem-scripts (0.9) precise; urgency=low
 
+  [ Timothy Chavez ]
   * added get-oemshare-auth-token to get am authentication token for oem-share
     that can be used for command line scripts that need retrieve images
 
   * added support for zsync-curl to oem-getiso so that images can be retrieved
     with zsync over https.
 
- -- Timothy Chavez <timothy.chavez@canonical.com>  Tue, 12 Feb 2013 12:42:13 -0600
+  [ Hsin-Yi Chen (hychen) ]
+  
+  * added zsync-curl, python-mechanize into deb depends.
+
+ -- Hsin-Yi Chen (hychen) <hychen@canonical.com>  Mon, 18 Feb 2013 16:46:36 +0800
 
 oem-scripts (0.8) precise; urgency=low
 

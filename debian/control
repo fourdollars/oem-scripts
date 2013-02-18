@@ -15,6 +15,8 @@ Architecture: all
 Depends: ${misc:Depends},
  python (<< 3.0), python (>= 2.6),
  python-distutils-extra,
+ python-mechanize,
+ zsync-curl
 Description: Short OEM related scripts
  Short OEM related scripts can go here. 
  Also there is a meta package oem-dev-tools that installs all scripts
