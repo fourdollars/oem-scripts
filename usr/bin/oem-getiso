@@ -200,6 +200,7 @@ def sorted_isos(isos):
     >>> sorted_isos(isos)
     ['somerville-oneiric-amd64-iso-20091116-3.iso', 'somerville-oneiric-amd64-iso-20111106-1.iso', 'somerville-oneiric-amd64-iso-20111116-1.iso']
     >>> isos = ['watauga2-precise-amd64-norecovery-iso-20130121-1.iso', 'watauga2-precise-amd64-norecovery-iso-20130121-0.iso']
+    >>> sorted_isos(isos)
     ['watauga2-precise-amd64-norecovery-iso-20130121-0.iso', 'watauga2-precise-amd64-norecovery-iso-20130121-1.iso']
     """
     def _f(e):
@@ -232,7 +233,7 @@ def iso_of_bugdesc(desc):
 def isourl_of_bug(q):
     """
     >>> isourl_of_bug(1100661)
-    'https://oem-share.canonical.com/partnersstella-anaheim-precise-amd64/images/20130116-0/iso/stella-anaheim-precise-amd64-iso-20130116-0.iso'
+    'https://oem-share.canonical.com/oem/cesg-builds/stella-anaheim-precise-amd64/20130116/0/images/iso/stella-anaheim-precise-amd64-iso-20130116-0.iso'
     """
     from launchpadlib.launchpad import Launchpad
     cachedir = os.path.join(os.environ["HOME"], ".launchpadlib/cache")
