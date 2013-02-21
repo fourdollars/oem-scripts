@@ -155,11 +155,11 @@ class RsyncURI(object):
         """
         return cls(imguri)
 
-class RsyncDownloader(object):
+class _Downloader(object):
 
     def __init__(self, url):
         """
-        >>> o = RsyncDownloader('https://oem-share.canonical.com/partners/somerville-oneiric-amd64/images/20111116-1/iso/somerville-oneiric-amd64-iso-20111116-1.iso')
+        >>> o = _Downloader('https://oem-share.canonical.com/partners/somerville-oneiric-amd64/images/20111116-1/iso/somerville-oneiric-amd64-iso-20111116-1.iso')
         Found url is a published iso link, covert it to a link in cesg-build server
         """
         self.imguri = ImageURI.from_url(url)
@@ -178,52 +178,33 @@ class RsyncDownloader(object):
         self.lastiso = self.find_lastdownloadediso()
         print 'Found last downloaded file:{}'.format(self.lastiso)
         self.isolink = RsyncURI.from_imguri(self.imguri).isolink
-        self.dorsync()
-
-    def dorsync(self):
         if os.path.exists(self.imguri.isoname):
-            print "Image {} already be downloaded.".format(self.imguri.isoname)
-            exit()
-
-        filename = self.lastiso and self.lastiso or self.imguri.isoname
+            sys.exit("Image {} already be downloaded.".format(
+                self.imguri.isoname))
         print 'Starting to download file:{}'.format(self.imguri.isoname)
+        self.do_download()
+        
+class RsyncDownloader(_Downloader):
+
+    def do_download(self):
+        filename = self.lastiso and self.lastiso or self.imguri.isoname
         cmd = ['rsync', '-Pv',
                self.isolink,
                filename
         ]
-        if __DEBUG__:
-            print ' '.join(cmd)
+
         subprocess.call(cmd)
+
         if filename != self.imguri.isoname:
             os.rename(filename, self.imguri.isoname)
 
-class ZsyncDownloader(object):
+class ZsyncDownloader(_Downloader):
+    
     def __init__(self, url, auth_token):
-        self.imguri = ImageURI.from_url(url)
-        if self.imguri.ispublished:
-            print 'Found url is a published iso link, covert it to a link in cesg-build server'
-            self.imguri = self.imguri.tobuilduri()
+        super(ZsyncDownloader, self).__init__(url)
         self.auth_token = auth_token
 
-    def find_lastdownloadediso(self):
-        proj_isos = filter(lambda iso: self.imguri.project in iso, glob.glob('*.iso'))
-        try:
-            return sorted_isos(proj_isos)[-1]
-        except IndexError:
-            return None
-
-    def run(self):
-        self.lastiso = self.find_lastdownloadediso()
-        print 'Found last downloaded file:{}'.format(self.lastiso)
-        self.isolink = self.imguri
-        self.dozsync()
-
-    def dozsync(self):
-        if os.path.exists(self.imguri.isoname):
-            sys.exit("Image {} already be downloaded.".format(
-                self.imguri.isoname))
-
-        print 'Starting to download file:{}'.format(self.imguri.isoname)
+    def do_download(self):
         cmd = ['zsync_curl',
                self.imguri.isolink + '.zsync',
                '-c pysid=' + self.auth_token
@@ -231,8 +212,6 @@ class ZsyncDownloader(object):
         if self.lastiso:
             cmd.append('-i ' + self.lastiso)
 
-        if __DEBUG__:
-            print ' '.join(cmd)
         subprocess.call(cmd)
 
 def sorted_isos(isos):

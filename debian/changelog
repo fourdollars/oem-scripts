@@ -9,8 +9,10 @@ oem-scripts (0.9) precise; urgency=low
 
   [ Hsin-Yi Chen (hychen) ]
   
-  * added zsync-curl, python-mechanize into deb depends.
-  * bump standard version.
+  * debian/control: 
+    - added zsync-curl, python-mechanize into deb depends.
+    - bump standard version.
+  * oem-getiso: removed duplicat cods.
 
  -- Hsin-Yi Chen (hychen) <hychen@canonical.com>  Mon, 18 Feb 2013 16:46:36 +0800
 
