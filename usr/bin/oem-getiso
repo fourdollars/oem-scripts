@@ -163,9 +163,6 @@ class _Downloader(object):
         Found url is a published iso link, covert it to a link in cesg-build server
         """
         self.imguri = ImageURI.from_url(url)
-        if self.imguri.ispublished:
-            print 'Found url is a published iso link, covert it to a link in cesg-build server'
-            self.imguri = self.imguri.tobuilduri()
 
     def find_lastdownloadediso(self):
         proj_isos = filter(lambda iso: self.imguri.project in iso, glob.glob('*.iso'))
