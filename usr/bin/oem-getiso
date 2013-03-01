@@ -180,7 +180,7 @@ class _Downloader(object):
                 self.imguri.isoname))
         print 'Starting to download file:{}'.format(self.imguri.isoname)
         self.do_download()
-        
+
 class RsyncDownloader(_Downloader):
 
     def do_download(self):
@@ -196,7 +196,7 @@ class RsyncDownloader(_Downloader):
             os.rename(filename, self.imguri.isoname)
 
 class ZsyncDownloader(_Downloader):
-    
+
     def __init__(self, url, auth_token):
         super(ZsyncDownloader, self).__init__(url)
         self.auth_token = auth_token
@@ -209,7 +209,7 @@ class ZsyncDownloader(_Downloader):
         if self.lastiso:
             cmd.append('-i ' + self.lastiso)
 
-        subprocess.call(cmd)
+        subprocess.call(" ".join(cmd), shell=True)
 
 def sorted_isos(isos):
     """
