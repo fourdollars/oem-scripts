@@ -5,7 +5,7 @@ oem-scripts (0.10~rc1) precise; urgency=low
       that it can open the seed, if detected, and correctly calculate the
       delta.
 
- -- Timothy R. Chavez <timothy.chavez@canonical.com>  Thu, 28 Feb 2013 19:51:06 -0600
+ -- Timothy Chavez <timothy.chavez@canonical.com>  Thu, 28 Feb 2013 19:51:06 -0600
 
 oem-scripts (0.9) precise; urgency=low
 
