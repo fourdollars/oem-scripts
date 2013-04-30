@@ -1,3 +1,11 @@
+oem-scripts (0.12) precise; urgency=low
+
+  * usr/bin/live-build-image-chroot.sh
+   - Now support to genreate a new squashfs image.
+
+
+ -- Rex Tsai (蔡志展) <rex.tsai@canonical.com>  Tue, 30 Apr 2013 16:38:02 +0800
+
 oem-scripts (0.11) precise; urgency=low
 
   * usr/bin/live-build-image-chroot.sh
