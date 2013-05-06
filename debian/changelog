@@ -1,3 +1,14 @@
+oem-scripts (0.13) precise; urgency=low
+
+  * usr/bin/get-oem-auth-token
+    - Copied from get-oemshare-auth-token.
+    - add both oem-share and oem-ibs authentication support.
+    - add --username --password --code to support silent mode.
+  * usr/bin/oem-getiso
+    - Changed the call() method to return exit code
+
+ -- Franz Hsieh (Franz) <franz.hsieh@canonical.com>  Mon, 06 May 2013 17:49:42 +0800
+
 oem-scripts (0.12) precise; urgency=low
 
   * usr/bin/live-build-image-chroot.sh

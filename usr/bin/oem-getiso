@@ -8,6 +8,7 @@ import glob
 import logging
 import subprocess
 import sys
+import time
 from optparse import OptionParser
 
 __DEBUG__ = (os.getenv('DEBUG') == 'true')
@@ -171,6 +172,17 @@ class _Downloader(object):
         except IndexError:
             return None
 
+    def stop(self):
+        self.running = False
+
+    def post_download(self):
+        pass
+
+    def poll(self):
+        if self.proc:
+            return self.proc.poll()
+        return -1
+
     def run(self):
         self.lastiso = self.find_lastdownloadediso()
         print 'Found last downloaded file:{}'.format(self.lastiso)
@@ -179,20 +191,25 @@ class _Downloader(object):
             sys.exit("Image {} already be downloaded.".format(
                 self.imguri.isoname))
         print 'Starting to download file:{}'.format(self.imguri.isoname)
-        self.do_download()
+        self.proc = self.do_download()
+        ret = self.proc.wait()
+        self.post_download()
+        return ret
 
 class RsyncDownloader(_Downloader):
+    filename = None
 
     def do_download(self):
-        filename = self.lastiso and self.lastiso or self.imguri.isoname
+        self.filename = self.lastiso and self.lastiso or self.imguri.isoname
         cmd = ['rsync', '-Pv',
                self.isolink,
-               filename
+               self.filename
         ]
+ 
+        return subprocess.Popen(cmd)
 
-        subprocess.call(cmd)
-
-        if filename != self.imguri.isoname:
+    def post_download(self):
+        if self.filename != self.imguri.isoname:
             os.rename(filename, self.imguri.isoname)
 
 class ZsyncDownloader(_Downloader):
@@ -209,7 +226,7 @@ class ZsyncDownloader(_Downloader):
         if self.lastiso:
             cmd.append('-i ' + self.lastiso)
 
-        subprocess.call(" ".join(cmd), shell=True)
+        return subprocess.Popen(" ".join(cmd), shell=True)
 
 def sorted_isos(isos):
     """
@@ -296,20 +313,24 @@ if __name__ == '__main__':
     else:
         url = args[0]
 
+    runner = None
     if options.method == "rsync":
-        try:
-            RsyncDownloader(url).run()
-        except KeyboardInterrupt:
-            sys.exit()
+        runner = RsyncDownloader(url)
     elif options.method == "zsync":
         if options.auth_token is None:
             sys.exit(parser.get_usage())
         if not os.path.exists("/usr/bin/zsync_curl"):
             sys.exit(
                 "The zync-curl package must be installed to use this method.")
-        try:
-            ZsyncDownloader(url, options.auth_token).run()
-        except KeyboardInterrupt:
-            sys.exit()
+        runner = ZsyncDownloader(url, options.auth_token)
     else:
         sys.exit(parser.get_usage())
+
+    try:
+        runner.run()
+    except KeyboardInterrupt:
+        while True:
+            if runner.poll() == None:
+                continue 
+            sys.exit(runner.poll())
+
