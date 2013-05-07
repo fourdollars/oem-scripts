@@ -187,9 +187,9 @@ class _Downloader(object):
         self.lastiso = self.find_lastdownloadediso()
         print 'Found last downloaded file:{}'.format(self.lastiso)
         self.isolink = RsyncURI.from_imguri(self.imguri).isolink
-        if os.path.exists(self.imguri.isoname):
-            sys.exit("Image {} already be downloaded.".format(
-                self.imguri.isoname))
+        #if os.path.exists(self.imguri.isoname):
+        #    sys.exit("Image {} already be downloaded.".format(
+        #        self.imguri.isoname))
         print 'Starting to download file:{}'.format(self.imguri.isoname)
         self.proc = self.do_download()
         ret = self.proc.wait()
@@ -227,6 +227,13 @@ class ZsyncDownloader(_Downloader):
             cmd.append('-i ' + self.lastiso)
 
         return subprocess.Popen(" ".join(cmd), shell=True)
+
+    def post_download(self):
+        if self.lastiso != self.imguri.isoname and \
+           os.path.exists(self.lastiso):
+            os.remove(self.lastiso)
+        if os.path.exists(self.imguri.isoname + ".zs-old"):
+            os.remove(self.imguri.isoname + ".zs-old")
 
 def sorted_isos(isos):
     """
