@@ -210,7 +210,7 @@ class RsyncDownloader(_Downloader):
 
     def post_download(self):
         if self.filename != self.imguri.isoname:
-            os.rename(filename, self.imguri.isoname)
+            os.rename(self.filename, self.imguri.isoname)
 
 class ZsyncDownloader(_Downloader):
 
