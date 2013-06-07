@@ -17,7 +17,12 @@ Depends: ${misc:Depends},
  python-distutils-extra,
  python-mechanize,
  zsync-curl,
- diffutils
+ diffutils,
+ dkms,
+ devscripts,
+ ubuntu-dev-tools,
+ debhelper,
+ dh-modaliases
 Recommends: qemu-user-static
 Description: Short OEM related scripts
  Short OEM related scripts can go here. 
