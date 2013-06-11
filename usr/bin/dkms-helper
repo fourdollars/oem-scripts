@@ -22,18 +22,21 @@
 #export DEBEMAIL=
 #export DEBMAINTAINER=
 #export KVER=3.5.0-23-generic
+#AUTOINSTALL=no
 #DEBTYPE=quilt # experimental
 #DISTRO="$(lsb_release -c -s)"
 #FIXPERMS=no
 #FORCE=no
 #MODALIASES=no
 #MODALIASES_REGEX="(usb|pci):v"
+#MODULES_CONF=('blacklist hello' 'blacklist kitty')
 #POST_ADD=
 #POST_BUILD=
 #POST_INSTALL=
 #POST_REMOVE=
 #PRE_BUILD=
 #PRE_INSTALL=
+#REMAKE_INITRD=no
 
 export LANG=C LANGUAGE=C QUILT_PATCHES="debian/patches"
 
@@ -86,7 +89,10 @@ cd "$BUILDROOT"
 tar cJf "${NAME}_${VERSION}.orig.tar.xz" "$NAME-$VERSION"
 cd -
 
-# Check Debian source package folder if any
+# Check dkms-helper.env if any
+if [ -e "${HOME}/.dkms-helper.env" ]; then
+    . "${HOME}/.dkms-helper.env"
+fi
 if [ -n "$2" -a -d "$2" -a -f "$2"/dkms-helper.env ]; then
     DEB="$(readlink -e $2)"
     . "$DEB"/dkms-helper.env
@@ -97,7 +103,7 @@ DKMS_MOD="-m $NAME -v $VERSION"
 DKMS_ARG="$DKMS_SETUP $DKMS_MOD"
 
 OPTION=(POST_ADD POST_BUILD POST_INSTALL POST_REMOVE PRE_BUILD PRE_INSTALL)
-EXPORT=(DISTRO FORCE MODALIASES MODALIASES_REGEX FIXPERMS)
+EXPORT=(DISTRO FORCE MODALIASES MODALIASES_REGEX FIXPERMS REMAKE_INITRD AUTOINSTALL)
 
 # Collect all pathes of optional scripts.
 for ((i=0; i<${#OPTION[@]}; i++)); do
@@ -237,8 +243,14 @@ PACKAGE_VERSION="$VERSION"
 AUTOINSTALL="yes"
 MAKE="'make' -C ./ KVER=\$kernelver"
 CLEAN="'make' -C ./ clean"
-REMAKE_INITRD="yes"
 ENDLINE
+
+if [ "${AUTOINSTALL:=yes}" = "yes" ]; then
+    echo "AUTOINSTALL=\"${AUTOINSTALL}\"" >> dkms.conf
+fi
+if [ "${REMAKE_INITRD:=yes}" = "yes" ]; then
+    echo "REMAKE_INITRD=\"${REMAKE_INITRD}\"" >> dkms.conf
+fi
 
 # Insert optional scripts into dkms.conf
 for ((i=0; i<${#OPTION[@]}; i++)); do
@@ -257,6 +269,12 @@ DEST_MODULE_LOCATION[$i]="/updates"
 
 ENDLINE
 done
+
+if [ -n "${MODULES_CONF}" ]; then
+    for i in `seq 0 $(expr ${#MODULES_CONF[*]} - 1)`; do
+        echo "MODULES_CONF[$i]=\"${MODULES_CONF[$i]}\"" >> dkms.conf
+    done
+fi
 
 cd -
 
@@ -392,6 +410,14 @@ for ((i=0; i<${#OPTION[@]}; i++)); do
         echo "${ITEM}=${VALUE}" >> $NAME-dkms-$VERSION/dkms-helper.env
     fi
 done
+
+if [ -n "${MODULES_CONF}" ]; then
+    echo -n 'MODULES_CONF=(' >> $NAME-dkms-$VERSION/dkms-helper.env
+    for i in `seq 0 $(expr ${#MODULES_CONF[*]} - 1)`; do
+        echo -n "'${MODULES_CONF[$i]}' " >> $NAME-dkms-$VERSION/dkms-helper.env
+    done
+    echo ')' >> $NAME-dkms-$VERSION/dkms-helper.env
+fi
 
 cd -
 
