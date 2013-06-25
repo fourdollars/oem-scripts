@@ -85,6 +85,16 @@ else
     cp -r "$NAME-$VERSION" "$BUILDROOT/$NAME-$VERSION/$NAME"
 fi
 
+if [ -d "$FOLDER.fw" ]; then
+    cp -r "$FOLDER.fw" "$BUILDROOT/$NAME-$VERSION/firmware"
+    cd "$FOLDER.fw"
+    fw_files=`find . -type f -printf "%P "`
+    cd -
+    echo "Find firmware to release ("$fw_files")"
+else
+    echo "Don't find firmware to release (no fireware in $FOLDER.fw)"
+fi
+
 cd "$BUILDROOT"
 tar cJf "${NAME}_${VERSION}.orig.tar.xz" "$NAME-$VERSION"
 cd -
@@ -285,6 +295,7 @@ dkms add $DKMS_ARG
 dkms mkdsc $DKMS_ARG --source-only --legacy-postinst=0
 
 # Insert modaliases into Debian source package
+
 cd $BUILDROOT/dkms/$NAME/$VERSION/dsc
 dpkg-source -x $NAME-dkms_$VERSION.dsc
 if [ "${MODALIASES:=yes}" = 'yes' ]; then
@@ -304,6 +315,20 @@ if [ "${MODALIASES:=yes}" = 'yes' ]; then
     fi
 else
     [ -f "$NAME-dkms-$VERSION/$NAME-$VERSION/.modaliases" ] && rm "$NAME-dkms-$VERSION/$NAME-$VERSION/.modaliases"
+fi
+
+
+# Copy firmware to dkms dsc directory
+if [ -d "$BUILDROOT/$NAME-$VERSION/firmware" ]; then
+    cp -a $BUILDROOT/$NAME-$VERSION/firmware $BUILDROOT/dkms/$NAME/$VERSION/dsc/$NAME-dkms-$VERSION
+    cat >> $NAME-dkms-$VERSION/Makefile <<ENDLINE
+
+##force, force install firmware
+ifeq ("\$(wildcard firmware)", "firmware")
+	install -d \$(DESTDIR)/lib/firmware
+	cp -a firmware/* \$(DESTDIR)/lib/firmware
+endif
+ENDLINE
 fi
 
 # Insert dkms modules to force install
@@ -369,6 +394,29 @@ if [ ! -e "$NAME-dkms-$VERSION/debian/source" ]; then
     echo "3.0 (${DEBTYPE:=native})" > "$NAME-dkms-$VERSION/debian/source/format"
 fi
 
+cat > $NAME-dkms-$VERSION/debian/preinst <<ENDLINE
+#!/bin/sh
+if [ "\$1" = "upgrade" ] || [ "\$1" = "install" ]; then
+	for item in $fw_files
+	do
+		dpkg-divert --package $NAME-dkms --add --rename \\
+		--divert "/lib/firmware/\$item"".divert" "/lib/firmware/\$item"
+	done
+fi
+#DEBHELPER#
+ENDLINE
+cat > $NAME-dkms-$VERSION/debian/postrm <<ENDLINE
+#!/bin/sh
+if [ "\$1" = "remove" ] || [ "\$1" = "purge" ]; then
+	for item in $fw_files
+	do
+		dpkg-divert --package $NAME-dkms --remove --rename \\
+		--divert "/lib/firmware/\$item"".divert" "/lib/firmware/\$item"
+	done
+fi
+#DEBHELPER#
+ENDLINE
+
 cat > $NAME-dkms-$VERSION/new-release.sh <<ENDLINE
 #!/bin/bash
 
@@ -391,7 +439,7 @@ sed -i "s/^PACKAGE_VERSION=.*/PACKAGE_VERSION=\\"\$VER\\"/" $NAME/dkms.conf
 dch -v "\$VER" "\$MSG"
 ENDLINE
 
-chmod +x $NAME-dkms-$VERSION/new-release.sh
+chmod +x $NAME-dkms-$VERSION/new-release.sh $NAME-dkms-$VERSION/debian/preinst $NAME-dkms-$VERSION/debian/postrm
 
 # Export original settings
 : > $NAME-dkms-$VERSION/dkms-helper.env
