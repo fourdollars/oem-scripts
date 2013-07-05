@@ -325,8 +325,8 @@ if [ -d "$BUILDROOT/$NAME-$VERSION/firmware" ]; then
 
 ##force, force install firmware
 ifeq ("\$(wildcard firmware)", "firmware")
-	install -d \$(DESTDIR)/lib/firmware
-	cp -a firmware/* \$(DESTDIR)/lib/firmware
+	install -d \$(DESTDIR)/usr/share/$NAME-dkms/firmware
+	cp -a firmware/* \$(DESTDIR)/usr/share/$NAME-dkms/firmware/
 endif
 ENDLINE
 fi
@@ -394,28 +394,26 @@ if [ ! -e "$NAME-dkms-$VERSION/debian/source" ]; then
     echo "3.0 (${DEBTYPE:=native})" > "$NAME-dkms-$VERSION/debian/source/format"
 fi
 
-cat > $NAME-dkms-$VERSION/debian/preinst <<ENDLINE
-#!/bin/sh
-if [ "\$1" = "upgrade" ] || [ "\$1" = "install" ]; then
-	for item in $fw_files
-	do
-		dpkg-divert --package $NAME-dkms --add --rename \\
-		--divert "/lib/firmware/\$item"".divert" "/lib/firmware/\$item"
-	done
-fi
-#DEBHELPER#
-ENDLINE
-cat > $NAME-dkms-$VERSION/debian/postrm <<ENDLINE
-#!/bin/sh
-if [ "\$1" = "remove" ] || [ "\$1" = "purge" ]; then
-	for item in $fw_files
-	do
-		dpkg-divert --package $NAME-dkms --remove --rename \\
-		--divert "/lib/firmware/\$item"".divert" "/lib/firmware/\$item"
-	done
-fi
-#DEBHELPER#
-ENDLINE
+# prepare fw_files for sed
+fw_files_sed=${fw_files//\//\\\/}
+### create firmware dpkg-divert in postinst
+sed -i "s/configure).*/&\\
+        for item in $fw_files_sed\\
+        do\\
+            TARGET=\"\/lib\/firmware\/\$item\"\\
+            mkdir -p \`dirname \$TARGET\`\\
+            dpkg-divert --package $NAME-dkms --divert \"\$TARGET.$NAME\" --rename \"\$TARGET\"\\
+            cp -av \"\/usr\/share\/$NAME-dkms\/firmware\/\$item\" \"\$TARGET\"\\
+        done\n/" $NAME-dkms-$VERSION/debian/postinst
+
+### remove firmware dpkg-divert in prerm
+sed -i "s/deconfigure).*/&\\
+        for item in $fw_files_sed\\
+        do\\
+            TARGET=\"\/lib\/firmware\/\$item\"\\
+            rm -v \"\$TARGET\"\\
+            dpkg-divert --package $NAME-dkms --rename --remove \"\$TARGET\"\\
+        done\n/" $NAME-dkms-$VERSION/debian/prerm
 
 cat > $NAME-dkms-$VERSION/new-release.sh <<ENDLINE
 #!/bin/bash
@@ -439,7 +437,7 @@ sed -i "s/^PACKAGE_VERSION=.*/PACKAGE_VERSION=\\"\$VER\\"/" $NAME/dkms.conf
 dch -v "\$VER" "\$MSG"
 ENDLINE
 
-chmod +x $NAME-dkms-$VERSION/new-release.sh $NAME-dkms-$VERSION/debian/preinst $NAME-dkms-$VERSION/debian/postrm
+chmod +x $NAME-dkms-$VERSION/new-release.sh
 
 # Export original settings
 : > $NAME-dkms-$VERSION/dkms-helper.env
