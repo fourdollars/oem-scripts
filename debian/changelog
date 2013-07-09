@@ -1,3 +1,10 @@
+oem-scripts (0.17) precise; urgency=low
+
+  * Improve dkms-helper.
+    - Add firmware support
+
+ -- Shawn Wang <shawn.wang@canonical.com>  Tue, 09 Jul 2013 17:25:34 +0800
+
 oem-scripts (0.16) precise; urgency=low
 
   * Improve dkms-helper.
