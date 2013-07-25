@@ -415,10 +415,11 @@ if [ ! -e "$NAME-dkms-$VERSION/debian/source" ]; then
     echo "3.0 (${DEBTYPE:=native})" > "$NAME-dkms-$VERSION/debian/source/format"
 fi
 
-# prepare fw_files for sed
-fw_files_sed=${fw_files//\//\\\/}
-### create firmware dpkg-divert in postinst
-sed -i "s/configure).*/&\\
+if [ "$fw_files" != "" ]; then
+    # prepare fw_files for sed
+    fw_files_sed=${fw_files//\//\\\/}
+    ### create firmware dpkg-divert in postinst
+    sed -i "s/\tconfigure).*/&\\
         for item in $fw_files_sed\\
         do\\
             TARGET=\"\/lib\/firmware\/\$item\"\\
@@ -427,14 +428,15 @@ sed -i "s/configure).*/&\\
             cp -av \"\/usr\/share\/$NAME-dkms\/firmware\/\$item\" \"\$TARGET\"\\
         done\n/" $NAME-dkms-$VERSION/debian/postinst
 
-### remove firmware dpkg-divert in prerm
-sed -i "s/deconfigure).*/&\\
+    ### remove firmware dpkg-divert in prerm
+    sed -i "s/deconfigure).*/&\\
         for item in $fw_files_sed\\
         do\\
             TARGET=\"\/lib\/firmware\/\$item\"\\
             rm -v \"\$TARGET\"\\
             dpkg-divert --package $NAME-dkms --rename --remove \"\$TARGET\"\\
         done\n/" $NAME-dkms-$VERSION/debian/prerm
+fi
 
 cat > $NAME-dkms-$VERSION/new-release.sh <<ENDLINE
 #!/bin/bash

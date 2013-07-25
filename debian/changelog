@@ -1,3 +1,9 @@
+oem-scripts (0.19) precise; urgency=low
+
+  * dkms-helper: Fix the firmware support when the firmware directory is not exit.
+
+ -- Shawn Wang <shawn.wang@canonical.com>  Thu, 25 Jul 2013 16:43:39 +0800
+
 oem-scripts (0.18) precise; urgency=low
 
   * dkms-helper: Fix the firmware support when dealing with tarball.
