@@ -51,7 +51,26 @@ if [ -d "$1" ]; then
     VERSION="${FOLDER##*-}"
 else
     TARBALL="$(basename $1)"
-    FOLDER="${TARBALL%.tar*}"
+    case "$TARBALL" in
+        (*.tar*)
+            FOLDER="${TARBALL%.tar*}"
+            ;;
+        (*.tgz) # GZip
+            FOLDER="${TARBALL%.tgz}"
+            ;;
+        (*.tbz*) # BZip2
+            FOLDER="${TARBALL%.tbz*}"
+            ;;
+        (*.tb2) # BZip2
+            FOLDER="${TARBALL%.tb2}"
+            ;;
+        (*.taz) # Z
+            FOLDER="${TARBALL%.taz}"
+            ;;
+        (*.tlz) # LZMA
+            FOLDER="${TARBALL%.tlz}"
+            ;;
+    esac
     NAME="${FOLDER%-*}"
     VERSION="${FOLDER##*-}"
 fi
@@ -85,14 +104,16 @@ else
     cp -r "$NAME-$VERSION" "$BUILDROOT/$NAME-$VERSION/$NAME"
 fi
 
-if [ -d "$FOLDER.fw" ]; then
-    cp -r "$FOLDER.fw" "$BUILDROOT/$NAME-$VERSION/firmware"
-    cd "$FOLDER.fw"
+FIRMWARE="$(basename $FOLDER.fw)"
+
+if [ -d "$FIRMWARE" ]; then
+    cp -r "$FIRMWARE" "$BUILDROOT/$NAME-$VERSION/firmware"
+    cd "$FIRMWARE"
     fw_files=`find . -type f -printf "%P "`
     cd -
     echo "Find firmware to release ("$fw_files")"
 else
-    echo "Don't find firmware to release (no fireware in $FOLDER.fw)"
+    echo "Don't find firmware to release (no firmware in $FIRMWARE)"
 fi
 
 cd "$BUILDROOT"
