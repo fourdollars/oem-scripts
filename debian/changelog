@@ -1,3 +1,11 @@
+oem-scripts (0.20) precise; urgency=low
+
+  * dkms-helper: Fix the issue of Makefile.orig that causes installation
+    failed.
+  * Switch to dpkg-source 3.0 (native) format
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 28 Oct 2013 16:51:53 +0800
+
 oem-scripts (0.19) precise; urgency=low
 
   * dkms-helper: Fix the firmware support when the firmware directory is not exit.
