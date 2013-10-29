@@ -1,3 +1,11 @@
+oem-scripts (0.21) precise; urgency=low
+
+  * oem-getiso
+    - Fix missing / that cause wrong iso url
+    - Return zsync/rsync exit code instead of 0
+
+ -- Franz Hsieh (Franz) <franz.hsieh@canonical.com>  Tue, 29 Oct 2013 16:22:11 +0800
+
 oem-scripts (0.20) precise; urgency=low
 
   * dkms-helper: Fix the issue of Makefile.orig that causes installation

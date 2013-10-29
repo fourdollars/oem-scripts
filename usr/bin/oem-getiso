@@ -28,7 +28,7 @@ class ImageURI(object):
 
     @property
     def rootdir(self):
-        self._rootdir = self.ispublished and '/partners' or '/oem/cesg-builds/'
+        self._rootdir = self.ispublished and '/partners/' or '/oem/cesg-builds/'
         return self._rootdir
 
     @property
@@ -229,7 +229,7 @@ class ZsyncDownloader(_Downloader):
         return subprocess.Popen(" ".join(cmd), shell=True)
 
     def post_download(self):
-        if self.lastiso != self.imguri.isoname and \
+        if self.lastiso and self.lastiso != self.imguri.isoname and \
            os.path.exists(self.lastiso):
             os.remove(self.lastiso)
         if os.path.exists(self.imguri.isoname + ".zs-old"):
@@ -334,7 +334,7 @@ if __name__ == '__main__':
         sys.exit(parser.get_usage())
 
     try:
-        runner.run()
+        sys.exit(runner.run())
     except KeyboardInterrupt:
         while True:
             if runner.poll() == None:
