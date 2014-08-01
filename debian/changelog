@@ -1,3 +1,14 @@
+oem-scripts (0.22) precise; urgency=medium
+
+  * get-oem-auth-token:
+    - Add retry mechanism
+    - Add RetryLimitExceed exception
+    - Catch user interrupt exception
+    - Catch unknown exceptions 
+    - Return exit code
+
+ -- Franz Hsieh (Franz) <franz.hsieh@canonical.com>  Fri, 01 Aug 2014 12:42:51 +0800
+
 oem-scripts (0.21) precise; urgency=low
 
   * oem-getiso
