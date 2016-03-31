@@ -1,3 +1,10 @@
+oem-scripts (0.23) trusty; urgency=medium
+
+  * oem-getiso
+    - Fix the download URL for iso-hybrid. (LP: #1560831)
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 31 Mar 2016 16:45:08 +0800
+
 oem-scripts (0.22) precise; urgency=medium
 
   * get-oem-auth-token:

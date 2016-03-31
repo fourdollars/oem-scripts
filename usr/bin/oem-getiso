@@ -16,11 +16,12 @@ __DEBUG__ = (os.getenv('DEBUG') == 'true')
 
 class ImageURI(object):
 
-    def __init__(self,  project, date, buildorder):
+    def __init__(self,  project, date, buildorder, image_type):
         self.project = project
         self.date = date
         self.buildorder = str(buildorder)
         self.manifest_ver = None
+        self.image_type = image_type
 
         # default value
         self.siteurl = 'https://oem-share.canonical.com'
@@ -42,9 +43,9 @@ class ImageURI(object):
     @property
     def imagepath(self):
         if self.ispublished:
-            return os.path.join(self.project, 'images', '{}-{}'.format(self.date, self.buildorder), 'iso', self.isoname)
+            return os.path.join(self.project, 'images', '{}-{}'.format(self.date, self.buildorder), self.image_type, self.isoname)
         else:
-            return os.path.join(self.project, self.date, self.buildorder, 'images', 'iso', self.isoname)
+            return os.path.join(self.project, self.date, self.buildorder, 'images', self.image_type, self.isoname)
 
     @property
     def isoname(self):
@@ -85,10 +86,10 @@ class ImageURI(object):
             comps = urlparse(url).path.split('/')
             published = (comps[1] == 'partners')
             if published:
-                proj = comps[2]
+                (proj,image_type) = (comps[2], comps[5])
                 (date, buildorder) = comps[4].split('-')
             else:
-                (proj, date, buildorder) = (comps[3] , comps[4], comps[5])
+                (proj, date, buildorder, image_type) = (comps[3] , comps[4], comps[5], comps[7])
             if 'dell-bto' in proj:
                 manifest_ver_index = published and 6 or 8
                 try:
@@ -98,9 +99,9 @@ class ImageURI(object):
                     raise IndexError
             else:
                 manifest_ver = None
-            return (proj, date, buildorder, published, manifest_ver)
-        (project, date, buildorder, published, manifest_ver) = _parse(url)
-        obj = cls(project, date, buildorder)
+            return (proj, date, buildorder, published, manifest_ver, image_type)
+        (project, date, buildorder, published, manifest_ver, image_type) = _parse(url)
+        obj = cls(project, date, buildorder, image_type)
         obj.manifest_ver = manifest_ver
         obj.ispublished = published
         return obj
