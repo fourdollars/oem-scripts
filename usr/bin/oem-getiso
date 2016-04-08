@@ -8,7 +8,7 @@ import glob
 import logging
 import subprocess
 import sys
-import time
+import re
 from optparse import OptionParser
 
 __DEBUG__ = (os.getenv('DEBUG') == 'true')
@@ -53,7 +53,8 @@ class ImageURI(object):
             project = self.project + '-' + self.manifest_ver
         else:
             project = self.project
-        return '{}-iso-{}-{}.iso'.format(project, self.date, self.buildorder)
+        image_type = 'iso' if re.match(r'^dell-bto', self.project) else self.image_type
+        return '{}-{}-{}-{}.iso'.format(project, image_type, self.date, self.buildorder)
 
     @classmethod
     def from_url(cls, url):
@@ -83,6 +84,9 @@ class ImageURI(object):
         """
         def _parse(url):
             from urlparse import urlparse
+            if not re.match(r'^https.*', url):
+                logging.error('{0} is not a valid image URL'.format(url))
+                raise IndexError
             comps = urlparse(url).path.split('/')
             published = (comps[1] == 'partners')
             if published:
