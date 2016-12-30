@@ -1,3 +1,21 @@
+oem-scripts (0.25) trusty; urgency=medium
+
+  * dkms-helper:
+    - Add dkms-helper information in debian/control.
+    - Force using BUILD_EXCLUSIVE_KERNEL to limit the kernel major and minor
+    numbers.
+    - Support KO_REGEX and BUILD_EXCLUSIVE_KERNEL for dkms-helper.sh
+    - Add Vcs-Bzr support.
+    - Add modalias manually adding support.
+    - Add firmware package support for dkms-helper.
+    - Show help manual when there is no argument.
+    - Avoid the installation issue of DKMS caused by Debian packaging.
+    - Need to export KVER variable.
+    - Add -d|--distribution -m|--message to dkms-helper.sh
+    - Add setup() to dkms-helper.sh
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 30 Dec 2016 20:40:19 +0800
+
 oem-scripts (0.24) trusty; urgency=medium
 
   * oem-getiso
