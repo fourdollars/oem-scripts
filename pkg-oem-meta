@@ -18,55 +18,81 @@ if program_name == 'pkg-somerville-meta':
     brand = 'dell'
     parser = argparse.ArgumentParser(
         description=f"{Codename} platform meta package generator.",
-        epilog=f"Ex. {os.path.basename(sys.argv[0])} -b 1868254 -s focal -k"
+        epilog=f"Ex. {program_name} -b 1868254 -s focal -k"
         " oem -p three-eyed-raven 0962")
-elif program_name == 'pkg-stella-meta':  # FIXME
+elif program_name == 'pkg-stella-meta':
     codename = 'stella'
     Codename = 'Stella'
     brand = 'hp'
-elif program_name == 'pkg-sutton-meta':  # FIXME
+    parser = argparse.ArgumentParser(
+        description=f"{Codename} platform meta package generator.",
+        epilog=f"Ex. {program_name} -s focal -k oem"
+        " -o cmit -p beedrill 8594")
+elif program_name == 'pkg-sutton-meta':
     codename = 'sutton'
     Codename = 'Sutton'
     brand = 'lenovo'
+    parser = argparse.ArgumentParser(
+        description=f"{Codename} platform meta package generator.",
+        epilog=f"Ex. {program_name} -s focal -k oem"
+        " -o bachman -p banaing S03")
 else:
-    raise Exception('This program can not be executed directly.')
+    raise Exception('This program can not be executed.')
 
 parser.add_argument('-k', '--kernel',
                     help="Using different kernel flavour. [oem|default] "
                     "'oem' is the default kernel flavour. "
                     "'default' will use generic or hwe kernel flavour.")
-parser.add_argument('-p', '--platform', help="platform name", required=True)
 parser.add_argument('-s', '--series', help="Ubuntu series, such as focal.")
 
 if codename == 'somerville':
     parser.add_argument('-b', '--bug',
                         help="Launchpad \033[1;36mpublic\033[1;0m bug number.",
                         type=int)
-    parser.add_argument('biosid', nargs='+', help="BIOS ID")
+    parser.add_argument('bios_id', nargs='+', help="BIOS ID")
+    parser.add_argument('-p', '--platform', help="platform tag", required=True)
 elif codename == 'stella':
-    pass  # TODO
+    parser.add_argument('-o', '--oem', help="OEM-codename", required=True)
+    parser.add_argument('-p', '--platform', help="platform-codename",
+                        required=True)
+    parser.add_argument('sd_id', nargs='+',
+                        help="subsystem device ID, such as 0962")
 elif codename == 'sutton':
-    pass  # TODO
+    parser.add_argument('-o', '--oem', help="OEM-codename", required=True)
+    parser.add_argument('-p', '--platform', help="platform-codename",
+                        required=True)
+    parser.add_argument('bios_ver', nargs='+',
+                        help="First three characters in bios version,\
+                        such as S30")
 args = parser.parse_args()
 
+# Sanity check
+platform = args.platform
 if codename == 'somerville':
+    oem = ''
     if args.platform.startswith("fossa-"):
         raise Exception('Please remove fossa- prefix from the platform name.')
-    # Sanity check
-    for bios_id in args.biosid:
+    for bios_id in args.bios_id:
         if not re.match('[0-9a-fA-F]{4}', bios_id):
-            raise Exception('Unknown BIOS ID format {}' % bios_id)
+            raise Exception('Invalid BIOS ID: {}' % bios_id)
+    meta = 'oem-' + codename + '-' + platform + '-meta'
 elif codename == 'stella':
-    pass  # TODO
+    oem = args.oem
+    for sd_id in args.sd_id:
+        if not re.match('[0-9a-fA-F]{4}', sd_id):
+            raise Exception('Invalid subsystem device ID: {}' % sd_id)
+    meta = 'oem-' + codename + '.' + oem + '-' + platform + '-meta'
+    Codename = Codename + ' ' + oem
 elif codename == 'sutton':
-    pass  # TODO
-
-platform = args.platform
-meta = 'oem-' + codename + '-' + platform + '-meta'
+    oem = args.oem
+    for bios_ver in args.bios_ver:
+        if not re.match('[0-9a-zA-Z]{3}', bios_ver):
+            raise Exception('Invalid BIOS version: {}' % bios_ver)
+    meta = 'oem-' + codename + '.' + oem + '-' + platform + '-meta'
+    Codename = Codename + ' ' + oem
 
 if os.path.exists(meta):
-    print(meta + ' already exists. Please remove or rename it.')
-    exit(1)
+    raise Exception(meta + ' already exists. Please remove or rename it.')
 
 if args.series is None:
     series = lsb_release.get_os_release()['CODENAME']
@@ -79,8 +105,7 @@ versions = dict(zip(info.get_all(result='codename'),
 if series in info.supported():
     version = versions[series].split(' ')[0]
 else:
-    print(series + ' is not supported.')
-    exit(1)
+    raise Exception('Series: ' + series + ' is not supported by Ubuntu.')
 
 os.mkdir(meta)
 os.chdir(meta)
@@ -101,28 +126,31 @@ def generate_debian_package(version, dummy=False, real=False):
             extra = ', linux-oem-20.04'
             flavour = 'oem'
         else:
-            print(args.kernel + ' is not supported.')
-            exit(1)
+            raise Exception(args.kernel + ' is not supported.')
+
+    prefix = oem and oem + '-' or oem
+    infix = oem and '.' + oem or oem
 
     if dummy:
         version = version + "~ubuntu1"
-        branch = platform + '-' + series + '-ubuntu'
+        branch = prefix + platform + '-' + series + '-ubuntu'
         extra = ''
 
     if real:
         version = version + "ubuntu1"
-        factory = 'oem-' + codename + '-factory-' + platform + '-meta'
-        branch = platform + '-' + series + '-oem'
+        factory = 'oem-' + codename + infix + '-factory-' + platform + '-meta'
+        branch = prefix + platform + '-' + series + '-oem'
 
     git_abbr = f"https://git.launchpad.net/{git_repo} -b {branch}"
     git_browser = f"https://code.launchpad.net/{git_repo}/+ref/{branch}"
 
     subprocess.run(['git', 'checkout', '--orphan', branch])
 
-    source_file = "oem-%s-%s-meta.list" % (codename, platform)
-    source_list = f"""
-deb http://{brand}.archive.canonical.com/ {series} {codename}-{platform}
-# deb-src http://{brand}.archive.canonical.com/ {series} {codename}-{platform}
+    source_file = "oem-%s-%s-meta.list" % (codename + infix, platform)
+    archive = 'archive.canonical.com'
+    source_list = f"""\
+deb http://{brand}.{archive}/ {series} {codename + infix}-{platform}
+# deb-src http://{brand}.{archive}/ {series} {codename + infix}-{platform}
 """
 
     with open(source_file, 'w') as f:
@@ -136,7 +164,7 @@ deb http://{brand}.archive.canonical.com/ {series} {codename}-{platform}
     email = os.getenv('DEBEMAIL', 'commercial-engineering@canonical.com')
     timestamp = strftime("%a, %d %b %Y %H:%M:%S %z", localtime())
 
-    if args.bug:
+    if 'bug' in vars(args).keys() and args.bug:
         lp_bug = f" (LP: #{args.bug})"
     else:
         lp_bug = ""
@@ -209,9 +237,18 @@ License: GPL-3
         f.write("%s /etc/apt/sources.list.d/\n" % (source_file))
 
     with open('modaliases', 'w') as f:
-        for bios_id in args.biosid:
-            f.write("alias pci:*sv00001028sd0000{0}* meta {1}\n"
-                    .format(bios_id.upper(), meta))
+        if 'bios_id' in vars(args).keys():
+            for bios_id in args.bios_id:
+                f.write("alias pci:*sv00001028sd0000{0}* meta {1}\n"
+                        .format(bios_id.upper(), meta))
+        elif 'sd_id' in vars(args).keys():
+            for sd_id in args.sd_id:
+                f.write("alias pci:*sv0000103Csd0000{0}* meta {1}\n"
+                        .format(sd_id.upper(), meta))
+        elif 'bios_ver' in vars(args).keys():
+            for bios_ver in args.bios_ver:
+                f.write("alias dmi:*bvnLENOVO:bvr{0}* meta {1}\n"
+                        .format(bios_ver, meta))
 
     with open('rules', 'w') as f:
         f.write("""#!/usr/bin/make -f

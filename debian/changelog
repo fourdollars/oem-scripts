@@ -14,6 +14,7 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
   * bin/*: Move all scripts under the top folder of the package.
   * pkg-oem-meta: Copy from pkg-somerville-meta in lp-fish-tools 1.192.39.
   * pkg-oem-meta: Adjust for other OEM projects.
+  * pkg-oem-meta: Support stella and sutton.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 29 Apr 2020 16:23:20 +0800
 
