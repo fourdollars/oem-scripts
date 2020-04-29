@@ -1,3 +1,10 @@
+oem-scripts (0.26) UNRELEASED; urgency=medium
+
+  * debian/control,
+    debian/copyright: Add the Git repository.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 29 Apr 2020 16:23:20 +0800
+
 oem-scripts (0.25) trusty; urgency=medium
 
   * dkms-helper:
