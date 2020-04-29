@@ -3,6 +3,8 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
   * debian/control,
     debian/copyright: Add the Git repository.
   * debian/oem-scripts.install: Rename to debian/install.
+  * debian/install,
+    usr/bin: Move all scripts under bin.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 29 Apr 2020 16:23:20 +0800
 
