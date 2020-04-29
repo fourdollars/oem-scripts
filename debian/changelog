@@ -11,6 +11,7 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
   * debian/control,
     debian/install,
     setup.py: Migrate to Python3.
+  * bin/*: Move all scripts under the top folder of the package.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 29 Apr 2020 16:23:20 +0800
 
