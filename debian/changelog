@@ -12,6 +12,7 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
     debian/install,
     setup.py: Migrate to Python3.
   * bin/*: Move all scripts under the top folder of the package.
+  * pkg-oem-meta: Copy from pkg-somerville-meta in lp-fish-tools 1.192.39.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 29 Apr 2020 16:23:20 +0800
 

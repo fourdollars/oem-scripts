@@ -1,0 +1,219 @@
+#! /usr/bin/env python3
+
+import argparse
+import lsb_release
+import os
+import re
+import subprocess
+import sys
+
+from distro_info import UbuntuDistroInfo
+from time import localtime, strftime
+
+parser = argparse.ArgumentParser(
+    description="Somerville platform meta package generator.",
+    epilog=f"Ex. {os.path.basename(sys.argv[0])} -b 1868254 -s focal -k oem "
+    "-p three-eyed-raven 0962")
+
+parser.add_argument('-k', '--kernel',
+                    help="Using different kernel flavour. [oem|default] "
+                    "'oem' is the default kernel flavour. "
+                    "'default' will use generic or hwe kernel flavour.")
+parser.add_argument('-p', '--platform', help="platform name", required=True)
+parser.add_argument('-s', '--series', help="Ubuntu series, such as focal.")
+parser.add_argument('-b', '--bug',
+                    help="Launchpad \033[1;36mpublic\033[1;0m bug number.",
+                    type=int)
+parser.add_argument('biosid', nargs='+', help="BIOS ID")
+args = parser.parse_args()
+
+if args.platform.startswith("fossa-"):
+    raise Exception('Please remove fossa- prefix from the platform name.')
+
+# Sanity check
+for bios_id in args.biosid:
+    if not re.match('[0-9a-fA-F]{4}', bios_id):
+        raise Exception('Unknown BIOS ID format {}' % bios_id)
+
+platform = args.platform
+meta = 'oem-somerville-' + platform + '-meta'
+
+if os.path.exists(meta):
+    print(meta + ' already exists. Please remove or rename it.')
+    exit(1)
+
+if args.series is None:
+    codename = lsb_release.get_os_release()['CODENAME']
+else:
+    codename = args.series
+
+info = UbuntuDistroInfo()
+versions = dict(zip(info.get_all(result='codename'),
+                    info.get_all(result='release')))
+if codename in info.supported():
+    version = versions[codename].split(' ')[0]
+else:
+    print(codename + ' is not supported.')
+    exit(1)
+
+os.mkdir(meta)
+os.chdir(meta)
+
+git_repo = '~oem-solutions-engineers/dell/+git/oem-somerville-projects-meta'
+
+
+def generate_debian_package(version, dummy=False, real=False):
+    if args.kernel is None:
+        extra = ', linux-oem-20.04'
+        flavour = 'oem'
+    else:
+        if args.kernel == 'default':
+            extra = ', linux-generic-hwe-20.04'
+            flavour = 'default'
+        elif args.kernel == 'oem':
+            extra = ', linux-oem-20.04'
+            flavour = 'oem'
+        else:
+            print(args.kernel + ' is not supported.')
+            exit(1)
+
+    if dummy:
+        version = version + "~ubuntu1"
+        branch = platform + '-' + codename + '-ubuntu'
+        extra = ''
+
+    if real:
+        version = version + "ubuntu1"
+        factory = 'oem-somerville-factory-' + platform + '-meta'
+        branch = platform + '-' + codename + '-oem'
+
+    git_abbr = f"https://git.launchpad.net/{git_repo} -b {branch}"
+    git_browser = f"https://code.launchpad.net/{git_repo}/+ref/{branch}"
+
+    subprocess.run(['git', 'checkout', '--orphan', branch])
+
+    source_file = "oem-somerville-%s-meta.list" % platform
+    source_list = """deb http://dell.archive.canonical.com/ {0} somerville-{1}
+# deb-src http://dell.archive.canonical.com/ {0} somerville-{1}
+""".format(codename, platform)
+
+    with open(source_file, 'w') as f:
+        f.write(source_list)
+
+    if not os.path.exists('debian'):
+        os.mkdir('debian')
+    os.chdir('debian')
+
+    fullname = os.getenv('DEBFULLNAME', 'Commercial Engineering')
+    email = os.getenv('DEBEMAIL', 'commercial-engineering@canonical.com')
+    timestamp = strftime("%a, %d %b %Y %H:%M:%S %z", localtime())
+
+    if args.bug:
+        lp_bug = f" (LP: #{args.bug})"
+    else:
+        lp_bug = ""
+
+    with open('changelog', 'w') as f:
+        f.write(f"""{meta} ({version}) {codename}; urgency=medium
+
+  * Meta package for Somerville {platform}.{lp_bug}
+
+ -- {fullname} <{email}>  {timestamp}
+""")
+
+    with open('compat', 'w') as f:
+        f.write("11\n")
+
+    with open('control', 'w') as f:
+        f.write(f"""Source: {meta}
+Section: misc
+Priority: optional
+Maintainer: Commercial Engineering <commercial-engineering@canonical.com>
+Build-Depends: debhelper (>= 11~), dh-modaliases
+Standards-Version: 4.1.4
+Vcs-Git: {git_abbr}
+Vcs-Browser: {git_browser}
+
+Package: {meta}
+Architecture: all
+Depends: ${{misc:Depends}}, ubuntu-oem-keyring{extra}
+XB-Modaliases: ${{modaliases}}
+XB-Ubuntu-OEM-Kernel-Flavour: {flavour}
+Description: hardware support for Somerville {platform} platform
+ This is a metapackage for Somerville {platform} platform. It installs\n"""
+                + " packages needed to support this hardware fully.\n")
+        if real:
+            f.write(f"""\nPackage: {factory}
+Architecture: all
+Depends: ${{misc:Depends}}
+Description: hardware support for Somerville {platform} platform
+ This is a factory metapackage for Somerville {platform} platform.\n"""
+                    + " It installs packages needed to support this hardware "
+                    + "fully.\n")
+
+    timestamp = strftime("%Y", localtime())
+
+    with open('copyright', 'w') as f:
+        f.write('Format: https://www.debian.org/doc/packaging-manuals/'
+                'copyright-format/1.0/\n'
+                f'Upstream-Name: {meta}\n'
+                f'Source: {git_browser}\n\n'
+                f"""Files: *
+Copyright: {timestamp} Canonical Limited
+License: GPL-3
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; version 3 of the License only.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
+""")
+
+    with open('install', 'w') as f:
+        f.write("%s /etc/apt/sources.list.d/\n" % (source_file))
+
+    with open('modaliases', 'w') as f:
+        for bios_id in args.biosid:
+            f.write("alias pci:*sv00001028sd0000{0}* meta {1}\n"
+                    .format(bios_id.upper(), meta))
+
+    with open('rules', 'w') as f:
+        f.write("""#!/usr/bin/make -f
+# -*- makefile -*-
+
+export DH_VERBOSE=1
+
+%:
+\tdh $@ --with modaliases\n""")
+
+    os.chmod('rules', 0o755)
+
+    if not os.path.exists('source'):
+        os.mkdir('source')
+    os.chdir('source')
+
+    with open('format', 'w') as f:
+        f.write("3.0 (native)\n")
+
+    os.chdir('..')
+    os.chdir('..')
+    subprocess.run(['git', 'add', '.'])
+    subprocess.run(['debcommit', '-a', '-R', '-r'])
+
+
+subprocess.run(['git', 'init'])
+generate_debian_package(version, dummy=True)
+generate_debian_package(version, real=True)
+
+subprocess.run(['git', 'remote', 'add', 'origin',
+                f'lp:{git_repo}'])
+
+print(f"'{meta}' is ready.")
