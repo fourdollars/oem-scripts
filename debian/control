@@ -1,22 +1,23 @@
 Source: oem-scripts
 Section: admin
-Priority: extra
-Build-Depends: debhelper (>= 6),
- python,
- python-support (>= 0.6.4),
- python-distutils-extra (>= 2.10)
-Standards-Version: 3.9.5
+Priority: optional
+XS-Testsuite: autopkgtest
+Build-Depends:
+ debhelper (>=11),
+ dh-python,
+ python3-all,
+ python3-setuptools
+Standards-Version: 4.5.0
 Maintainer: Commercial Engineering <commercial-engineering@canonical.com>
 Vcs-Browser: https://code.launchpad.net/~oem-solutions-engineers/oem-dev-tools/+git/oem-scripts
 Vcs-Git: https://git.launchpad.net/~oem-solutions-engineers/oem-dev-tools/+git/oem-scripts
-XS-Python-Version: current
 
 Package: oem-scripts
 Architecture: all
 Depends: ${misc:Depends},
- python (<< 3.0), python (>= 2.6),
- python-distutils-extra,
- python-mechanize,
+ ${python3:Depends},
+ python3-distutils-extra,
+ python3-mechanize,
  zsync-curl,
  diffutils,
  dkms,

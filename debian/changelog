@@ -5,6 +5,12 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
   * debian/oem-scripts.install: Rename to debian/install.
   * debian/install,
     usr/bin: Move all scripts under bin.
+  * debian/control: The priority extra has been deprecated.
+  * debian/control,
+    debian/tests/control: Add some example for autopkgtest.
+  * debian/control,
+    debian/install,
+    setup.py: Migrate to Python3.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 29 Apr 2020 16:23:20 +0800
 
