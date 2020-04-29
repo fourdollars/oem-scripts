@@ -10,10 +10,26 @@ import sys
 from distro_info import UbuntuDistroInfo
 from time import localtime, strftime
 
-parser = argparse.ArgumentParser(
-    description="Somerville platform meta package generator.",
-    epilog=f"Ex. {os.path.basename(sys.argv[0])} -b 1868254 -s focal -k oem "
-    "-p three-eyed-raven 0962")
+program_name = os.path.basename(sys.argv[0])
+
+if program_name == 'pkg-somerville-meta':
+    codename = 'somerville'
+    Codename = 'Somerville'
+    brand = 'dell'
+    parser = argparse.ArgumentParser(
+        description=f"{Codename} platform meta package generator.",
+        epilog=f"Ex. {os.path.basename(sys.argv[0])} -b 1868254 -s focal -k"
+        " oem -p three-eyed-raven 0962")
+elif program_name == 'pkg-stella-meta':  # FIXME
+    codename = 'stella'
+    Codename = 'Stella'
+    brand = 'hp'
+elif program_name == 'pkg-sutton-meta':  # FIXME
+    codename = 'sutton'
+    Codename = 'Sutton'
+    brand = 'lenovo'
+else:
+    raise Exception('This program can not be executed directly.')
 
 parser.add_argument('-k', '--kernel',
                     help="Using different kernel flavour. [oem|default] "
@@ -21,45 +37,56 @@ parser.add_argument('-k', '--kernel',
                     "'default' will use generic or hwe kernel flavour.")
 parser.add_argument('-p', '--platform', help="platform name", required=True)
 parser.add_argument('-s', '--series', help="Ubuntu series, such as focal.")
-parser.add_argument('-b', '--bug',
-                    help="Launchpad \033[1;36mpublic\033[1;0m bug number.",
-                    type=int)
-parser.add_argument('biosid', nargs='+', help="BIOS ID")
+
+if codename == 'somerville':
+    parser.add_argument('-b', '--bug',
+                        help="Launchpad \033[1;36mpublic\033[1;0m bug number.",
+                        type=int)
+    parser.add_argument('biosid', nargs='+', help="BIOS ID")
+elif codename == 'stella':
+    pass  # TODO
+elif codename == 'sutton':
+    pass  # TODO
 args = parser.parse_args()
 
-if args.platform.startswith("fossa-"):
-    raise Exception('Please remove fossa- prefix from the platform name.')
-
-# Sanity check
-for bios_id in args.biosid:
-    if not re.match('[0-9a-fA-F]{4}', bios_id):
-        raise Exception('Unknown BIOS ID format {}' % bios_id)
+if codename == 'somerville':
+    if args.platform.startswith("fossa-"):
+        raise Exception('Please remove fossa- prefix from the platform name.')
+    # Sanity check
+    for bios_id in args.biosid:
+        if not re.match('[0-9a-fA-F]{4}', bios_id):
+            raise Exception('Unknown BIOS ID format {}' % bios_id)
+elif codename == 'stella':
+    pass  # TODO
+elif codename == 'sutton':
+    pass  # TODO
 
 platform = args.platform
-meta = 'oem-somerville-' + platform + '-meta'
+meta = 'oem-' + codename + '-' + platform + '-meta'
 
 if os.path.exists(meta):
     print(meta + ' already exists. Please remove or rename it.')
     exit(1)
 
 if args.series is None:
-    codename = lsb_release.get_os_release()['CODENAME']
+    series = lsb_release.get_os_release()['CODENAME']
 else:
-    codename = args.series
+    series = args.series
 
 info = UbuntuDistroInfo()
 versions = dict(zip(info.get_all(result='codename'),
                     info.get_all(result='release')))
-if codename in info.supported():
-    version = versions[codename].split(' ')[0]
+if series in info.supported():
+    version = versions[series].split(' ')[0]
 else:
-    print(codename + ' is not supported.')
+    print(series + ' is not supported.')
     exit(1)
 
 os.mkdir(meta)
 os.chdir(meta)
 
-git_repo = '~oem-solutions-engineers/dell/+git/oem-somerville-projects-meta'
+PREFIX = '~oem-solutions-engineers'
+git_repo = PREFIX + '/' + brand + '/+git/oem-' + codename + '-projects-meta'
 
 
 def generate_debian_package(version, dummy=False, real=False):
@@ -79,23 +106,24 @@ def generate_debian_package(version, dummy=False, real=False):
 
     if dummy:
         version = version + "~ubuntu1"
-        branch = platform + '-' + codename + '-ubuntu'
+        branch = platform + '-' + series + '-ubuntu'
         extra = ''
 
     if real:
         version = version + "ubuntu1"
-        factory = 'oem-somerville-factory-' + platform + '-meta'
-        branch = platform + '-' + codename + '-oem'
+        factory = 'oem-' + codename + '-factory-' + platform + '-meta'
+        branch = platform + '-' + series + '-oem'
 
     git_abbr = f"https://git.launchpad.net/{git_repo} -b {branch}"
     git_browser = f"https://code.launchpad.net/{git_repo}/+ref/{branch}"
 
     subprocess.run(['git', 'checkout', '--orphan', branch])
 
-    source_file = "oem-somerville-%s-meta.list" % platform
-    source_list = """deb http://dell.archive.canonical.com/ {0} somerville-{1}
-# deb-src http://dell.archive.canonical.com/ {0} somerville-{1}
-""".format(codename, platform)
+    source_file = "oem-%s-%s-meta.list" % (codename, platform)
+    source_list = f"""
+deb http://{brand}.archive.canonical.com/ {series} {codename}-{platform}
+# deb-src http://{brand}.archive.canonical.com/ {series} {codename}-{platform}
+"""
 
     with open(source_file, 'w') as f:
         f.write(source_list)
@@ -114,9 +142,9 @@ def generate_debian_package(version, dummy=False, real=False):
         lp_bug = ""
 
     with open('changelog', 'w') as f:
-        f.write(f"""{meta} ({version}) {codename}; urgency=medium
+        f.write(f"""{meta} ({version}) {series}; urgency=medium
 
-  * Meta package for Somerville {platform}.{lp_bug}
+  * Meta package for {Codename} {platform}.{lp_bug}
 
  -- {fullname} <{email}>  {timestamp}
 """)
@@ -139,15 +167,15 @@ Architecture: all
 Depends: ${{misc:Depends}}, ubuntu-oem-keyring{extra}
 XB-Modaliases: ${{modaliases}}
 XB-Ubuntu-OEM-Kernel-Flavour: {flavour}
-Description: hardware support for Somerville {platform} platform
- This is a metapackage for Somerville {platform} platform. It installs\n"""
+Description: hardware support for {Codename} {platform} platform
+ This is a metapackage for {Codename} {platform} platform. It installs\n"""
                 + " packages needed to support this hardware fully.\n")
         if real:
             f.write(f"""\nPackage: {factory}
 Architecture: all
 Depends: ${{misc:Depends}}
-Description: hardware support for Somerville {platform} platform
- This is a factory metapackage for Somerville {platform} platform.\n"""
+Description: hardware support for {Codename} {platform} platform
+ This is a factory metapackage for {Codename} {platform} platform.\n"""
                     + " It installs packages needed to support this hardware "
                     + "fully.\n")
 
