@@ -103,7 +103,7 @@ elif codename == 'sutton':
     oem = args.oem.lower()
     for bios_ver in args.bios_ver:
         if (not re.match('[0-9a-zA-Z]{3}$', bios_ver)) and \
-           (not re.match('bvn[0-9a-zA-Z]+:pvr[0-9a-zA-Z]{3}$', bios_ver)):
+           (not re.match('bvn[0-9a-zA-Z]+:bvr[0-9a-zA-Z]{3}$', bios_ver)):
             raise Exception('Invalid BIOS version: {%s}' % bios_ver)
     meta = 'oem-' + codename + '.' + oem + '-' + platform + '-meta'
     Codename = Codename + ' ' + oem.title()
@@ -250,7 +250,7 @@ License: GPL-3
             for bios_ver in args.bios_ver:
                 result = re.match('([0-9a-zA-Z]{3})$', bios_ver)
                 if result is None:
-                    result  = re.match('bvn([0-9a-zA-Z]+):pvr([0-9a-zA-Z]{3})$', bios_ver)
+                    result  = re.match('bvn([0-9a-zA-Z]+):bvr([0-9a-zA-Z]{3})$', bios_ver)
                     if result is None:
                         exit(1)
                     else:
