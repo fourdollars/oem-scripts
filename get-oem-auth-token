@@ -1,11 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import getpass
 import mechanize
 import argparse
 
-class RetryLimitExceed(Exception): pass
+
+class RetryLimitExceed(Exception):
+    pass
+
 
 def get_browser():
     """
@@ -14,6 +17,7 @@ def get_browser():
     browser = mechanize.Browser()
     browser.set_handle_robots(False)
     return browser
+
 
 def prompt_for_credentials():
     """
@@ -24,12 +28,14 @@ def prompt_for_credentials():
     password = getpass.getpass()
     return username, password
 
+
 def prompt_for_password():
     """
     Return password from stdin
     """
     password = getpass.getpass()
     return password
+
 
 def prompt_for_code():
     """
@@ -38,34 +44,38 @@ def prompt_for_code():
     print >> sys.stderr, "\rCode: ",
     return raw_input()
 
+
 def get_session_cookie(browser=get_browser(), args=None):
     """
     Fetch initial url, login with the supplied credentials, and return the
     session id for the authenticated session.
     """
 
-    prop = { 'oem-ibs'  : { "name"    : "oem-ibs.canonical.com",
-                            "url"     : "https://oem-ibs.canonical.com/builds/",
-                            "session" : "sessionid" },
-             'oem-share': { "name"    : "oem-share.canonical.com",
-                            "url"     : "https://oem-share.canonical.com/oem/cesg-builds/",
-                            "session" : "pysid" }
-            }
+    prop = {
+        'oem-ibs': {
+            "name": "oem-ibs.canonical.com",
+            "url": "https://oem-ibs.canonical.com/builds/",
+            "session": "sessionid"},
+        'oem-share': {
+            "name": "oem-share.canonical.com",
+            "url": "https://oem-share.canonical.com/oem/cesg-builds/",
+            "session": "pysid"}
+    }
 
     bad_creds = False
     bad_code = False
 
-    retry    = args.retry
+    retry = args.retry
     username = args.username
     password = args.password
-    code     = args.code
+    code = args.code
 
-    if args.server == None or args.server not in prop:
-        print >> sys.stderr, "Unsuppoted server %s" %args.server
+    if args.server is None or args.server not in prop:
+        print >> sys.stderr, "Unsuppoted server %s" % args.server
         return
     server = prop[args.server]
 
-    print >> sys.stderr, "Authenticating %s with Ubuntu SSO..." %args.server
+    print >> sys.stderr, "Authenticating %s with Ubuntu SSO..." % args.server
     browser.open(server["url"])
     # apachd2-openid
     try:
@@ -130,19 +140,23 @@ def get_session_cookie(browser=get_browser(), args=None):
     cookies = cookiejar._cookies[server["name"]]
     return cookies["/"][server["session"]].value
 
+
 def main():
-    parser = argparse.ArgumentParser(description='Retrieve Canonical internal websites session ID',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("server", help="Specify server identifier [oem-ibs|oem-share]")
+    parser = argparse.ArgumentParser(
+        description='Retrieve Canonical internal websites session ID',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("server",
+                        help="Specify server identifier [oem-ibs|oem-share]")
     parser.add_argument("-u", "--username", help="Specify user's email")
     parser.add_argument("-p", "--password", help="Specify password")
     parser.add_argument("-c", "--code", help="Specify 2-factor code")
-    parser.add_argument("-r", "--retry", help="Sepcify authentication retry", type=int, default=3)
+    parser.add_argument("-r", "--retry", help="Sepcify authentication retry",
+                        type=int, default=3)
     args = parser.parse_args()
     result = 1
     try:
         session = get_session_cookie(args=args)
-        if session != None:
+        if session is not None:
             result = 0
             print session
     except RetryLimitExceed:
@@ -153,6 +167,7 @@ def main():
         print >> sys.stderr, "\rUnknown error %s" % str(e)
 
     return result
+
 
 if __name__ == "__main__":
     sys.exit(main())
