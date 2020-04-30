@@ -89,21 +89,21 @@ if codename == 'somerville':
     if args.platform.startswith("fossa-"):
         raise Exception('Please remove fossa- prefix from the platform name.')
     for bios_id in args.bios_id:
-        if not re.match('[0-9a-fA-F]{4}', bios_id):
-            raise Exception('Invalid BIOS ID: {}' % bios_id)
+        if not re.match('[0-9a-fA-F]{4}$', bios_id):
+            raise Exception('Invalid BIOS ID: {%s}' % bios_id)
     meta = 'oem-' + codename + '-' + platform + '-meta'
 elif codename == 'stella':
     oem = args.oem.lower()
     for sd_id in args.sd_id:
-        if not re.match('[0-9a-fA-F]{4}', sd_id):
-            raise Exception('Invalid subsystem device ID: {}' % sd_id)
+        if not re.match('[0-9a-fA-F]{4}$', sd_id):
+            raise Exception('Invalid subsystem device ID: {%s}' % sd_id)
     meta = 'oem-' + codename + '.' + oem + '-' + platform + '-meta'
     Codename = Codename + ' ' + oem.title()
 elif codename == 'sutton':
     oem = args.oem.lower()
     for bios_ver in args.bios_ver:
-        if not re.match('[0-9a-zA-Z]{3}', bios_ver):
-            raise Exception('Invalid BIOS version: {}' % bios_ver)
+        if not re.match('[0-9a-zA-Z]{3}$', bios_ver):
+            raise Exception('Invalid BIOS version: {%s}' % bios_ver)
     meta = 'oem-' + codename + '.' + oem + '-' + platform + '-meta'
     Codename = Codename + ' ' + oem.title()
 
