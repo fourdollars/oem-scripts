@@ -19,7 +19,7 @@ if program_name == 'pkg-somerville-meta':
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
-        epilog=f"Ex. {program_name} -b 1868254 -s focal -k"
+        epilog=f"Ex. {program_name} --public-bug 1868254 -s focal -k"
         " oem -p three-eyed-raven 0962")
 elif program_name == 'pkg-stella-meta':
     codename = 'stella'
@@ -52,11 +52,14 @@ info = UbuntuDistroInfo()
 series = lsb_release.get_os_release()['CODENAME']
 parser.add_argument('-s', '--series', choices=info.supported(), default=series,
                     help=f"Ubuntu series, such as {series} by default.")
+parser.add_argument('--public-bug',
+                    help="Launchpad public bug number.",
+                    type=int)
+parser.add_argument('--private-bug',
+                    help="Launchpad private bug number.",
+                    type=int)
 
 if codename == 'somerville':
-    parser.add_argument('-b', '--bug',
-                        help="Launchpad \033[1;36mpublic\033[1;0m bug number.",
-                        type=int)
     parser.add_argument('bios_id', nargs='+', help="BIOS ID")
     parser.add_argument('-p', '--platform', help="platform tag", required=True)
 elif codename == 'stella':
@@ -129,11 +132,19 @@ def generate_debian_package(version, dummy=False, real=False):
         version = version + "~ubuntu1"
         branch = prefix + platform + '-' + series + '-ubuntu'
         extra = ''
+        if args.public_bug:
+            lp_bug = f" (LP: #{args.public_bug})"
+        else:
+            lp_bug = ""
 
     if real:
         version = version + "ubuntu1"
         factory = 'oem-' + codename + infix + '-factory-' + platform + '-meta'
         branch = prefix + platform + '-' + series + '-oem'
+        if args.private_bug:
+            lp_bug = f" (LP: #{args.private_bug})"
+        else:
+            lp_bug = ""
 
     git_abbr = f"https://git.launchpad.net/{git_repo} -b {branch}"
     git_browser = f"https://code.launchpad.net/{git_repo}/+ref/{branch}"
@@ -157,11 +168,6 @@ deb http://{brand}.{archive}/ {series} {codename + infix}-{platform}
     fullname = os.getenv('DEBFULLNAME', 'Commercial Engineering')
     email = os.getenv('DEBEMAIL', 'commercial-engineering@canonical.com')
     timestamp = strftime("%a, %d %b %Y %H:%M:%S %z", localtime())
-
-    if 'bug' in vars(args).keys() and args.bug:
-        lp_bug = f" (LP: #{args.bug})"
-    else:
-        lp_bug = ""
 
     with open('changelog', 'w') as f:
         f.write(f"""{meta} ({version}) {series}; urgency=medium

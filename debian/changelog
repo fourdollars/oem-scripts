@@ -17,6 +17,7 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
   * pkg-oem-meta: Support stella and sutton.
   * pkg-oem-meta: Capitalize the OEM and platform name and reduce some
     Exceptions.
+  * pkg-oem-meta: Add public and private bug options for all OEM projects.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 29 Apr 2020 16:23:20 +0800
 
