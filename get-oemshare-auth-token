@@ -18,9 +18,9 @@ def prompt_for_credentials():
     """
     Return username and password collected from stdin.
     """
-    print >> sys.stderr, "\rUsername: ",
-    username = raw_input()
-    password = getpass.getpass()
+    print("\rEmail: ", file=sys.stderr, end='')
+    username = input()
+    password = getpass.getpass(stream=sys.stderr)
     return username, password
 
 
@@ -28,8 +28,8 @@ def prompt_for_code():
     """
     Return code collected from stdin.
     """
-    print >> sys.stderr, "\rCode: ",
-    return raw_input()
+    print("\r2FA Code: ", file=sys.stderr, end='')
+    return input()
 
 
 def get_session_cookie(browser=get_browser()):
@@ -40,7 +40,7 @@ def get_session_cookie(browser=get_browser()):
     bad_creds = False
     bad_code = False
 
-    print >> sys.stderr, "Authenticating with Ubuntu SSO..."
+    print("Authenticating with Ubuntu SSO...", file=sys.stderr)
     browser.open("https://oem-share.canonical.com/oem/cesg-builds/")
     # apachd2-openid
     browser.select_form("oid_form")
@@ -58,7 +58,7 @@ def get_session_cookie(browser=get_browser()):
                 browser.form.find_control("oath_token")
             except mechanize.ControlNotFoundError:
                 if bad_creds:
-                    print >> sys.stderr, "\rBad credentials"
+                    print("\rBad credentials", file=sys.stderr)
                 bad_creds = True
                 username, password = prompt_for_credentials()
                 browser["email"] = username
@@ -66,7 +66,7 @@ def get_session_cookie(browser=get_browser()):
                 browser.submit()
             else:
                 if bad_code:
-                    print >> sys.stderr, "\rBad code"
+                    print("\rBad code", file=sys.stderr)
                 bad_code = True
                 code = prompt_for_code()
                 browser["oath_token"] = code
@@ -80,7 +80,7 @@ def get_session_cookie(browser=get_browser()):
 
 
 def main():
-    print get_session_cookie()
+    print(get_session_cookie())
 
 
 if __name__ == "__main__":

@@ -24,6 +24,7 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
     get-oemshare-auth-token,
     oem-getiso,
     tests/test_pep8: Clear some PEP8 errors.
+  * get-oemshare-auth-token: Make it work on Python3.
 
   [ Bin Li]
   * pkg-oem-meta: Fix warning for Exception and strict rules for bios/sd information.
