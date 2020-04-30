@@ -23,9 +23,9 @@ def prompt_for_credentials():
     """
     Return username and password collected from stdin.
     """
-    print >> sys.stderr, "\rUsername: ",
-    username = raw_input()
-    password = getpass.getpass()
+    print("\rEmail: ", file=sys.stderr, end='')
+    username = input()
+    password = getpass.getpass(stream=sys.stderr)
     return username, password
 
 
@@ -33,7 +33,7 @@ def prompt_for_password():
     """
     Return password from stdin
     """
-    password = getpass.getpass()
+    password = getpass.getpass(stream=sys.stderr)
     return password
 
 
@@ -41,8 +41,8 @@ def prompt_for_code():
     """
     Return code collected from stdin.
     """
-    print >> sys.stderr, "\rCode: ",
-    return raw_input()
+    print("\r2FA Code: ", file=sys.stderr, end='')
+    return input()
 
 
 def get_session_cookie(browser=get_browser(), args=None):
@@ -71,11 +71,12 @@ def get_session_cookie(browser=get_browser(), args=None):
     code = args.code
 
     if args.server is None or args.server not in prop:
-        print >> sys.stderr, "Unsuppoted server %s" % args.server
+        print("Unsuppoted server %s" % args.server, file=sys.stderr)
         return
     server = prop[args.server]
 
-    print >> sys.stderr, "Authenticating %s with Ubuntu SSO..." % args.server
+    print("Authenticating %s with Ubuntu SSO..." % args.server,
+          file=sys.stderr)
     browser.open(server["url"])
     # apachd2-openid
     try:
@@ -97,7 +98,7 @@ def get_session_cookie(browser=get_browser(), args=None):
                 browser.form.find_control("oath_token")
             except mechanize.ControlNotFoundError:
                 if bad_creds:
-                    print >> sys.stderr, "\rBad credentials"
+                    print("\rBad credentials", file=sys.stderr)
                     """ clean credentials """
                     username = None
                     password = None
@@ -124,7 +125,7 @@ def get_session_cookie(browser=get_browser(), args=None):
                 browser.submit()
             else:
                 if bad_code:
-                    print >> sys.stderr, "\rBad code"
+                    print("\rBad code", file=sys.stderr)
                 bad_code = True
 
                 if code is None:
@@ -158,13 +159,13 @@ def main():
         session = get_session_cookie(args=args)
         if session is not None:
             result = 0
-            print session
+            print(session)
     except RetryLimitExceed:
         pass
     except KeyboardInterrupt:
-        print >> sys.stderr, "\rterminate"
+        print("\rterminate", file=sys.stderr)
     except Exception as e:
-        print >> sys.stderr, "\rUnknown error %s" % str(e)
+        print("\rUnknown error %s" % str(e), file=sys.stderr)
 
     return result
 
