@@ -16,7 +16,7 @@ __DEBUG__ = (os.getenv('DEBUG') == 'true')
 
 class ImageURI(object):
 
-    def __init__(self,  project, date, buildorder, image_type):
+    def __init__(self, project, date, buildorder, image_type):
         self.project = project
         self.date = date
         self.buildorder = str(buildorder)

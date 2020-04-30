@@ -22,8 +22,7 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
   * debian/rules,
     get-oem-auth-token,
     get-oemshare-auth-token,
-    tests/test_pep8: Clear some PEP8 errors.
-  * oem-getiso,
+    oem-getiso,
     tests/test_pep8: Clear some PEP8 errors.
 
   [ Bin Li]
