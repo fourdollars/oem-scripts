@@ -73,7 +73,7 @@ elif codename == 'sutton':
     parser.add_argument('-p', '--platform', help="platform-codename",
                         required=True)
     parser.add_argument('bios_ver', nargs='+',
-                        help="First three chars in bios version, such as S30")
+            help="First three chars in bios version, such as S30 or bvnLENOVO:bvrS30")
 args = parser.parse_args()
 
 platform = args.platform.lower()
