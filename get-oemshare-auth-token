@@ -4,6 +4,7 @@ import sys
 import getpass
 import mechanize
 
+
 def get_browser():
     """
     Return a mechanize.Browser configured appropriately.
@@ -11,6 +12,7 @@ def get_browser():
     browser = mechanize.Browser()
     browser.set_handle_robots(False)
     return browser
+
 
 def prompt_for_credentials():
     """
@@ -21,12 +23,14 @@ def prompt_for_credentials():
     password = getpass.getpass()
     return username, password
 
+
 def prompt_for_code():
     """
     Return code collected from stdin.
     """
     print >> sys.stderr, "\rCode: ",
     return raw_input()
+
 
 def get_session_cookie(browser=get_browser()):
     """
@@ -74,8 +78,10 @@ def get_session_cookie(browser=get_browser()):
     oemshare_cookies = cookiejar._cookies["oem-share.canonical.com"]
     return oemshare_cookies["/"]["pysid"].value
 
+
 def main():
     print get_session_cookie()
+
 
 if __name__ == "__main__":
     main()
