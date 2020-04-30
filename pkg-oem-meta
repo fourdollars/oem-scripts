@@ -14,25 +14,28 @@ program_name = os.path.basename(sys.argv[0])
 
 if program_name == 'pkg-somerville-meta':
     codename = 'somerville'
-    Codename = 'Somerville'
+    Codename = codename.title()
     brand = 'dell'
     parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
         epilog=f"Ex. {program_name} -b 1868254 -s focal -k"
         " oem -p three-eyed-raven 0962")
 elif program_name == 'pkg-stella-meta':
     codename = 'stella'
-    Codename = 'Stella'
+    Codename = codename.title()
     brand = 'hp'
     parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
         epilog=f"Ex. {program_name} -s focal -k oem"
         " -o cmit -p beedrill 8594")
 elif program_name == 'pkg-sutton-meta':
     codename = 'sutton'
-    Codename = 'Sutton'
+    Codename = codename.title()
     brand = 'lenovo'
     parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
         epilog=f"Ex. {program_name} -s focal -k oem"
         " -o bachman -p banaing S03")
@@ -40,10 +43,15 @@ else:
     raise Exception('This program can not be executed.')
 
 parser.add_argument('-k', '--kernel',
-                    help="Using different kernel flavour. [oem|default] "
-                    "'oem' is the default kernel flavour. "
-                    "'default' will use generic or hwe kernel flavour.")
-parser.add_argument('-s', '--series', help="Ubuntu series, such as focal.")
+                    choices=['oem', 'kernel'],
+                    default='oem',
+                    help="Using different kernel flavour. [oem|default]\n"
+                    "'oem' is for linux-oem-20.04.\n"
+                    "'default' is for linux-generic-hwe-20.04.")
+info = UbuntuDistroInfo()
+series = lsb_release.get_os_release()['CODENAME']
+parser.add_argument('-s', '--series', choices=info.supported(), default=series,
+                    help=f"Ubuntu series, such as {series} by default.")
 
 if codename == 'somerville':
     parser.add_argument('-b', '--bug',
@@ -62,12 +70,17 @@ elif codename == 'sutton':
     parser.add_argument('-p', '--platform', help="platform-codename",
                         required=True)
     parser.add_argument('bios_ver', nargs='+',
-                        help="First three characters in bios version,\
-                        such as S30")
+                        help="First three chars in bios version, such as S30")
 args = parser.parse_args()
 
+platform = args.platform.lower()
+Platform = platform.title()
+series = args.series
+versions = dict(zip(info.get_all(result='codename'),
+                    info.get_all(result='release')))
+version = versions[series].split(' ')[0]
+
 # Sanity check
-platform = args.platform
 if codename == 'somerville':
     oem = ''
     if args.platform.startswith("fossa-"):
@@ -77,35 +90,22 @@ if codename == 'somerville':
             raise Exception('Invalid BIOS ID: {}' % bios_id)
     meta = 'oem-' + codename + '-' + platform + '-meta'
 elif codename == 'stella':
-    oem = args.oem
+    oem = args.oem.lower()
     for sd_id in args.sd_id:
         if not re.match('[0-9a-fA-F]{4}', sd_id):
             raise Exception('Invalid subsystem device ID: {}' % sd_id)
     meta = 'oem-' + codename + '.' + oem + '-' + platform + '-meta'
-    Codename = Codename + ' ' + oem
+    Codename = Codename + ' ' + oem.title()
 elif codename == 'sutton':
-    oem = args.oem
+    oem = args.oem.lower()
     for bios_ver in args.bios_ver:
         if not re.match('[0-9a-zA-Z]{3}', bios_ver):
             raise Exception('Invalid BIOS version: {}' % bios_ver)
     meta = 'oem-' + codename + '.' + oem + '-' + platform + '-meta'
-    Codename = Codename + ' ' + oem
+    Codename = Codename + ' ' + oem.title()
 
 if os.path.exists(meta):
     raise Exception(meta + ' already exists. Please remove or rename it.')
-
-if args.series is None:
-    series = lsb_release.get_os_release()['CODENAME']
-else:
-    series = args.series
-
-info = UbuntuDistroInfo()
-versions = dict(zip(info.get_all(result='codename'),
-                    info.get_all(result='release')))
-if series in info.supported():
-    version = versions[series].split(' ')[0]
-else:
-    raise Exception('Series: ' + series + ' is not supported by Ubuntu.')
 
 os.mkdir(meta)
 os.chdir(meta)
@@ -115,18 +115,12 @@ git_repo = PREFIX + '/' + brand + '/+git/oem-' + codename + '-projects-meta'
 
 
 def generate_debian_package(version, dummy=False, real=False):
-    if args.kernel is None:
+    if args.kernel == 'default':
+        extra = ', linux-generic-hwe-20.04'
+        flavour = 'default'
+    elif args.kernel == 'oem':
         extra = ', linux-oem-20.04'
         flavour = 'oem'
-    else:
-        if args.kernel == 'default':
-            extra = ', linux-generic-hwe-20.04'
-            flavour = 'default'
-        elif args.kernel == 'oem':
-            extra = ', linux-oem-20.04'
-            flavour = 'oem'
-        else:
-            raise Exception(args.kernel + ' is not supported.')
 
     prefix = oem and oem + '-' or oem
     infix = oem and '.' + oem or oem
@@ -172,7 +166,7 @@ deb http://{brand}.{archive}/ {series} {codename + infix}-{platform}
     with open('changelog', 'w') as f:
         f.write(f"""{meta} ({version}) {series}; urgency=medium
 
-  * Meta package for {Codename} {platform}.{lp_bug}
+  * Meta package for {Codename} {Platform}.{lp_bug}
 
  -- {fullname} <{email}>  {timestamp}
 """)
@@ -195,15 +189,15 @@ Architecture: all
 Depends: ${{misc:Depends}}, ubuntu-oem-keyring{extra}
 XB-Modaliases: ${{modaliases}}
 XB-Ubuntu-OEM-Kernel-Flavour: {flavour}
-Description: hardware support for {Codename} {platform} platform
- This is a metapackage for {Codename} {platform} platform. It installs\n"""
+Description: hardware support for {Codename} {Platform} platform
+ This is a metapackage for {Codename} {Platform} platform. It installs\n"""
                 + " packages needed to support this hardware fully.\n")
         if real:
             f.write(f"""\nPackage: {factory}
 Architecture: all
 Depends: ${{misc:Depends}}
-Description: hardware support for {Codename} {platform} platform
- This is a factory metapackage for {Codename} {platform} platform.\n"""
+Description: hardware support for {Codename} {Platform} platform
+ This is a factory metapackage for {Codename} {Platform} platform.\n"""
                     + " It installs packages needed to support this hardware "
                     + "fully.\n")
 
