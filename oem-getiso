@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # author: hychen <hychen@canonical.com>
 #
 # Run self test: $ DEBUG=true oem-getiso
@@ -29,7 +29,8 @@ class ImageURI(object):
 
     @property
     def rootdir(self):
-        self._rootdir = self.ispublished and '/partners/' or '/oem/cesg-builds/'
+        self._rootdir = self.ispublished and\
+            '/partners/' or '/oem/cesg-builds/'
         return self._rootdir
 
     @property
@@ -43,9 +44,12 @@ class ImageURI(object):
     @property
     def imagepath(self):
         if self.ispublished:
-            return os.path.join(self.project, 'images', '{}-{}'.format(self.date, self.buildorder), self.image_type, self.isoname)
+            return os.path.join(self.project, 'images',
+                                '{}-{}'.format(self.date, self.buildorder),
+                                self.image_type, self.isoname)
         else:
-            return os.path.join(self.project, self.date, self.buildorder, 'images', self.image_type, self.isoname)
+            return os.path.join(self.project, self.date, self.buildorder,
+                                'images', self.image_type, self.isoname)
 
     @property
     def isoname(self):
@@ -53,8 +57,10 @@ class ImageURI(object):
             project = self.project + '-' + self.manifest_ver
         else:
             project = self.project
-        image_type = 'iso' if re.match(r'^dell-bto', self.project) else self.image_type
-        return '{}-{}-{}-{}.iso'.format(project, image_type, self.date, self.buildorder)
+        image_type = 'iso' \
+            if re.match(r'^dell-bto', self.project) else self.image_type
+        return '{}-{}-{}-{}.iso'.format(project, image_type,
+                                        self.date, self.buildorder)
 
     @classmethod
     def from_url(cls, url):
@@ -90,21 +96,25 @@ class ImageURI(object):
             comps = urlparse(url).path.split('/')
             published = (comps[1] == 'partners')
             if published:
-                (proj,image_type) = (comps[2], comps[5])
+                (proj, image_type) = (comps[2], comps[5])
                 (date, buildorder) = comps[4].split('-')
             else:
-                (proj, date, buildorder, image_type) = (comps[3] , comps[4], comps[5], comps[7])
+                (proj, date, buildorder, image_type) = \
+                    (comps[3], comps[4], comps[5], comps[7])
             if 'dell-bto' in proj:
                 manifest_ver_index = published and 6 or 8
                 try:
                     manifest_ver = comps[manifest_ver_index].split('-')[-4]
                 except IndexError:
-                    logging.error('published:{0} manifest_ver_index:{1}'.format(published, manifest_ver_index))
+                    logging.error('published:{0} manifest_ver_index:{1}'
+                                  .format(published, manifest_ver_index))
                     raise IndexError
             else:
                 manifest_ver = None
-            return (proj, date, buildorder, published, manifest_ver, image_type)
-        (project, date, buildorder, published, manifest_ver, image_type) = _parse(url)
+            return (proj, date, buildorder, published,
+                    manifest_ver, image_type)
+        (project, date, buildorder, published, manifest_ver, image_type) = \
+            _parse(url)
         obj = cls(project, date, buildorder, image_type)
         obj.manifest_ver = manifest_ver
         obj.ispublished = published
@@ -128,9 +138,11 @@ class ImageURI(object):
         obj.ispublished = False
         return obj
 
+
 def __testself():
     import doctest
     doctest.testmod()
+
 
 class RsyncURI(object):
 
@@ -146,7 +158,8 @@ class RsyncURI(object):
 
     @property
     def imagepath(self):
-        return self.rootdir + os.path.join(self.imguri.rootdir, self.imguri.imagepath)
+        return self.rootdir + os.path.join(self.imguri.rootdir,
+                                           self.imguri.imagepath)
 
     @classmethod
     def from_imguri(cls, imguri):
@@ -161,6 +174,7 @@ class RsyncURI(object):
         """
         return cls(imguri)
 
+
 class _Downloader(object):
 
     def __init__(self, url):
@@ -171,7 +185,8 @@ class _Downloader(object):
         self.imguri = ImageURI.from_url(url)
 
     def find_lastdownloadediso(self):
-        proj_isos = filter(lambda iso: self.imguri.project in iso, glob.glob('*.iso'))
+        proj_isos = filter(lambda iso: self.imguri.project in iso,
+                           glob.glob('*.iso'))
         try:
             return sorted_isos(proj_isos)[-1]
         except IndexError:
@@ -192,14 +207,15 @@ class _Downloader(object):
         self.lastiso = self.find_lastdownloadediso()
         print 'Found last downloaded file:{}'.format(self.lastiso)
         self.isolink = RsyncURI.from_imguri(self.imguri).isolink
-        #if os.path.exists(self.imguri.isoname):
-        #    sys.exit("Image {} already be downloaded.".format(
-        #        self.imguri.isoname))
+        # if os.path.exists(self.imguri.isoname):
+        #     sys.exit("Image {} already be downloaded.".format(
+        #         self.imguri.isoname))
         print 'Starting to download file:{}'.format(self.imguri.isoname)
         self.proc = self.do_download()
         ret = self.proc.wait()
         self.post_download()
         return ret
+
 
 class RsyncDownloader(_Downloader):
     filename = None
@@ -209,13 +225,14 @@ class RsyncDownloader(_Downloader):
         cmd = ['rsync', '-Pv',
                self.isolink,
                self.filename
-        ]
- 
+               ]
+
         return subprocess.Popen(cmd)
 
     def post_download(self):
         if self.filename != self.imguri.isoname:
             os.rename(self.filename, self.imguri.isoname)
+
 
 class ZsyncDownloader(_Downloader):
 
@@ -227,7 +244,7 @@ class ZsyncDownloader(_Downloader):
         cmd = ['zsync_curl',
                self.imguri.isolink + '.zsync',
                '-c pysid=' + self.auth_token
-        ]
+               ]
         if self.lastiso:
             cmd.append('-i ' + self.lastiso)
 
@@ -239,6 +256,7 @@ class ZsyncDownloader(_Downloader):
             os.remove(self.lastiso)
         if os.path.exists(self.imguri.isoname + ".zs-old"):
             os.remove(self.imguri.isoname + ".zs-old")
+
 
 def sorted_isos(isos):
     """
@@ -264,17 +282,19 @@ def sorted_isos(isos):
         return int('{}{}'.format(date, order))
     return sorted(isos, key=_f)
 
+
 def iso_of_bugdesc(desc):
     """
     >>> iso_of_bugdesc('Image: somerville-oneiric-amd64-20111116-1')
     ('somerville-oneiric-amd64', '20111116', '1')
     """
     import re
-    ret = re.findall('Image:\s+((\S+)-(\d+)-(\d)).*', desc)
+    ret = re.findall('Image:\\s+((\\S+)-(\\d+)-(\\d)).*', desc)
     if ret:
         return (ret[0][1], ret[0][2], ret[0][3])
     else:
         return ()
+
 
 def isourl_of_bug(q):
     """
@@ -295,6 +315,7 @@ def isourl_of_bug(q):
     # @FIXME: we can not rsync published iso now.
     # img.ispublished = True
     return img.isolink
+
 
 if __name__ == '__main__':
     usage = "usage: %prog --method [rsync|zsync --auth_token " \
@@ -342,7 +363,6 @@ if __name__ == '__main__':
         sys.exit(runner.run())
     except KeyboardInterrupt:
         while True:
-            if runner.poll() == None:
-                continue 
+            if runner.poll() is None:
+                continue
             sys.exit(runner.poll())
-

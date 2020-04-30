@@ -1,3 +1,5 @@
 #!/bin/sh
 
-pep8 get-oem-auth-token get-oemshare-auth-token
+pep8 get-oem-auth-token get-oemshare-auth-token setup.py
+
+pep8 --ignore=E501 oem-getiso

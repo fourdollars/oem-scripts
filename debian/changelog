@@ -22,6 +22,8 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
     get-oem-auth-token,
     get-oemshare-auth-token,
     tests/test_pep8: Clear some PEP8 errors.
+  * oem-getiso
+    tests/test_pep8: Clear some PEP8 errors.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 29 Apr 2020 16:23:20 +0800
 
