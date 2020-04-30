@@ -89,7 +89,7 @@ class ImageURI(object):
         >>> o = ImageURI.from_url('https://oem-share.canonical.com/partners/dell-bto-oneiric-audi-13-intel/images/20120316-3/iso/dell-bto-oneiric-audi-13-intel-A04-iso-20120316-3.iso')
         """
         def _parse(url):
-            from urlparse import urlparse
+            from urllib.parse import urlparse
             if not re.match(r'^https.*', url):
                 logging.error('{0} is not a valid image URL'.format(url))
                 raise IndexError
@@ -205,12 +205,12 @@ class _Downloader(object):
 
     def run(self):
         self.lastiso = self.find_lastdownloadediso()
-        print 'Found last downloaded file:{}'.format(self.lastiso)
+        print('Found last downloaded file:{}'.format(self.lastiso))
         self.isolink = RsyncURI.from_imguri(self.imguri).isolink
         # if os.path.exists(self.imguri.isoname):
         #     sys.exit("Image {} already be downloaded.".format(
         #         self.imguri.isoname))
-        print 'Starting to download file:{}'.format(self.imguri.isoname)
+        print('Starting to download file:{}'.format(self.imguri.isoname))
         self.proc = self.do_download()
         ret = self.proc.wait()
         self.post_download()
@@ -307,7 +307,7 @@ def isourl_of_bug(q):
         lp = Launchpad.login_with("oem-getiso", 'production', cachedir)
         found_iso = iso_of_bugdesc(lp.bugs[q].description)
     except KeyboardInterrupt:
-        print "Terminated by user reqeust!"
+        print("Terminated by user reqeust!")
         exit()
     if not found_iso:
         return None
@@ -330,7 +330,7 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     if __DEBUG__:
-        print 'self testing...'
+        print('self testing...')
         __testself()
         sys.exit()
 
@@ -339,7 +339,7 @@ if __name__ == '__main__':
 
     if args[0].isdigit():
         bug = args[0]
-        print "find iso link for bug {}".format(bug)
+        print("find iso link for bug {}".format(bug))
         url = isourl_of_bug(bug)
         if not url:
             sys.exit("Could not find iso link for the bug {}".format(bug))
