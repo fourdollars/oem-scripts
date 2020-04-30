@@ -252,7 +252,7 @@ License: GPL-3
                 if result is None:
                     result  = re.match('bvn([0-9a-zA-Z]+):bvr([0-9a-zA-Z]{3})$', bios_ver)
                     if result is None:
-                        exit(1)
+                        continue
                     else:
                         bios_vendor = result.group(1)
                         bios_ids = result.group(2)
