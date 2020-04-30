@@ -28,6 +28,7 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
 
   [ Bin Li]
   * pkg-oem-meta: Fix warning for Exception and strict rules for bios/sd information.
+  * pkg-oem-meta: Support the bvn for sutton.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 29 Apr 2020 16:23:20 +0800
 

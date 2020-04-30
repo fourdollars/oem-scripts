@@ -73,7 +73,8 @@ elif codename == 'sutton':
     parser.add_argument('-p', '--platform', help="platform-codename",
                         required=True)
     parser.add_argument('bios_ver', nargs='+',
-                        help="First three chars in bios version, such as S30")
+                        help="First three chars in bios version, "
+                        + "such as S30 or bvnLENOVO:bvrS30")
 args = parser.parse_args()
 
 platform = args.platform.lower()
@@ -102,7 +103,8 @@ elif codename == 'stella':
 elif codename == 'sutton':
     oem = args.oem.lower()
     for bios_ver in args.bios_ver:
-        if not re.match('[0-9a-zA-Z]{3}$', bios_ver):
+        if (not re.match('[0-9a-zA-Z]{3}$', bios_ver)) and \
+           (not re.match('bvn[0-9a-zA-Z]+:bvr[0-9a-zA-Z]{3}$', bios_ver)):
             raise Exception('Invalid BIOS version: {%s}' % bios_ver)
     meta = 'oem-' + codename + '.' + oem + '-' + platform + '-meta'
     Codename = Codename + ' ' + oem.title()
@@ -247,8 +249,22 @@ License: GPL-3
                         .format(sd_id.upper(), meta))
         elif 'bios_ver' in vars(args).keys():
             for bios_ver in args.bios_ver:
-                f.write("alias dmi:*bvnLENOVO:bvr{0}* meta {1}\n"
-                        .format(bios_ver, meta))
+                result = re.match('([0-9a-zA-Z]{3})$', bios_ver)
+                if result is None:
+                    result = re.match('bvn([0-9a-zA-Z]+):bvr([0-9a-zA-Z]{3})$',
+                                      bios_ver)
+                    if result is None:
+                        continue
+                    else:
+                        bios_vendor = result.group(1)
+                        bios_ids = result.group(2)
+                else:
+                    # Set the default bios vendor for Lenovo
+                    bios_vendor = 'LENOVO'
+                    bios_ids = result.group()
+
+                f.write("alias dmi:*bvn{0}:bvr{1}* meta {2}\n"
+                        .format(bios_vendor, bios_ids, meta))
 
     with open('rules', 'w') as f:
         f.write("""#!/usr/bin/make -f
