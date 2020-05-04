@@ -17,6 +17,7 @@ Package: oem-scripts
 Architecture: all
 Depends: ${misc:Depends},
  ${python3:Depends},
+ python3-distro-info,
  python3-distutils-extra,
  python3-mechanize,
  zsync-curl,

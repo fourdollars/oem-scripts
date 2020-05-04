@@ -30,6 +30,7 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
   * debian/control: Build depends on pep8.
   * debian/links: Add links for pkg-somerville-meta, pkg-stella-meta and
     pkg-sutton-meta.
+  * debian/control: Depend on python3-distro-info.
 
   [ Bin Li]
   * pkg-oem-meta: Fix warning for Exception and strict rules for bios/sd information.
