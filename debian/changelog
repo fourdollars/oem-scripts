@@ -27,6 +27,7 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
   * get-oemshare-auth-token: Make it work on Python3.
   * get-oem-auth-token: Make it work on Python3.
   * oem-getiso: Make it work on Python3.
+  * debian/control: Build depends on pep8.
 
   [ Bin Li]
   * pkg-oem-meta: Fix warning for Exception and strict rules for bios/sd information.
