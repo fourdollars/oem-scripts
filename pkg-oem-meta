@@ -49,7 +49,13 @@ parser.add_argument('-k', '--kernel',
                     "'oem' is for linux-oem-20.04.\n"
                     "'default' is for linux-generic-hwe-20.04.")
 info = UbuntuDistroInfo()
-series = lsb_release.get_os_release()['CODENAME']
+try:
+    # for bionic
+    series = lsb_release.get_lsb_information()['CODENAME']
+except AttributeError as e:
+    # for focal
+    series = lsb_release.get_os_release()['CODENAME']
+
 parser.add_argument('-s', '--series', choices=info.supported(), default=series,
                     help=f"Ubuntu series, such as {series} by default.")
 parser.add_argument('--public-bug',
@@ -287,6 +293,8 @@ export DH_VERBOSE=1
     os.chdir('..')
     os.chdir('..')
     subprocess.run(['git', 'add', '.'])
+    subprocess.run(['git', 'config', 'user.name', fullname])
+    subprocess.run(['git', 'config', 'user.email', email])
     subprocess.run(['debcommit', '-a', '-R', '-r'])
 
 

@@ -1,2 +1,2 @@
-Test-Command: true
-Depends: @
+Tests: pkg-somerville-meta
+Depends: @, git

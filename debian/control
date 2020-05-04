@@ -15,18 +15,20 @@ Vcs-Git: https://git.launchpad.net/~oem-solutions-engineers/oem-dev-tools/+git/o
 
 Package: oem-scripts
 Architecture: all
-Depends: ${misc:Depends},
+Depends:
+ ${misc:Depends},
  ${python3:Depends},
+ debhelper,
+ devscripts,
+ dh-modaliases,
+ diffutils,
+ dkms,
+ lsb-release,
  python3-distro-info,
  python3-distutils-extra,
  python3-mechanize,
- zsync-curl,
- diffutils,
- dkms,
- devscripts,
  ubuntu-dev-tools,
- debhelper,
- dh-modaliases
+ zsync-curl
 Recommends: qemu-user-static
 Description: Short OEM related scripts
  Short OEM related scripts can go here. 
