@@ -28,6 +28,8 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
   * get-oem-auth-token: Make it work on Python3.
   * oem-getiso: Make it work on Python3.
   * debian/control: Build depends on pep8.
+  * debian/links: Add links for pkg-somerville-meta, pkg-stella-meta and
+    pkg-sutton-meta.
 
   [ Bin Li]
   * pkg-oem-meta: Fix warning for Exception and strict rules for bios/sd information.
