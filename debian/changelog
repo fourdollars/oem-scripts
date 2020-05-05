@@ -35,6 +35,7 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
     debian/tests/control,
     debian/tests/pkg-somerville-meta,
     pkg-oem-meta: Add the test case for autopkgtest.
+  * tests/test_pep8: Check pkg-oem-meta.
 
   [ Bin Li]
   * pkg-oem-meta: Fix warning for Exception and strict rules for bios/sd information.
