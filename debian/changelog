@@ -41,6 +41,8 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
     get-private-ppa,
     launchpad-api.sh,
     setup.py: Add some scripts to prepare the setup script for autopkgtest.
+  * auto-oem-scripts-autopkgtest,
+    setup.py: Rename to autopkgtest-oem-scripts-auto.
 
   [ Bin Li]
   * pkg-oem-meta: Fix warning for Exception and strict rules for bios/sd information.
