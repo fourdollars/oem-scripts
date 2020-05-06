@@ -1,4 +1,4 @@
-oem-scripts (0.27) UNRELEASED; urgency=medium
+oem-scripts (0.27) bionic; urgency=medium
 
   * autopkgtest-oem-scripts-auto,
     config.sh,
@@ -13,7 +13,7 @@ oem-scripts (0.27) UNRELEASED; urgency=medium
     launchpad-api.sh,
     setup.py: Rename launchpad-api.sh to launchpad-api and add some test cases.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 06 May 2020 23:28:24 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 07 May 2020 00:29:54 +0800
 
 oem-scripts (0.26) bionic; urgency=medium
 
