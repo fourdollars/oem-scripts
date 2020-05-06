@@ -1,2 +1,2 @@
-Tests: pkg-somerville-meta
-Depends: @, git
+Tests: pkg-somerville-meta, launchpad-api, get-private-ppa
+Depends: @

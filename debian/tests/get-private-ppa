@@ -1,0 +1,15 @@
+#!/bin/bash
+
+exec 2>&1
+set -euo pipefail
+IFS=$'\n\t'
+
+RET=$(get-private-ppa ppa:oem-solutions-group/ppa)
+
+if [ "$(echo "$RET" | awk '{print $2}')" = "7B85BB3BB81D9DAFF9F06250B52B913A41086767" ]; then
+    echo PASS
+    exit
+else
+    echo FAIL
+    exit 1
+fi

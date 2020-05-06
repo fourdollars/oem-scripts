@@ -4,8 +4,16 @@ oem-scripts (0.27) UNRELEASED; urgency=medium
     config.sh,
     get-private-ppa,
     launchpad-api.sh: Change the function names in config.sh.
+  * autopkgtest-oem-scripts-auto,
+    debian/control,
+    debian/tests/control,
+    debian/tests/get-private-ppa,
+    debian/tests/launchpad-api,
+    get-private-ppa,
+    launchpad-api.sh,
+    setup.py: Rename launchpad-api.sh to launchpad-api and add some test cases.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 06 May 2020 22:30:36 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 06 May 2020 23:28:24 +0800
 
 oem-scripts (0.26) bionic; urgency=medium
 

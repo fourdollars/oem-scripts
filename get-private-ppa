@@ -4,7 +4,7 @@
 source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
 
 if ! has_oem_scripts_config; then
-    echo "Please execute \`launchpad-api.sh\` to get the token for Launchpad API first."
+    echo "Please execute \`launchpad-api\` to get the token for Launchpad API first."
     exit 1
 fi
 
@@ -12,8 +12,8 @@ PPA="$1"
 GROUP=$(echo "${PPA//[:\/]/ }" | awk '{print $2}')
 ARCHIVE=$(echo "${PPA//[:\/]/ }" | awk '{print $3}')
 
-username=$(launchpad-api.sh get devel/people/+me | jq -r .name)
-URL=$(launchpad-api.sh post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=https://api.launchpad.net/devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .)
-KEY=$(launchpad-api.sh get "devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .signing_key_fingerprint)
+username=$(launchpad-api get devel/people/+me | jq -r .name)
+URL=$(launchpad-api post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=https://api.launchpad.net/devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .)
+KEY=$(launchpad-api get "devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .signing_key_fingerprint)
 
 echo "$URL" "$KEY"
