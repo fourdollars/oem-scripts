@@ -1,4 +1,4 @@
-oem-scripts (0.26) UNRELEASED; urgency=medium
+oem-scripts (0.26) bionic; urgency=medium
 
   [Shih-Yuan Lee (FourDollars)]
   * debian/control,
@@ -48,7 +48,7 @@ oem-scripts (0.26) UNRELEASED; urgency=medium
   * pkg-oem-meta: Fix warning for Exception and strict rules for bios/sd information.
   * pkg-oem-meta: Support the bvn for sutton.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 29 Apr 2020 16:23:20 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 06 May 2020 21:49:34 +0800
 
 oem-scripts (0.25) trusty; urgency=medium
 
