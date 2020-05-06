@@ -72,13 +72,13 @@ post_api()
 }
 
 
-if has_config; then
-    oauth_token=$(read_config oauth_token)
-    oauth_token_secret=$(read_config oauth_token_secret)
+if has_oem_scripts_config; then
+    oauth_token=$(read_oem_scripts_config oauth_token)
+    oauth_token_secret=$(read_oem_scripts_config oauth_token_secret)
 else
     get_token
-    write_config oauth_token "${oauth_token}"
-    write_config oauth_token_secret "${oauth_token_secret}"
+    write_oem_scripts_config oauth_token "${oauth_token}"
+    write_oem_scripts_config oauth_token_secret "${oauth_token_secret}"
 fi
 
 case "$1" in

@@ -2,7 +2,7 @@
 
 CONFIG="$HOME/.config/oem-scripts/config.ini"
 
-has_config ()
+has_oem_scripts_config ()
 {
     if [ -f "$CONFIG" ]; then
         true
@@ -11,12 +11,12 @@ has_config ()
     fi
 }
 
-read_config ()
+read_oem_scripts_config ()
 {
-    has_config && grep ^"$1 = " "$CONFIG" | awk '{print $3}'
+    has_oem_scripts_config && grep ^"$1 = " "$CONFIG" | awk '{print $3}'
 }
 
-write_config ()
+write_oem_scripts_config ()
 {
     if [ ! -f "$CONFIG" ]; then
         mkdir -p "$HOME/.config/oem-scripts"
