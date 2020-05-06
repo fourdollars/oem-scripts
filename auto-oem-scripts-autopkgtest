@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# shellcheck source=config.sh
+source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
+
+if ! has_config; then
+    echo "Please execute \`launchpad-api.sh\` to get the token for Launchpad API first."
+    exit 1
+fi
+
+PPA="ppa:oem-solutions-group/ppa"
+RET=$(get-private-ppa $PPA)
+URL=$(echo "$RET" | awk '{print $1}')
+KEY=$(echo "$RET" | awk '{print $2}')
+
+cat <<ENDLINE
+#!/bin/bash
+
+export LC_ALL=C.UTF-8
+export LANG=C.UTF-8
+
+install_pkgs ()
+{
+    for pkg in "\$@"; do
+        if ! dpkg-query -W -f='\${Status}\n' "\$pkg" | grep "install ok installed"; then
+            sudo apt-get install "\$pkg" --yes
+        fi
+    done
+}
+
+importkey()
+{
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-key "\$1"
+}
+
+install_pkgs gpg apt-transport-https
+
+importkey "$KEY"
+
+cat | sudo tee /etc/apt/sources.list.d/${PPA//[:\/]/-}.list <<END
+deb [arch=amd64] $URL \$(lsb_release -cs) main
+END
+
+sudo apt-get update
+ENDLINE

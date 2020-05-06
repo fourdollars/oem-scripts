@@ -30,12 +30,14 @@ Also there is a meta package oem-dev-tools that installs all scripts''',
       license='GPLv3+1',
       author='Commercial Engineering',
       author_email='commercial-engineering@canonical.com',
-      url='https://github.com/fourdollars/energy-tools',
       scripts=[
+          'auto-oem-scripts-autopkgtest',
           'copyPackage.py',
           'dkms-helper',
           'get-oem-auth-token',
           'get-oemshare-auth-token',
+          'get-private-ppa',
+          'launchpad-api.sh',
           'live-build-image-chroot.sh',
           'oem-getiso',
           'pkg-oem-meta',
@@ -43,5 +45,6 @@ Also there is a meta package oem-dev-tools that installs all scripts''',
           'setup4test.sh',
           'stap-build-mymodule.sh',
           'stap-dbgsym.sh',
-      ]
+      ],
+      data_files=[('share/oem-scripts', ['config.sh'])]
       )
