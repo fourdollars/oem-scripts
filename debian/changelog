@@ -1,3 +1,12 @@
+oem-scripts (0.29) UNRELEASED; urgency=medium
+
+  [ Bin Li]
+  * pkg-oem-meta: Fix the case sensitive problem for pkg-sutton-meta.
+  * debian/tests/control,
+    debian/tests/pkg-sutton-meta: Add the autopkgtest case for pkg-sutton-meta.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 07 May 2020 17:47:22 +0800
+
 oem-scripts (0.28) bionic; urgency=medium
 
   * launchpad-api: Ignore stdin to avoid failing in autopkgtest.
