@@ -7,7 +7,7 @@ IFS=$'\n\t'
 export DEBFULLNAME="Commercial Engineering"
 export DEBEMAIL="commercial-engineering@canonical.com"
 
-./pkg-sutton-meta --public-bug 123456 --private-bug 1874177 -s focal -k oem -o Newell -p AdaM N2U bvnLENOVo:bvrN2o
+pkg-sutton-meta --public-bug 123456 --private-bug 1874177 -s focal -k oem -o Newell -p AdaM N2U bvnLENOVo:bvrN2o
 
 cd oem-sutton.newell-adam-meta || exit 1
 
