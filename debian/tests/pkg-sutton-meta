@@ -17,7 +17,7 @@ grep "deb http://lenovo.archive.canonical.com/ focal sutton.newell-adam" oem-sut
 grep "# deb-src http://lenovo.archive.canonical.com/ focal sutton.newell-adam" oem-sutton.newell-adam-meta.list
 
 grep "oem-sutton.newell-adam-meta (20.04~ubuntu1) focal; urgency=medium" debian/changelog
-grep "* Meta package for Sutton Newell Adam." debian/changelog
+grep "\* Meta package for Sutton Newell Adam." debian/changelog
 grep '(LP: #123456)' debian/changelog
 
 grep "Source: oem-sutton.newell-adam-meta" debian/control
@@ -37,7 +37,7 @@ grep "deb http://lenovo.archive.canonical.com/ focal sutton.newell-adam" oem-sut
 grep "# deb-src http://lenovo.archive.canonical.com/ focal sutton.newell-adam" oem-sutton.newell-adam-meta.list
 
 grep "oem-sutton.newell-adam-meta (20.04ubuntu1) focal; urgency=medium" debian/changelog
-grep "* Meta package for Sutton Newell Adam." debian/changelog
+grep "\* Meta package for Sutton Newell Adam." debian/changelog
 grep '(LP: #1874177)' debian/changelog
 
 grep "Source: oem-sutton.newell-adam-meta" debian/control
