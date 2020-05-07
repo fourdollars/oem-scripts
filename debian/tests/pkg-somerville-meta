@@ -13,8 +13,10 @@ cd oem-somerville-three-eyed-raven-meta || exit 1
 
 git checkout three-eyed-raven-focal-ubuntu
 
-grep "deb http://dell.archive.canonical.com/ focal somerville-three-eyed-raven" oem-somerville-three-eyed-raven-meta.list
-grep "# deb-src http://dell.archive.canonical.com/ focal somerville-three-eyed-raven" oem-somerville-three-eyed-raven-meta.list
+grep "^deb http://dell.archive.canonical.com/ focal somerville\$" oem-somerville-three-eyed-raven-meta.list
+grep "^# deb-src http://dell.archive.canonical.com/ focal somerville\$" oem-somerville-three-eyed-raven-meta.list
+grep "^deb http://dell.archive.canonical.com/ focal somerville-three-eyed-raven\$" oem-somerville-three-eyed-raven-meta.list
+grep "^# deb-src http://dell.archive.canonical.com/ focal somerville-three-eyed-raven\$" oem-somerville-three-eyed-raven-meta.list
 
 grep "oem-somerville-three-eyed-raven-meta (20.04~ubuntu1) focal; urgency=medium" debian/changelog
 grep "Meta package for Somerville Three-Eyed-Raven." debian/changelog
@@ -31,8 +33,10 @@ grep "alias pci:\*sv00001028sd00000962\* meta oem-somerville-three-eyed-raven-me
 
 git checkout three-eyed-raven-focal-oem
 
-grep "deb http://dell.archive.canonical.com/ focal somerville-three-eyed-raven" oem-somerville-three-eyed-raven-meta.list
-grep "# deb-src http://dell.archive.canonical.com/ focal somerville-three-eyed-raven" oem-somerville-three-eyed-raven-meta.list
+grep "^deb http://dell.archive.canonical.com/ focal somerville\$" oem-somerville-three-eyed-raven-meta.list
+grep "^# deb-src http://dell.archive.canonical.com/ focal somerville\$" oem-somerville-three-eyed-raven-meta.list
+grep "^deb http://dell.archive.canonical.com/ focal somerville-three-eyed-raven\$" oem-somerville-three-eyed-raven-meta.list
+grep "^# deb-src http://dell.archive.canonical.com/ focal somerville-three-eyed-raven\$" oem-somerville-three-eyed-raven-meta.list
 
 grep "oem-somerville-three-eyed-raven-meta (20.04ubuntu1) focal; urgency=medium" debian/changelog
 grep "Meta package for Somerville Three-Eyed-Raven." debian/changelog

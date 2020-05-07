@@ -5,6 +5,11 @@ oem-scripts (0.29) UNRELEASED; urgency=medium
   * debian/tests/control,
     debian/tests/pkg-sutton-meta: Add the autopkgtest case for pkg-sutton-meta.
 
+  [Shih-Yuan Lee (FourDollars)]
+  * debian/tests/pkg-somerville-meta,
+    debian/tests/pkg-sutton-meta,
+    pkg-oem-meta: Use group name and archive, and add common source list.
+
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 07 May 2020 17:47:22 +0800
 
 oem-scripts (0.28) bionic; urgency=medium
