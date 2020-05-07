@@ -1,6 +1,7 @@
 oem-scripts (0.28) UNRELEASED; urgency=medium
 
   * launchpad-api: Ignore stdin to avoid failing in autopkgtest.
+  * debian/control: Break and replace lp-fish-tools (<<1.192.40)
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 07 May 2020 11:47:23 +0800
 

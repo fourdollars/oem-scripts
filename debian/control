@@ -32,6 +32,8 @@ Depends:
  python3-mechanize,
  ubuntu-dev-tools,
  zsync-curl
+Breaks: lp-fish-tools (<<1.192.40)
+Replaces: lp-fish-tools (<<1.192.40)
 Recommends: qemu-user-static
 Description: Short OEM related scripts
  Short OEM related scripts can go here. 
