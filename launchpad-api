@@ -10,7 +10,7 @@ source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
 get_token()
 {
     echo "oauth_consumer_key=${oauth_consumer_key}"
-    oauth=$(http --form post https://launchpad.net/+request-token oauth_consumer_key="$oauth_consumer_key" oauth_signature_method=PLAINTEXT oauth_signature="&")
+    oauth=$(http --ignore-stdin --form post https://launchpad.net/+request-token oauth_consumer_key="$oauth_consumer_key" oauth_signature_method=PLAINTEXT oauth_signature="&")
     echo "$oauth"
 
     eval "${oauth/&*/}"
@@ -22,7 +22,7 @@ get_token()
     echo "Please open https://launchpad.net/+authorize-token?oauth_token=$oauth_token to authorize the token."
 
     while :; do
-        body=$(http --form post https://launchpad.net/+access-token oauth_token="$oauth_token" oauth_consumer_key="$oauth_consumer_key" oauth_signature_method=PLAINTEXT oauth_signature="&$oauth_token_secret")
+        body=$(http --ignore-stdin --form post https://launchpad.net/+access-token oauth_token="$oauth_token" oauth_consumer_key="$oauth_consumer_key" oauth_signature_method=PLAINTEXT oauth_signature="&$oauth_token_secret")
         if [ "$body" = "Request token has not yet been reviewed. Try again later." ]; then
             echo "Wait for 5 seconds."
             sleep 5
@@ -44,7 +44,7 @@ get_token()
 get_api()
 {
     api="$1" && shift
-    http --follow GET "https://api.launchpad.net/$api" \
+    http --ignore-stdin --follow GET "https://api.launchpad.net/$api" \
         'OAuth realm'=="https://api.launchpad.net/" \
         oauth_consumer_key=="${oauth_consumer_key}" \
         oauth_nonce=="$(date +%s)" \
@@ -59,7 +59,7 @@ get_api()
 post_api()
 {
     api="$1" && shift
-    http --form POST "https://api.launchpad.net/$api" \
+    http --ignore-stdin --form POST "https://api.launchpad.net/$api" \
         'OAuth realm'="https://api.launchpad.net/" \
         oauth_consumer_key="${oauth_consumer_key}" \
         oauth_nonce="$(date +%s)" \
