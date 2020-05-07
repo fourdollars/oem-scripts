@@ -1,4 +1,4 @@
-oem-scripts (0.29) UNRELEASED; urgency=medium
+oem-scripts (0.29) bionic; urgency=medium
 
   [ Bin Li]
   * pkg-oem-meta: Fix the case sensitive problem for pkg-sutton-meta.
@@ -11,9 +11,9 @@ oem-scripts (0.29) UNRELEASED; urgency=medium
     pkg-oem-meta: Use group name and archive, and add common source list.
   * debian/tests/pkg-somerville-meta,
     pkg-oem-meta: Depend on oem-somerville-meta for somerville real meta.
-  * pkg-oem-meta: The dummy should not depend any kernel meta.
+  * pkg-oem-meta: The dummy should not depend on any kernel meta.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 07 May 2020 17:47:22 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 07 May 2020 19:22:38 +0800
 
 oem-scripts (0.28) bionic; urgency=medium
 
