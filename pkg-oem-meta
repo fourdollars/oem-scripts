@@ -126,11 +126,14 @@ git_repo = PREFIX + '/' + brand + '/+git/oem-' + codename + '-projects-meta'
 
 
 def generate_debian_package(version, dummy=False, real=False):
+    extra = ''
     if args.kernel == 'default':
-        extra = ', linux-generic-hwe-20.04'
+        if real:
+            extra = ', linux-generic-hwe-20.04'
         flavour = 'default'
     elif args.kernel == 'oem':
-        extra = ', linux-oem-20.04'
+        if real:
+            extra = ', linux-oem-20.04'
         flavour = 'oem'
 
     if group:
