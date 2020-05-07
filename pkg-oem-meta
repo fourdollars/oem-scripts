@@ -69,13 +69,13 @@ if codename == 'somerville':
     parser.add_argument('bios_id', nargs='+', help="BIOS ID")
     parser.add_argument('-p', '--platform', help="platform tag", required=True)
 elif codename == 'stella':
-    parser.add_argument('-o', '--oem', help="OEM-codename", required=True)
+    parser.add_argument('-g', '--group', help="OEM-group", required=True)
     parser.add_argument('-p', '--platform', help="platform-codename",
                         required=True)
     parser.add_argument('sd_id', nargs='+',
                         help="subsystem device ID, such as 0962")
 elif codename == 'sutton':
-    parser.add_argument('-o', '--oem', help="OEM-codename", required=True)
+    parser.add_argument('-g', '--group', help="OEM-group", required=True)
     parser.add_argument('-p', '--platform', help="platform-codename",
                         required=True)
     parser.add_argument('bios_ver', nargs='+',
@@ -92,7 +92,7 @@ version = versions[series].split(' ')[0]
 
 # Sanity check
 if codename == 'somerville':
-    oem = ''
+    group = ''
     if args.platform.startswith("fossa-"):
         raise Exception('Please remove fossa- prefix from the platform name.')
     for bios_id in args.bios_id:
@@ -100,20 +100,20 @@ if codename == 'somerville':
             raise Exception('Invalid BIOS ID: {%s}' % bios_id)
     meta = 'oem-' + codename + '-' + platform + '-meta'
 elif codename == 'stella':
-    oem = args.oem.lower()
+    group = args.group.lower()
     for sd_id in args.sd_id:
         if not re.match('[0-9a-fA-F]{4}$', sd_id):
             raise Exception('Invalid subsystem device ID: {%s}' % sd_id)
-    meta = 'oem-' + codename + '.' + oem + '-' + platform + '-meta'
-    Codename = Codename + ' ' + oem.title()
+    meta = 'oem-' + codename + '.' + group + '-' + platform + '-meta'
+    Codename = Codename + ' ' + group.title()
 elif codename == 'sutton':
-    oem = args.oem.lower()
+    group = args.group.lower()
     for bios_ver in args.bios_ver:
         if (not re.match('[0-9a-zA-Z]{3}$', bios_ver)) and \
            (not re.match('bvn[0-9a-zA-Z]+:bvr[0-9a-zA-Z]{3}$', bios_ver)):
             raise Exception('Invalid BIOS version: {%s}' % bios_ver)
-    meta = 'oem-' + codename + '.' + oem + '-' + platform + '-meta'
-    Codename = Codename + ' ' + oem.title()
+    meta = 'oem-' + codename + '.' + group + '-' + platform + '-meta'
+    Codename = Codename + ' ' + group.title()
 
 if os.path.exists(meta):
     raise Exception(meta + ' already exists. Please remove or rename it.')
@@ -126,20 +126,28 @@ git_repo = PREFIX + '/' + brand + '/+git/oem-' + codename + '-projects-meta'
 
 
 def generate_debian_package(version, dummy=False, real=False):
+    extra = ''
     if args.kernel == 'default':
-        extra = ', linux-generic-hwe-20.04'
+        if real:
+            extra = ', linux-generic-hwe-20.04'
         flavour = 'default'
     elif args.kernel == 'oem':
-        extra = ', linux-oem-20.04'
+        if real:
+            extra = ', linux-oem-20.04'
         flavour = 'oem'
 
-    prefix = oem and oem + '-' or oem
-    infix = oem and '.' + oem or oem
+    if group:
+        prefix = group + '-'
+        infix = '.' + group
+        platform_archive = codename + infix
+    else:
+        prefix = ''
+        infix = ''
+        platform_archive = codename + '-' + platform
 
     if dummy:
         version = version + "~ubuntu1"
         branch = prefix + platform + '-' + series + '-ubuntu'
-        extra = ''
         if args.public_bug:
             lp_bug = f" (LP: #{args.public_bug})"
         else:
@@ -153,6 +161,8 @@ def generate_debian_package(version, dummy=False, real=False):
             lp_bug = f" (LP: #{args.private_bug})"
         else:
             lp_bug = ""
+        if codename == 'somerville':
+            extra = extra + ', oem-somerville-meta'
 
     git_abbr = f"https://git.launchpad.net/{git_repo} -b {branch}"
     git_browser = f"https://code.launchpad.net/{git_repo}/+ref/{branch}"
@@ -162,8 +172,10 @@ def generate_debian_package(version, dummy=False, real=False):
     source_file = "oem-%s-%s-meta.list" % (codename + infix, platform)
     archive = 'archive.canonical.com'
     source_list = f"""\
-deb http://{brand}.{archive}/ {series} {codename + infix}-{platform}
-# deb-src http://{brand}.{archive}/ {series} {codename + infix}-{platform}
+deb http://{brand}.{archive}/ {series} {codename}
+# deb-src http://{brand}.{archive}/ {series} {codename}
+deb http://{brand}.{archive}/ {series} {platform_archive}
+# deb-src http://{brand}.{archive}/ {series} {platform_archive}
 """
 
     with open(source_file, 'w') as f:

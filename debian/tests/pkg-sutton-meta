@@ -7,14 +7,16 @@ IFS=$'\n\t'
 export DEBFULLNAME="Commercial Engineering"
 export DEBEMAIL="commercial-engineering@canonical.com"
 
-pkg-sutton-meta --public-bug 123456 --private-bug 1874177 -s focal -k oem -o Newell -p AdaM N2U bvnLENOVo:bvrN2o
+pkg-sutton-meta --public-bug 123456 --private-bug 1874177 -s focal -k oem -g Newell -p AdaM N2U bvnLENOVo:bvrN2o
 
 cd oem-sutton.newell-adam-meta || exit 1
 
 git checkout newell-adam-focal-ubuntu
 
-grep "deb http://lenovo.archive.canonical.com/ focal sutton.newell-adam" oem-sutton.newell-adam-meta.list
-grep "# deb-src http://lenovo.archive.canonical.com/ focal sutton.newell-adam" oem-sutton.newell-adam-meta.list
+grep "^deb http://lenovo.archive.canonical.com/ focal sutton$" oem-sutton.newell-adam-meta.list
+grep "^# deb-src http://lenovo.archive.canonical.com/ focal sutton$" oem-sutton.newell-adam-meta.list
+grep "^deb http://lenovo.archive.canonical.com/ focal sutton.newell$" oem-sutton.newell-adam-meta.list
+grep "^# deb-src http://lenovo.archive.canonical.com/ focal sutton.newell$" oem-sutton.newell-adam-meta.list
 
 grep "oem-sutton.newell-adam-meta (20.04~ubuntu1) focal; urgency=medium" debian/changelog
 grep "\* Meta package for Sutton Newell Adam." debian/changelog
@@ -33,8 +35,10 @@ grep "alias dmi:\*bvnLENOVO:bvrN2O\* meta oem-sutton.newell-adam-meta" debian/mo
 
 git checkout newell-adam-focal-oem
 
-grep "deb http://lenovo.archive.canonical.com/ focal sutton.newell-adam" oem-sutton.newell-adam-meta.list
-grep "# deb-src http://lenovo.archive.canonical.com/ focal sutton.newell-adam" oem-sutton.newell-adam-meta.list
+grep "^deb http://lenovo.archive.canonical.com/ focal sutton$" oem-sutton.newell-adam-meta.list
+grep "^# deb-src http://lenovo.archive.canonical.com/ focal sutton$" oem-sutton.newell-adam-meta.list
+grep "^deb http://lenovo.archive.canonical.com/ focal sutton.newell$" oem-sutton.newell-adam-meta.list
+grep "^# deb-src http://lenovo.archive.canonical.com/ focal sutton.newell$" oem-sutton.newell-adam-meta.list
 
 grep "oem-sutton.newell-adam-meta (20.04ubuntu1) focal; urgency=medium" debian/changelog
 grep "\* Meta package for Sutton Newell Adam." debian/changelog

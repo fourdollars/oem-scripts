@@ -13,15 +13,17 @@ cd oem-somerville-three-eyed-raven-meta || exit 1
 
 git checkout three-eyed-raven-focal-ubuntu
 
-grep "deb http://dell.archive.canonical.com/ focal somerville-three-eyed-raven" oem-somerville-three-eyed-raven-meta.list
-grep "# deb-src http://dell.archive.canonical.com/ focal somerville-three-eyed-raven" oem-somerville-three-eyed-raven-meta.list
+grep "^deb http://dell.archive.canonical.com/ focal somerville\$" oem-somerville-three-eyed-raven-meta.list
+grep "^# deb-src http://dell.archive.canonical.com/ focal somerville\$" oem-somerville-three-eyed-raven-meta.list
+grep "^deb http://dell.archive.canonical.com/ focal somerville-three-eyed-raven\$" oem-somerville-three-eyed-raven-meta.list
+grep "^# deb-src http://dell.archive.canonical.com/ focal somerville-three-eyed-raven\$" oem-somerville-three-eyed-raven-meta.list
 
 grep "oem-somerville-three-eyed-raven-meta (20.04~ubuntu1) focal; urgency=medium" debian/changelog
 grep "Meta package for Somerville Three-Eyed-Raven." debian/changelog
 grep '(LP: #1868254)' debian/changelog
 
 grep "Source: oem-somerville-three-eyed-raven-meta" debian/control
-grep "Depends: \${misc:Depends}, ubuntu-oem-keyring" debian/control
+grep "Depends: \${misc:Depends}, ubuntu-oem-keyring$" debian/control
 grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
 grep -v "Package: oem-somerville-factory-three-eyed-raven-meta" debian/control
 
@@ -31,15 +33,17 @@ grep "alias pci:\*sv00001028sd00000962\* meta oem-somerville-three-eyed-raven-me
 
 git checkout three-eyed-raven-focal-oem
 
-grep "deb http://dell.archive.canonical.com/ focal somerville-three-eyed-raven" oem-somerville-three-eyed-raven-meta.list
-grep "# deb-src http://dell.archive.canonical.com/ focal somerville-three-eyed-raven" oem-somerville-three-eyed-raven-meta.list
+grep "^deb http://dell.archive.canonical.com/ focal somerville\$" oem-somerville-three-eyed-raven-meta.list
+grep "^# deb-src http://dell.archive.canonical.com/ focal somerville\$" oem-somerville-three-eyed-raven-meta.list
+grep "^deb http://dell.archive.canonical.com/ focal somerville-three-eyed-raven\$" oem-somerville-three-eyed-raven-meta.list
+grep "^# deb-src http://dell.archive.canonical.com/ focal somerville-three-eyed-raven\$" oem-somerville-three-eyed-raven-meta.list
 
 grep "oem-somerville-three-eyed-raven-meta (20.04ubuntu1) focal; urgency=medium" debian/changelog
 grep "Meta package for Somerville Three-Eyed-Raven." debian/changelog
 grep '(LP: #123456)' debian/changelog
 
 grep "Source: oem-somerville-three-eyed-raven-meta" debian/control
-grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-oem-20.04" debian/control
+grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-oem-20.04, oem-somerville-meta$" debian/control
 grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
 grep "Package: oem-somerville-factory-three-eyed-raven-meta" debian/control
 
