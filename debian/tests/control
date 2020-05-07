@@ -1,2 +1,2 @@
-Tests: pkg-somerville-meta, launchpad-api, get-private-ppa
+Tests: pkg-somerville-meta, pkg-sutton-meta launchpad-api, get-private-ppa
 Depends: @

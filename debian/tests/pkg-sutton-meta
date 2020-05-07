@@ -1,0 +1,51 @@
+#!/bin/bash
+
+exec 2>&1
+set -euo pipefail
+IFS=$'\n\t'
+
+export DEBFULLNAME="Commercial Engineering"
+export DEBEMAIL="commercial-engineering@canonical.com"
+
+pkg-sutton-meta --public-bug 123456 --private-bug 1874177 -s focal -k oem -o Newell -p AdaM N2U bvnLENOVo:bvrN2O
+
+cd oem-sutton.newell-adam-meta || exit 1
+
+git checkout newell-adam-focal-ubuntu
+
+grep "deb http://lenovo.archive.canonical.com/ focal sutton.newell-adam" oem-sutton.newell-adam-meta.list
+grep "# deb-src http://lenovo.archive.canonical.com/ focal sutton.newell-adam" oem-sutton.newell-adam-meta.list
+
+grep "oem-sutton.newell-adam-meta (20.04~ubuntu1) focal; urgency=medium" debian/changelog
+grep "* Meta package for Sutton Newell Adam." debian/changelog
+grep '(LP: #123456)' debian/changelog
+
+grep "Source: oem-sutton.newell-adam-meta" debian/control
+grep "Package: oem-sutton.newell-adam-meta" debian/control
+grep -v "Package: oem-sutton.newell-factory-adam-meta" debian/control
+grep "Depends: \${misc:Depends}, ubuntu-oem-keyring" debian/control
+grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
+
+grep "Upstream-Name: oem-sutton.newell-adam-meta" debian/copyright
+
+grep "alias dmi:\*bvnLENOVO:bvrN2U\* meta oem-sutton.newell-adam-meta" debian/modaliases
+grep "alias dmi:\*bvnLENOVO:bvrN2O\* meta oem-sutton.newell-adam-meta" debian/modaliases
+
+git checkout newell-adam-focal-oem
+
+grep "deb http://lenovo.archive.canonical.com/ focal sutton.newell-adam" oem-sutton.newell-adam-meta.list
+grep "# deb-src http://lenovo.archive.canonical.com/ focal sutton.newell-adam" oem-sutton.newell-adam-meta.list
+
+grep "oem-sutton.newell-adam-meta (20.04ubuntu1) focal; urgency=medium" debian/changelog
+grep "* Meta package for Sutton Newell Adam." debian/changelog
+grep '(LP: #1874177)' debian/changelog
+
+grep "Source: oem-sutton.newell-adam-meta" debian/control
+grep "Package: oem-sutton.newell-factory-adam-meta" debian/control
+grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-oem-20.04" debian/control
+grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
+
+grep "Upstream-Name: oem-sutton.newell-adam-meta" debian/copyright
+
+grep "alias dmi:\*bvnLENOVO:bvrN2U\* meta oem-sutton.newell-adam-meta" debian/modaliases
+grep "alias dmi:\*bvnLENOVO:bvrN2O\* meta oem-sutton.newell-adam-meta" debian/modaliases
