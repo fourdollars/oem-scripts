@@ -145,7 +145,6 @@ def generate_debian_package(version, dummy=False, real=False):
     if dummy:
         version = version + "~ubuntu1"
         branch = prefix + platform + '-' + series + '-ubuntu'
-        extra = ''
         if args.public_bug:
             lp_bug = f" (LP: #{args.public_bug})"
         else:
@@ -159,6 +158,8 @@ def generate_debian_package(version, dummy=False, real=False):
             lp_bug = f" (LP: #{args.private_bug})"
         else:
             lp_bug = ""
+        if codename == 'somerville':
+            extra = extra + ', oem-somerville-meta'
 
     git_abbr = f"https://git.launchpad.net/{git_repo} -b {branch}"
     git_browser = f"https://code.launchpad.net/{git_repo}/+ref/{branch}"

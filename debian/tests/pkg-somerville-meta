@@ -23,7 +23,7 @@ grep "Meta package for Somerville Three-Eyed-Raven." debian/changelog
 grep '(LP: #1868254)' debian/changelog
 
 grep "Source: oem-somerville-three-eyed-raven-meta" debian/control
-grep "Depends: \${misc:Depends}, ubuntu-oem-keyring" debian/control
+grep "Depends: \${misc:Depends}, ubuntu-oem-keyring$" debian/control
 grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
 grep -v "Package: oem-somerville-factory-three-eyed-raven-meta" debian/control
 
@@ -43,7 +43,7 @@ grep "Meta package for Somerville Three-Eyed-Raven." debian/changelog
 grep '(LP: #123456)' debian/changelog
 
 grep "Source: oem-somerville-three-eyed-raven-meta" debian/control
-grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-oem-20.04" debian/control
+grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-oem-20.04, oem-somerville-meta$" debian/control
 grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
 grep "Package: oem-somerville-factory-three-eyed-raven-meta" debian/control
 

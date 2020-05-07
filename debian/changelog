@@ -9,6 +9,8 @@ oem-scripts (0.29) UNRELEASED; urgency=medium
   * debian/tests/pkg-somerville-meta,
     debian/tests/pkg-sutton-meta,
     pkg-oem-meta: Use group name and archive, and add common source list.
+  * debian/tests/pkg-somerville-meta,
+    pkg-oem-meta: Depend on oem-somerville-meta for somerville real meta.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 07 May 2020 17:47:22 +0800
 
