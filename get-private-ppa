@@ -8,12 +8,14 @@ if ! has_oem_scripts_config; then
     exit 1
 fi
 
-PPA="$1"
-GROUP=$(echo "${PPA//[:\/]/ }" | awk '{print $2}')
-ARCHIVE=$(echo "${PPA//[:\/]/ }" | awk '{print $3}')
-
 username=$(launchpad-api get devel/people/+me | jq -r .name)
-URL=$(launchpad-api post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=https://api.launchpad.net/devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .)
-KEY=$(launchpad-api get "devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .signing_key_fingerprint)
 
-echo "$URL" "$KEY"
+for ppa in "$@"; do
+    if [[ "$ppa" =~ ^ppa: ]]; then
+        GROUP=$(echo "${ppa//[:\/]/ }" | awk '{print $2}')
+        ARCHIVE=$(echo "${ppa//[:\/]/ }" | awk '{print $3}')
+        URL=$(launchpad-api post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=https://api.launchpad.net/devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .)
+        KEY=$(launchpad-api get "devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .signing_key_fingerprint)
+        echo "$URL" "$KEY"
+    fi
+done
