@@ -262,12 +262,12 @@ License: GPL-3
                     if result is None:
                         continue
                     else:
-                        bios_vendor = result.group(1)
-                        bios_ids = result.group(2)
+                        bios_vendor = result.group(1).upper()
+                        bios_ids = result.group(2).upper()
                 else:
                     # Set the default bios vendor for Lenovo
                     bios_vendor = 'LENOVO'
-                    bios_ids = result.group()
+                    bios_ids = result.group().upper()
 
                 f.write("alias dmi:*bvn{0}:bvr{1}* meta {2}\n"
                         .format(bios_vendor, bios_ids, meta))
