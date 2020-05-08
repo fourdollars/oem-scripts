@@ -11,7 +11,7 @@ else
     oauth_token_secret=$(read_oem_scripts_config oauth_token_secret)
 fi
 
-PPA=(ppa:oem-solutions-group/ppa)
+PPA=(ppa:oem-solutions-group/ppa "$@")
 
 LINE=()
 while read -r line; do

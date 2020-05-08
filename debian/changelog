@@ -1,3 +1,11 @@
+oem-scripts (0.32) UNRELEASED; urgency=medium
+
+  * autopkgtest-oem-scripts-auto,
+    debian/tests/autopkgtest-oem-scripts-auto,
+    debian/tests/control: Add a autopkgtest case.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 08 May 2020 14:22:52 +0800
+
 oem-scripts (0.31) bionic; urgency=medium
 
   * autopkgtest-oem-scripts-auto: Only support a POSIX shell script.

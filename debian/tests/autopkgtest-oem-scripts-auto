@@ -1,0 +1,4 @@
+#!/bin/bash
+
+autopkgtest-oem-scripts-auto > auto.sh
+dash -n auto.sh
