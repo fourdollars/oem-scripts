@@ -17,7 +17,7 @@ URL=$(echo "$RET" | awk '{print $1}')
 KEY=$(echo "$RET" | awk '{print $2}')
 
 cat <<ENDLINE
-#!/bin/bash
+#!/bin/sh
 
 export LC_ALL=C.UTF-8
 export LANG=C.UTF-8
