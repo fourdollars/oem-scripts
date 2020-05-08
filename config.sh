@@ -2,9 +2,9 @@
 
 CONFIG="$HOME/.config/oem-scripts/config.ini"
 
-has_oem_scripts_config ()
+valid_oem_scripts_config ()
 {
-    if [ -f "$CONFIG" ]; then
+    if [ -f "$CONFIG" ] && grep "^oauth_consumer_key = " "$CONFIG" >/dev/null 2>&1; then
         true
     else
         false
@@ -13,7 +13,7 @@ has_oem_scripts_config ()
 
 read_oem_scripts_config ()
 {
-    has_oem_scripts_config && grep ^"$1 = " "$CONFIG" | awk '{print $3}'
+    grep ^"$1 = " "$CONFIG" | cut -d ' ' -f 3-
 }
 
 write_oem_scripts_config ()

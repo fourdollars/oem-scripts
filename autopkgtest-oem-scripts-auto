@@ -3,12 +3,13 @@
 # shellcheck source=config.sh
 source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
 
-if ! has_oem_scripts_config; then
+if ! valid_oem_scripts_config; then
     echo "Please execute \`launchpad-api\` to get the token for Launchpad API first."
     exit 1
 else
     oauth_token=$(read_oem_scripts_config oauth_token)
     oauth_token_secret=$(read_oem_scripts_config oauth_token_secret)
+    oauth_consumer_key=$(read_oem_scripts_config oauth_consumer_key)
 fi
 
 PPA=(ppa:oem-solutions-group/ppa "$@")
@@ -56,6 +57,7 @@ HOME="/home/\$(grep 1000:1000 /etc/passwd | awk -F: '{print \$1}')"
 mkdir -p "\$HOME/.config/oem-scripts"
 echo "oauth_token = $oauth_token" > "\$HOME/.config/oem-scripts/config.ini"
 echo "oauth_token_secret = $oauth_token_secret" >> "\$HOME/.config/oem-scripts/config.ini"
+echo "oauth_consumer_key = $oauth_consumer_key" >> "\$HOME/.config/oem-scripts/config.ini"
 
 sudo apt-get update
 ENDLINE

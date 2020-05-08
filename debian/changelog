@@ -2,6 +2,10 @@ oem-scripts (0.34) UNRELEASED; urgency=medium
 
   * config.sh,
     launchpad-api: Make it work System-wide.
+  * autopkgtest-oem-scripts-auto,
+    config.sh,
+    get-private-ppa,
+    launchpad-api: Avoid the system-wide token transition problem.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 08 May 2020 18:06:28 +0800
 
