@@ -1,4 +1,4 @@
-oem-scripts (0.30) UNRELEASED; urgency=medium
+oem-scripts (0.31) bionic; urgency=medium
 
   * autopkgtest-oem-scripts-auto: Only support a POSIX shell script.
   * autopkgtest-oem-scripts-auto,
@@ -6,7 +6,7 @@ oem-scripts (0.30) UNRELEASED; urgency=medium
     get-private-ppa: Simulate the source list made by add-apt-repository.
   * autopkgtest-oem-scripts-auto: Make it easier to use multiple PPA.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 08 May 2020 10:54:16 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 08 May 2020 13:09:26 +0800
 
 oem-scripts (0.30) bionic; urgency=medium
 
