@@ -22,7 +22,7 @@ write_oem_scripts_config ()
         mkdir -p "$HOME/.config/oem-scripts"
         touch "$CONFIG"
     fi
-    if [ -z "$(read_config "$1")" ]; then
+    if [ -z "$(read_oem_scripts_config "$1")" ]; then
         echo "$1 = $2" >> "$CONFIG"
     else
         sed -i "s/$1 = .*/$1 = $2/" "$CONFIG"

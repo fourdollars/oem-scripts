@@ -2,7 +2,7 @@
 # https://help.launchpad.net/API/SigningRequests
 # https://api.launchpad.net/
 
-oauth_consumer_key=${oauth_consumer_key:=oem-scripts}
+oauth_consumer_key=${oauth_consumer_key:="System-wide: oem-scripts ($(hostname))"}
 
 # shellcheck source=config.sh
 source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
@@ -19,7 +19,7 @@ get_token()
     eval "${oauth/*&/}"
     echo "oauth_token_secret=${oauth_token_secret:=}"
 
-    echo "Please open https://launchpad.net/+authorize-token?oauth_token=$oauth_token to authorize the token."
+    echo "Please open https://launchpad.net/+authorize-token?oauth_token=$oauth_token&allow_permission=DESKTOP_INTEGRATION to authorize the token."
 
     while :; do
         body=$(http --ignore-stdin --form post https://launchpad.net/+access-token oauth_token="$oauth_token" oauth_consumer_key="$oauth_consumer_key" oauth_signature_method=PLAINTEXT oauth_signature="&$oauth_token_secret")
