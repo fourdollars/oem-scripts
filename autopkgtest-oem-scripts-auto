@@ -55,7 +55,8 @@ create_source_list "${LINE[*]}"
 
 HOME="/home/\$(grep 1000:1000 /etc/passwd | awk -F: '{print \$1}')"
 mkdir -p "\$HOME/.config/oem-scripts"
-echo "oauth_token = $oauth_token" > "\$HOME/.config/oem-scripts/config.ini"
+echo "[oem-scripts]" > "\$HOME/.config/oem-scripts/config.ini"
+echo "oauth_token = $oauth_token" >> "\$HOME/.config/oem-scripts/config.ini"
 echo "oauth_token_secret = $oauth_token_secret" >> "\$HOME/.config/oem-scripts/config.ini"
 echo "oauth_consumer_key = $oauth_consumer_key" >> "\$HOME/.config/oem-scripts/config.ini"
 
