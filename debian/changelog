@@ -1,6 +1,9 @@
 oem-scripts (0.30) UNRELEASED; urgency=medium
 
   * autopkgtest-oem-scripts-auto: Only support a POSIX shell script.
+  * autopkgtest-oem-scripts-auto,
+    debian/tests/get-private-ppa,
+    get-private-ppa: Simulate the source list made by add-apt-repository.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 08 May 2020 10:54:16 +0800
 
