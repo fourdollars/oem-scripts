@@ -1,8 +1,8 @@
-oem-scripts (0.33) UNRELEASED; urgency=medium
+oem-scripts (0.33) bionic; urgency=medium
 
   * get-private-ppa: Make it also support the public PPA.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 08 May 2020 16:35:56 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 08 May 2020 16:54:53 +0800
 
 oem-scripts (0.32) bionic; urgency=medium
 
