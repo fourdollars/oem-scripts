@@ -2,3 +2,4 @@
 
 autopkgtest-oem-scripts-auto > auto.sh
 dash -n auto.sh
+shellcheck auto.sh
