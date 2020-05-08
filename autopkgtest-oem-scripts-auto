@@ -11,11 +11,14 @@ else
     oauth_token_secret=$(read_oem_scripts_config oauth_token_secret)
 fi
 
-PPA="ppa:oem-solutions-group/ppa"
-RET=$(get-private-ppa $PPA)
-NAME=$(echo "$RET" | awk '{print $1}')
-URL=$(echo "$RET" | awk '{print $2}')
-KEY=$(echo "$RET" | awk '{print $3}')
+PPA=(ppa:oem-solutions-group/ppa)
+
+LINE=()
+while read -r line; do
+    LINE+=("$line")
+done < <(get-private-ppa "${PPA[@]}")
+
+IFS="|"
 
 cat <<ENDLINE
 #!/bin/sh
@@ -33,17 +36,21 @@ install_pkgs ()
     done
 }
 
-importkey()
-{
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-key "\$1"
-}
-
 install_pkgs gpg apt-transport-https
 
-importkey "$KEY"
+create_source_list ()
+{
+    echo "\$*" | tr "|" "\n" | while read -r line; do
+        NAME=\$(echo "\$line" | awk '{print \$1}')
+        URL=\$(echo "\$line" | awk '{print \$2}')
+        KEY=\$(echo "\$line" | awk '{print \$3}')
+        apt-key adv --keyserver keyserver.ubuntu.com --recv-key "\$KEY"
+        echo "deb \$URL \$(lsb_release -cs) main" > "/etc/apt/sources.list.d/\$NAME-\$(lsb_release -cs).list"
+        echo "# deb-src \$URL \$(lsb_release -cs) main" >> "/etc/apt/sources.list.d/\$NAME-\$(lsb_release -cs).list"
+    done
+}
 
-echo "deb $URL \$(lsb_release -cs) main" > "/etc/apt/sources.list.d/$NAME-\$(lsb_release -cs).list"
-echo "# deb-src $URL \$(lsb_release -cs) main" >> "/etc/apt/sources.list.d/$NAME-\$(lsb_release -cs).list"
+create_source_list "${LINE[*]}"
 
 HOME="/home/\$(grep 1000:1000 /etc/passwd | awk -F: '{print \$1}')"
 mkdir -p "\$HOME/.config/oem-scripts"
