@@ -14,4 +14,8 @@ if [ "$(echo "$RET" | awk '{print $3}')" != "7B85BB3BB81D9DAFF9F06250B52B913A410
     exit 1
 fi
 
+if [ "$(get-private-ppa ppa:canonical-kernel-team/ppa)" != "canonical-kernel-team-ubuntu-ppa http://ppa.launchpad.net/canonical-kernel-team/ppa/ubuntu 110E21D8B0E2A1F0243AF6820856F197B892ACEA" ]; then
+    exit 1
+fi
+
 exit

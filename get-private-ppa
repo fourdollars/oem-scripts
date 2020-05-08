@@ -14,7 +14,11 @@ for PPA in "$@"; do
     if [[ "$PPA" =~ ^ppa: ]]; then
         GROUP=$(echo "${PPA//[:\/]/ }" | awk '{print $2}')
         ARCHIVE=$(echo "${PPA//[:\/]/ }" | awk '{print $3}')
-        URL=$(launchpad-api post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=https://api.launchpad.net/devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .)
+        if [ "$(launchpad-api get "devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .private)" = "true" ]; then
+            URL=$(launchpad-api post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=https://api.launchpad.net/devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .)
+        else
+            URL="http://ppa.launchpad.net/$GROUP/$ARCHIVE/ubuntu"
+        fi
         KEY=$(launchpad-api get "devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .signing_key_fingerprint)
         echo "$GROUP-ubuntu-$ARCHIVE" "$URL" "$KEY"
     fi
