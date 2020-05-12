@@ -1,3 +1,10 @@
+oem-scripts (0.37) UNRELEASED; urgency=medium
+
+  [ Bin Li]
+  * pkg-oem-meta: Fix the information in parameter
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 12 May 2020 16:44:55 +0800
+
 oem-scripts (0.36) bionic; urgency=medium
 
   * autopkgtest-oem-scripts-auto,
