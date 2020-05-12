@@ -29,7 +29,7 @@ elif program_name == 'pkg-stella-meta':
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
         epilog=f"Ex. {program_name} -s focal -k oem"
-        " -o cmit -p beedrill 8594")
+        " -g cmit -p beedrill 8594")
 elif program_name == 'pkg-sutton-meta':
     codename = 'sutton'
     Codename = codename.title()
@@ -38,7 +38,7 @@ elif program_name == 'pkg-sutton-meta':
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
         epilog=f"Ex. {program_name} -s focal -k oem"
-        " -o bachman -p banaing S03")
+        " -g bachman -p banaing S03")
 else:
     raise Exception('This program can not be executed.')
 
