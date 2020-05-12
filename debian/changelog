@@ -1,4 +1,4 @@
-oem-scripts (0.37) UNRELEASED; urgency=medium
+oem-scripts (0.37) bionic; urgency=medium
 
   [ Bin Li]
   * pkg-oem-meta: Fix the information in parameter
@@ -7,7 +7,7 @@ oem-scripts (0.37) UNRELEASED; urgency=medium
   * debian/tests/pkg-somerville-meta,
     pkg-oem-meta: Fix the wrong kernel option and add more tests for it.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 12 May 2020 16:54:19 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 12 May 2020 17:59:23 +0800
 
 oem-scripts (0.36) bionic; urgency=medium
 
