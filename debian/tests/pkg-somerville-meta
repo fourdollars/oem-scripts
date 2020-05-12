@@ -46,7 +46,22 @@ grep "Source: oem-somerville-three-eyed-raven-meta" debian/control
 grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-oem-20.04, oem-somerville-meta$" debian/control
 grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
 grep "Package: oem-somerville-factory-three-eyed-raven-meta" debian/control
+grep "Depends: \${misc:Depends}$" debian/control
 
 grep "Upstream-Name: oem-somerville-three-eyed-raven-meta" debian/copyright
 
 grep "alias pci:\*sv00001028sd00000962\* meta oem-somerville-three-eyed-raven-meta" debian/modaliases
+
+cd ..
+rm -fr oem-somerville-three-eyed-raven-meta
+
+pkg-somerville-meta --public-bug 1868254 --private-bug 123456 -s focal -k default -p three-eyed-raven 0962
+
+cd oem-somerville-three-eyed-raven-meta || exit 1
+
+git checkout three-eyed-raven-focal-ubuntu
+grep "XB-Ubuntu-OEM-Kernel-Flavour: default" debian/control
+
+git checkout three-eyed-raven-focal-oem
+grep "XB-Ubuntu-OEM-Kernel-Flavour: default" debian/control
+grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-generic-hwe-20.04, oem-somerville-meta$" debian/control

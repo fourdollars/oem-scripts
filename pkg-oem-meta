@@ -43,7 +43,7 @@ else:
     raise Exception('This program can not be executed.')
 
 parser.add_argument('-k', '--kernel',
-                    choices=['oem', 'kernel'],
+                    choices=['oem', 'default'],
                     default='oem',
                     help="Using different kernel flavour. [oem|default]\n"
                     "'oem' is for linux-oem-20.04.\n"
