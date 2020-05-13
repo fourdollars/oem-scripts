@@ -36,7 +36,7 @@ elif program_name == 'pkg-sutton-meta':
     codename = 'sutton'
     Codename = codename.title()
     brand = 'sutton'
-    git_repo_project = 'dell'
+    git_repo_project = 'sutton'
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
