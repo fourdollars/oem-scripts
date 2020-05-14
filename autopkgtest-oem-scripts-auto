@@ -28,11 +28,21 @@ export LC_ALL=C.UTF-8
 export LANG=C.UTF-8
 export LANGUAGE=C:
 
+set -eu
+
+# Created files should be readable by user (this script is called as root)
+umask 0022
+
+# avoid debconf hangs
+export DEBIAN_FRONTEND=noninteractive
+
+root=\${1:-/}
+
 install_pkgs ()
 {
     for pkg in "\$@"; do
-        if ! dpkg-query -W -f='\${Status}\n' "\$pkg" | grep "install ok installed"; then
-            apt-get install "\$pkg" --yes
+        if ! chroot "\$root" dpkg-query -W -f="\\\${Status}\n" "\$pkg" | grep "install ok installed"; then
+            chroot "\$root" apt-get install "\$pkg" --yes
         fi
     done
 }
@@ -45,22 +55,23 @@ create_source_list ()
         NAME=\$(echo "\$line" | awk '{print \$1}')
         URL=\$(echo "\$line" | awk '{print \$2}')
         KEY=\$(echo "\$line" | awk '{print \$3}')
-        apt-key adv --keyserver keyserver.ubuntu.com --recv-key "\$KEY"
-        echo "deb \$URL \$(lsb_release -cs) main" > "/etc/apt/sources.list.d/\$NAME-\$(lsb_release -cs).list"
-        echo "# deb-src \$URL \$(lsb_release -cs) main" >> "/etc/apt/sources.list.d/\$NAME-\$(lsb_release -cs).list"
+        chroot "\$root" apt-key adv --keyserver keyserver.ubuntu.com --recv-key "\$KEY"
+        echo "deb \$URL \$(chroot "\$root" lsb_release -cs) main" > "\$root/etc/apt/sources.list.d/\$NAME-\$(chroot "\$root" lsb_release -cs).list"
+        echo "# deb-src \$URL \$(chroot "\$root" lsb_release -cs) main" >> "\$root/etc/apt/sources.list.d/\$NAME-\$(chroot "\$root" lsb_release -cs).list"
     done
 }
 
 create_source_list "${LINE[*]}"
 
-HOME="/home/\$(grep 1000:1000 /etc/passwd | awk -F: '{print \$1}')"
-mkdir -p "\$HOME/.config/oem-scripts"
-cat > "\$HOME/.config/oem-scripts/config.ini" <<END
+HOME="/home/\$(grep 1000:1000 "\$root/etc/passwd" | awk -F: '{print \$1}')"
+mkdir -p "\$root\$HOME/.config/oem-scripts"
+cat > "\$root\$HOME/.config/oem-scripts/config.ini" <<END
 [oem-scripts]
 oauth_token = $oauth_token
 oauth_token_secret = $oauth_token_secret
 oauth_consumer_key = $oauth_consumer_key
 END
 
-sudo apt-get update
+chroot "\$root" apt-get update
+chroot "\$root" chown 1000.1000 -R "\$HOME"
 ENDLINE
