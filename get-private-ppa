@@ -11,9 +11,9 @@ source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
 cur_dir=$(cd "$(dirname "$0")"; pwd)
 
 launchpad_api="${cur_dir}/launchpad-api"
-
-if [ ! -e /usr/bin/jq ]; then
-    echo "Cound't find /usr/bin/jq, please install \`jq\` package."
+jq_file=$(which jq)
+if [ "${jq_file}" = "" ] || [ ! -x ${jq_file} ]; then
+    echo "Please install \`jq\` package!"
     exit 1
 fi
 

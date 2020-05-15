@@ -14,8 +14,9 @@ oauth_consumer_key=${oauth_consumer_key:="System-wide: $(lsb_release -is) (oem-s
 # shellcheck source=config.sh
 source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
 
-if [ ! -e /usr/bin/http ]; then
-    echo "Cound't find /usr/bin/http, please install \`httpie\` package."
+http_file=$(which http)
+if [ "${http_file}" = "" ] || [ ! -x ${http_file} ]; then
+    echo "Please install \`httpie\` package!"
     exit 1
 fi
 
