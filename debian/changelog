@@ -1,4 +1,4 @@
-oem-scripts (0.39) UNRELEASED; urgency=medium
+oem-scripts (0.39) bionic; urgency=medium
 
   [ Bin Li]
   * autopkgtest-oem-scripts-auto
