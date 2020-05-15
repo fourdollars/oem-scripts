@@ -1,11 +1,23 @@
 #!/bin/bash
 # https://help.launchpad.net/API/SigningRequests
 # https://api.launchpad.net/
+# Usage:
+#  launchpad-api get devel/people/+me
+#  launchpad-api get devel/people/+me ws.op==getArchiveSubscriptionURLs
+# NOTE:
+# When it return "HTTP/1.1 401 Unauthorized" and no URL just show "You need to be logged in to view this URL."
+# Please remove the config.ini and try again.
+# $ rm ~/.config/oem-scripts/config.ini
 
 oauth_consumer_key=${oauth_consumer_key:="System-wide: $(lsb_release -is) (oem-scripts $(hostname))"}
 
 # shellcheck source=config.sh
 source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
+
+if [ ! -e /usr/bin/http ]; then
+    echo "Cound't find /usr/bin/http, please install \`httpie\` package."
+    exit 1
+fi
 
 get_token()
 {
