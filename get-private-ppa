@@ -1,25 +1,39 @@
 #!/bin/bash
+# Usage:
+#  get-private-ppa ppa:oem-archive/somerville
+#  get-private-ppa ppa:oem-archive/sutton
+#  get-private-ppa ppa:oem-solutions-group/ppa
 
 # shellcheck source=config.sh
 source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
+
+# Get the path of get-private-ppa, it's same path with launchpad-api
+cur_dir=$(cd "$(dirname "$0")"; pwd)
+
+launchpad_api="${cur_dir}/launchpad-api"
+jq_file=$(which jq)
+if [ "${jq_file}" = "" ] || [ ! -x ${jq_file} ]; then
+    echo "Please install \`jq\` package!"
+    exit 1
+fi
 
 if ! valid_oem_scripts_config; then
     echo "Please execute \`launchpad-api\` to get the token for Launchpad API first."
     exit 1
 fi
 
-username=$(launchpad-api get devel/people/+me | jq -r .name)
+username=$(${launchpad_api} get devel/people/+me | jq -r .name)
 
 for PPA in "$@"; do
     if [[ "$PPA" =~ ^ppa: ]]; then
         GROUP=$(echo "${PPA//[:\/]/ }" | awk '{print $2}')
         ARCHIVE=$(echo "${PPA//[:\/]/ }" | awk '{print $3}')
-        if [ "$(launchpad-api get "devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .private)" = "true" ]; then
-            URL=$(launchpad-api post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=https://api.launchpad.net/devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .)
+        if [ "$(${launchpad_api} get "devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .private)" = "true" ]; then
+            URL=$(${launchpad_api} post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=https://api.launchpad.net/devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .)
         else
             URL="http://ppa.launchpad.net/$GROUP/$ARCHIVE/ubuntu"
         fi
-        KEY=$(launchpad-api get "devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .signing_key_fingerprint)
+        KEY=$(${launchpad_api} get "devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .signing_key_fingerprint)
         echo "$GROUP-ubuntu-$ARCHIVE" "$URL" "$KEY"
     fi
 done
