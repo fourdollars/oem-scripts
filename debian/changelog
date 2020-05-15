@@ -1,3 +1,13 @@
+oem-scripts (0.39) UNRELEASED; urgency=medium
+
+  [ Bin Li]
+  * autopkgtest-oem-scripts-auto
+    get-private-ppa,
+    launchpad-api: Add the usage in scripts and use absolute path to make them
+    work without the installation.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 15 May 2020 15:58:17 +0800
+
 oem-scripts (0.38) bionic; urgency=medium
 
   * autopkgtest-oem-scripts-auto: Make it able to be used by autopkgtest-build-qemu.
