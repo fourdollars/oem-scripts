@@ -1,4 +1,4 @@
-oem-scripts (0.38) UNRELEASED; urgency=medium
+oem-scripts (0.38) bionic; urgency=medium
 
   * autopkgtest-oem-scripts-auto: Make it able to be used by autopkgtest-build-qemu.
 
