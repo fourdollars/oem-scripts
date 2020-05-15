@@ -1,3 +1,9 @@
+oem-scripts (0.38) UNRELEASED; urgency=medium
+
+  * autopkgtest-oem-scripts-auto: Make it able to be used by autopkgtest-build-qemu.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 14 May 2020 22:02:22 +0800
+
 oem-scripts (0.37) bionic; urgency=medium
 
   [ Bin Li]
