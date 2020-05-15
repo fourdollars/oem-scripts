@@ -1,7 +1,13 @@
 #!/bin/bash
+# Usage:
+#  autopkgtest-oem-scripts-auto > auto.sh && chmod +x auto.sh
 
 # shellcheck source=config.sh
 source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
+
+# Get the path of autopkgtest-oem-scripts-auto, it's same path with launchpad-api
+cur_dir=$(cd "$(dirname "$0")"; pwd)
+get_private_ppa="${cur_dir}/get-private-ppa"
 
 if ! valid_oem_scripts_config; then
     echo "Please execute \`launchpad-api\` to get the token for Launchpad API first."
@@ -17,7 +23,7 @@ PPA=(ppa:oem-solutions-group/ppa "$@")
 LINE=()
 while read -r line; do
     LINE+=("$line")
-done < <(get-private-ppa "${PPA[@]}")
+done < <(${get_private_ppa} "${PPA[@]}")
 
 IFS="|"
 
