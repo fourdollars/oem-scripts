@@ -16,6 +16,7 @@ if program_name == 'pkg-somerville-meta':
     codename = 'somerville'
     Codename = codename.title()
     brand = 'dell'
+    git_repo_project = 'dell'
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
@@ -25,6 +26,7 @@ elif program_name == 'pkg-stella-meta':
     codename = 'stella'
     Codename = codename.title()
     brand = 'hp'
+    git_repo_project = 'stella'
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
@@ -34,11 +36,12 @@ elif program_name == 'pkg-sutton-meta':
     codename = 'sutton'
     Codename = codename.title()
     brand = 'lenovo'
+    git_repo_project = 'sutton'
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
         epilog=f"Ex. {program_name} -s focal -k oem"
-        " -g bachman -p banaing S03")
+        " -g bachman -p banaing S08")
 else:
     raise Exception('This program can not be executed.')
 
@@ -80,7 +83,7 @@ elif codename == 'sutton':
                         required=True)
     parser.add_argument('bios_ver', nargs='+',
                         help="First three chars in bios version, "
-                        + "such as S30 or bvnLENOVO:bvrS30")
+                        + "such as S08 or bvnLENOVO:bvrS08")
 args = parser.parse_args()
 
 platform = args.platform.lower()
@@ -122,7 +125,7 @@ os.mkdir(meta)
 os.chdir(meta)
 
 PREFIX = '~oem-solutions-engineers'
-git_repo = PREFIX + '/' + brand + '/+git/oem-' + codename + '-projects-meta'
+git_repo = PREFIX + '/' + git_repo_project + '/+git/oem-' + codename + '-projects-meta'
 
 
 def generate_debian_package(version, dummy=False, real=False):
@@ -137,7 +140,7 @@ def generate_debian_package(version, dummy=False, real=False):
         flavour = 'oem'
 
     if group:
-        prefix = group + '-'
+        prefix = group + '.'
         infix = '.' + group
         platform_archive = codename + infix
     else:
