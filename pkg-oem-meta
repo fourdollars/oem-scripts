@@ -35,7 +35,7 @@ elif program_name == 'pkg-stella-meta':
 elif program_name == 'pkg-sutton-meta':
     codename = 'sutton'
     Codename = codename.title()
-    brand = 'sutton'
+    brand = 'lenovo'
     git_repo_project = 'sutton'
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
