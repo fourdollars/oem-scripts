@@ -11,7 +11,7 @@ pkg-sutton-meta --public-bug 123456 --private-bug 1874177 -s focal -k oem -g New
 
 cd oem-sutton.newell-adam-meta || exit 1
 
-git checkout newell-adam-focal-ubuntu
+git checkout newell.adam-focal-ubuntu
 
 grep "^deb http://lenovo.archive.canonical.com/ focal sutton$" oem-sutton.newell-adam-meta.list
 grep "^# deb-src http://lenovo.archive.canonical.com/ focal sutton$" oem-sutton.newell-adam-meta.list
@@ -33,7 +33,7 @@ grep "Upstream-Name: oem-sutton.newell-adam-meta" debian/copyright
 grep "alias dmi:\*bvnLENOVO:bvrN2U\* meta oem-sutton.newell-adam-meta" debian/modaliases
 grep "alias dmi:\*bvnLENOVO:bvrN2O\* meta oem-sutton.newell-adam-meta" debian/modaliases
 
-git checkout newell-adam-focal-oem
+git checkout newell.adam-focal-oem
 
 grep "^deb http://lenovo.archive.canonical.com/ focal sutton$" oem-sutton.newell-adam-meta.list
 grep "^# deb-src http://lenovo.archive.canonical.com/ focal sutton$" oem-sutton.newell-adam-meta.list
