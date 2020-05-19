@@ -31,6 +31,9 @@ grep "Upstream-Name: oem-somerville-three-eyed-raven-meta" debian/copyright
 
 grep "alias pci:\*sv00001028sd00000962\* meta oem-somerville-three-eyed-raven-meta" debian/modaliases
 
+grep "^pristine-tar = False$" debian/gbp.conf
+grep "^debian-branch=three-eyed-raven-focal-ubuntu$" debian/gbp.conf
+
 git checkout three-eyed-raven-focal-oem
 
 grep "^deb http://dell.archive.canonical.com/ focal somerville\$" oem-somerville-three-eyed-raven-meta.list
@@ -51,6 +54,9 @@ grep "Depends: \${misc:Depends}, oem-somerville-factory-meta$" debian/control
 grep "Upstream-Name: oem-somerville-three-eyed-raven-meta" debian/copyright
 
 grep "alias pci:\*sv00001028sd00000962\* meta oem-somerville-three-eyed-raven-meta" debian/modaliases
+
+grep "^pristine-tar = False$" debian/gbp.conf
+grep "^debian-branch=three-eyed-raven-focal-oem$" debian/gbp.conf
 
 cd ..
 rm -fr oem-somerville-three-eyed-raven-meta

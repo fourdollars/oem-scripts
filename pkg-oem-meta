@@ -191,6 +191,16 @@ deb http://{brand}.{archive}/ {series} {platform_archive}
         os.mkdir('debian')
     os.chdir('debian')
 
+    gbp_conf = f"""
+[DEFAULT]
+pristine-tar = False
+
+[buildpackage]
+debian-branch={branch}
+"""
+    with open('gbp.conf', 'w') as f:
+        f.write(gbp_conf)
+
     fullname = os.getenv('DEBFULLNAME', 'Commercial Engineering')
     email = os.getenv('DEBEMAIL', 'commercial-engineering@canonical.com')
     timestamp = strftime("%a, %d %b %Y %H:%M:%S %z", localtime())
