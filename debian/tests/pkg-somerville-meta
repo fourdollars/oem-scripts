@@ -46,7 +46,7 @@ grep "Source: oem-somerville-three-eyed-raven-meta" debian/control
 grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-oem-20.04, oem-somerville-meta$" debian/control
 grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
 grep "Package: oem-somerville-factory-three-eyed-raven-meta" debian/control
-grep "Depends: \${misc:Depends}$" debian/control
+grep "Depends: \${misc:Depends}, oem-somerville-factory-meta$" debian/control
 
 grep "Upstream-Name: oem-somerville-three-eyed-raven-meta" debian/copyright
 
