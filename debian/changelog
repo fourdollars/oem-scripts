@@ -1,3 +1,10 @@
+oem-scripts (0.43) UNRELEASED; urgency=medium
+
+  * autopkgtest-collect-credentials,
+    autopkgtest-oem-scripts-auto: Fix the permission of SSH private key.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 20 May 2020 15:05:32 +0800
+
 oem-scripts (0.42) bionic; urgency=medium
 
   * autopkgtest-collect-credentials,

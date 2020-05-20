@@ -1,6 +1,6 @@
 #!/bin/bash
 # Usage:
-#  autopkgtest-oem-scripts-auto > auto.sh && chmod +x auto.sh
+#  autopkgtest-oem-scripts-auto --ssh ~/.ssh/id_ecdsa > auto-provision.sh && chmod +x auto-provision.sh
 
 # shellcheck source=config.sh
 source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
