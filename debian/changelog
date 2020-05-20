@@ -1,4 +1,4 @@
-oem-scripts (0.43) UNRELEASED; urgency=medium
+oem-scripts (0.43) bionic; urgency=medium
 
   * autopkgtest-collect-credentials,
     autopkgtest-oem-scripts-auto: Fix the permission of SSH private key.
