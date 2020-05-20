@@ -1,4 +1,4 @@
-oem-scripts (0.42) UNRELEASED; urgency=medium
+oem-scripts (0.42) bionic; urgency=medium
 
   * autopkgtest-collect-credentials,
     autopkgtest-oem-scripts-auto,
