@@ -1,3 +1,13 @@
+oem-scripts (0.42) UNRELEASED; urgency=medium
+
+  * autopkgtest-collect-credentials,
+    autopkgtest-oem-scripts-auto,
+    debian/tests/autopkgtest-collect-credentials,
+    debian/tests/control,
+    setup.py: Implement the general purposed autopkgtest-collect-credentials.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 20 May 2020 12:48:32 +0800
+
 oem-scripts (0.41) bionic; urgency=medium
 
   * debian/tests/pkg-somerville-meta,

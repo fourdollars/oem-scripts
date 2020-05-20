@@ -31,6 +31,7 @@ Also there is a meta package oem-dev-tools that installs all scripts''',
       author='Commercial Engineering',
       author_email='commercial-engineering@canonical.com',
       scripts=[
+          'autopkgtest-collect-credentials',
           'autopkgtest-oem-scripts-auto',
           'copyPackage.py',
           'dkms-helper',
