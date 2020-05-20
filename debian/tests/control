@@ -1,2 +1,5 @@
-Tests: pkg-somerville-meta, pkg-sutton-meta, launchpad-api, get-private-ppa, autopkgtest-oem-scripts-auto
+Tests: autopkgtest-collect-credentials, autopkgtest-oem-scripts-auto
 Depends: @, shellcheck
+
+Tests: pkg-somerville-meta, pkg-sutton-meta, launchpad-api, get-private-ppa
+Depends: @

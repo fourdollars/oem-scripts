@@ -6,78 +6,13 @@
 source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
 
 # Get the path of autopkgtest-oem-scripts-auto, it's same path with launchpad-api
-cur_dir=$(cd "$(dirname "$0")"; pwd)
-get_private_ppa="${cur_dir}/get-private-ppa"
+cur_dir=$(cd "$(dirname "$0")" || exit; pwd)
 
 if ! valid_oem_scripts_config; then
     echo "Please execute \`launchpad-api\` to get the token for Launchpad API first."
     exit 1
-else
-    oauth_token=$(read_oem_scripts_config oauth_token)
-    oauth_token_secret=$(read_oem_scripts_config oauth_token_secret)
-    oauth_consumer_key=$(read_oem_scripts_config oauth_consumer_key)
 fi
 
-PPA=(ppa:oem-solutions-group/ppa "$@")
+autopkgtest_collect_credentials="${cur_dir}/autopkgtest-collect-credentials"
 
-LINE=()
-while read -r line; do
-    LINE+=("$line")
-done < <(${get_private_ppa} "${PPA[@]}")
-
-IFS="|"
-
-cat <<ENDLINE
-#!/bin/sh
-
-export LC_ALL=C.UTF-8
-export LANG=C.UTF-8
-export LANGUAGE=C:
-
-set -eu
-
-# Created files should be readable by user (this script is called as root)
-umask 0022
-
-# avoid debconf hangs
-export DEBIAN_FRONTEND=noninteractive
-
-root=\${1:-/}
-
-install_pkgs ()
-{
-    for pkg in "\$@"; do
-        if ! chroot "\$root" dpkg-query -W -f="\\\${Status}\n" "\$pkg" | grep "install ok installed"; then
-            chroot "\$root" apt-get install "\$pkg" --yes
-        fi
-    done
-}
-
-install_pkgs gpg apt-transport-https
-
-create_source_list ()
-{
-    echo "\$*" | tr "|" "\n" | while read -r line; do
-        NAME=\$(echo "\$line" | awk '{print \$1}')
-        URL=\$(echo "\$line" | awk '{print \$2}')
-        KEY=\$(echo "\$line" | awk '{print \$3}')
-        chroot "\$root" apt-key adv --keyserver keyserver.ubuntu.com --recv-key "\$KEY"
-        echo "deb \$URL \$(chroot "\$root" lsb_release -cs) main" > "\$root/etc/apt/sources.list.d/\$NAME-\$(chroot "\$root" lsb_release -cs).list"
-        echo "# deb-src \$URL \$(chroot "\$root" lsb_release -cs) main" >> "\$root/etc/apt/sources.list.d/\$NAME-\$(chroot "\$root" lsb_release -cs).list"
-    done
-}
-
-create_source_list "${LINE[*]}"
-
-HOME="/home/\$(grep 1000:1000 "\$root/etc/passwd" | awk -F: '{print \$1}')"
-mkdir -p "\$root\$HOME/.config/oem-scripts"
-cat > "\$root\$HOME/.config/oem-scripts/config.ini" <<END
-[oem-scripts]
-oauth_token = $oauth_token
-oauth_token_secret = $oauth_token_secret
-oauth_consumer_key = $oauth_consumer_key
-END
-
-chroot "\$root" apt-get update
-chroot "\$root" chown 1000.1000 -R "\$HOME"
-ENDLINE
+${autopkgtest_collect_credentials} ppa:oem-solutions-group/ppa ~/.config/oem-scripts/config.ini "$@"
