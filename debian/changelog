@@ -1,4 +1,4 @@
-oem-scripts (0.41) UNRELEASED; urgency=medium
+oem-scripts (0.41) bionic; urgency=medium
 
   * debian/tests/pkg-somerville-meta,
     pkg-oem-meta: Make Somerville factory meta depend on
