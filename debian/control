@@ -1,7 +1,6 @@
 Source: oem-scripts
 Section: admin
 Priority: optional
-XS-Testsuite: autopkgtest
 Build-Depends:
  debhelper (>=11),
  dh-python,

@@ -125,7 +125,8 @@ os.mkdir(meta)
 os.chdir(meta)
 
 PREFIX = '~oem-solutions-engineers'
-git_repo = PREFIX + '/' + git_repo_project + '/+git/oem-' + codename + '-projects-meta'
+git_repo = PREFIX + '/' + git_repo_project \
+    + '/+git/oem-' + codename + '-projects-meta'
 
 
 def generate_debian_package(version, dummy=False, real=False):
@@ -159,6 +160,7 @@ def generate_debian_package(version, dummy=False, real=False):
     if real:
         version = version + "ubuntu1"
         factory = 'oem-' + codename + infix + '-factory-' + platform + '-meta'
+        factory_depends = ''
         branch = prefix + platform + '-' + series + '-oem'
         if args.private_bug:
             lp_bug = f" (LP: #{args.private_bug})"
@@ -166,6 +168,7 @@ def generate_debian_package(version, dummy=False, real=False):
             lp_bug = ""
         if codename == 'somerville':
             extra = extra + ', oem-somerville-meta'
+            factory_depends = factory_depends + ', oem-somerville-factory-meta'
 
     git_abbr = f"https://git.launchpad.net/{git_repo} -b {branch}"
     git_browser = f"https://code.launchpad.net/{git_repo}/+ref/{branch}"
@@ -187,6 +190,16 @@ deb http://{brand}.{archive}/ {series} {platform_archive}
     if not os.path.exists('debian'):
         os.mkdir('debian')
     os.chdir('debian')
+
+    gbp_conf = f"""
+[DEFAULT]
+pristine-tar = False
+
+[buildpackage]
+debian-branch={branch}
+"""
+    with open('gbp.conf', 'w') as f:
+        f.write(gbp_conf)
 
     fullname = os.getenv('DEBFULLNAME', 'Commercial Engineering')
     email = os.getenv('DEBEMAIL', 'commercial-engineering@canonical.com')
@@ -224,7 +237,7 @@ Description: hardware support for {Codename} {Platform} platform
         if real:
             f.write(f"""\nPackage: {factory}
 Architecture: all
-Depends: ${{misc:Depends}}
+Depends: ${{misc:Depends}}{factory_depends}
 Description: hardware support for {Codename} {Platform} platform
  This is a factory metapackage for {Codename} {Platform} platform.\n"""
                     + " It installs packages needed to support this hardware "
@@ -306,6 +319,32 @@ export DH_VERBOSE=1
         f.write("3.0 (native)\n")
 
     os.chdir('..')
+
+    if not os.path.exists('tests'):
+        os.mkdir('tests')
+    os.chdir('tests')
+    with open('control', 'w') as f:
+        f.write(f"""Tests: {meta}
+Depends: @
+Restrictions: needs-root
+""")
+    with open(meta, 'w') as f:
+        f.write(f"""#!/bin/bash
+
+exec 2>&1
+set -euo pipefail
+IFS=$'\\n\\t'
+
+apt-get update
+apt-get full-upgrade --yes
+
+apt-get update
+apt-get full-upgrade --yes
+
+apt-get autoremove --purge --yes {meta}
+""")
+    os.chdir('..')
+
     os.chdir('..')
     subprocess.run(['git', 'add', '.'])
     subprocess.run(['git', 'config', 'user.name', fullname])
