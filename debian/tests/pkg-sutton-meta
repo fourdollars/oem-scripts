@@ -46,7 +46,8 @@ grep '(LP: #1874177)' debian/changelog
 
 grep "Source: oem-sutton.newell-adam-meta" debian/control
 grep "Package: oem-sutton.newell-factory-adam-meta" debian/control
-grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-oem-20.04" debian/control
+grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-oem-20.04 oem-sutton.newell-meta" debian/control
+grep "Depends: \${misc:Depends}, oem-sutton.newell-factory-meta" debian/control
 grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
 
 grep "Upstream-Name: oem-sutton.newell-adam-meta" debian/copyright

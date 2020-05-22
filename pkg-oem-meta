@@ -169,6 +169,9 @@ def generate_debian_package(version, dummy=False, real=False):
         if codename == 'somerville':
             extra = extra + ', oem-somerville-meta'
             factory_depends = factory_depends + ', oem-somerville-factory-meta'
+        if codename == 'sutton':
+            extra = extra + ', oem-' + platform_archive + '-meta'
+            factory_depends = factory_depends + ', oem-' + platform_archive + '-factory-meta'
 
     git_abbr = f"https://git.launchpad.net/{git_repo} -b {branch}"
     git_browser = f"https://code.launchpad.net/{git_repo}/+ref/{branch}"
