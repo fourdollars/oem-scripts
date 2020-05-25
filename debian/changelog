@@ -1,10 +1,10 @@
-oem-scripts (0.44) UNRELEASED; urgency=medium
+oem-scripts (0.44) bionic; urgency=medium
 
   [ Bin Li]
   * pkg-oem-meta: Add the dependency for group meta and group facotry meta for
     sutton.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 25 May 2020 20:40:55 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 25 May 2020 20:42:11 +0800
 
 oem-scripts (0.43) bionic; urgency=medium
 
