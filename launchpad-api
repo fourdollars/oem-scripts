@@ -56,8 +56,21 @@ get_token()
 
 get_api()
 {
-    api="$1" && shift
-    http --ignore-stdin --follow GET "https://api.launchpad.net/$api" \
+    if [ -z "$1" ]; then
+        return
+    fi
+    if [[ "$1" =~ ^https://api.launchpad.net/ ]]; then
+        api="$1" && shift
+    elif [[ "$1" =~ ^devel/ ]]; then
+        api="https://api.launchpad.net/$1" && shift
+    elif [[ "$1" =~ ^/devel/ ]]; then
+        api="https://api.launchpad.net$1" && shift
+    elif [[ "$1" =~ ^/ ]]; then
+        api="https://api.launchpad.net/devel$1" && shift
+    else
+        api="https://api.launchpad.net/devel/$1" && shift
+    fi
+    http --ignore-stdin --follow GET "$api" \
         'OAuth realm'=="https://api.launchpad.net/" \
         oauth_consumer_key=="${oauth_consumer_key}" \
         oauth_nonce=="$(date +%s)" \
@@ -71,8 +84,21 @@ get_api()
 
 post_api()
 {
-    api="$1" && shift
-    http --ignore-stdin --form POST "https://api.launchpad.net/$api" \
+    if [ -z "$1" ]; then
+        return
+    fi
+    if [[ "$1" =~ ^https://api.launchpad.net/ ]]; then
+        api="$1" && shift
+    elif [[ "$1" =~ ^devel/ ]]; then
+        api="https://api.launchpad.net/$1" && shift
+    elif [[ "$1" =~ ^/devel/ ]]; then
+        api="https://api.launchpad.net$1" && shift
+    elif [[ "$1" =~ ^/ ]]; then
+        api="https://api.launchpad.net/devel$1" && shift
+    else
+        api="https://api.launchpad.net/devel/$1" && shift
+    fi
+    http --ignore-stdin --form POST "$api" \
         'OAuth realm'="https://api.launchpad.net/" \
         oauth_consumer_key="${oauth_consumer_key}" \
         oauth_nonce="$(date +%s)" \
