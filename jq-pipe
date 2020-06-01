@@ -1,0 +1,13 @@
+#!/bin/bash
+
+exec 2>&1
+set -euo pipefail
+
+# Usage:
+# launchpad-api get https://api.launchpad.net/devel/~fourdollars/oem-dev-tools/+git/oem-scripts/+merge/384887
+# launchpad-api get https://api.launchpad.net/devel/~fourdollars/oem-dev-tools/+git/oem-scripts/+merge/384887 | jq-pipe .preview_diff_link
+# launchpad-api get https://api.launchpad.net/devel/~fourdollars/oem-dev-tools/+git/oem-scripts/+merge/384887 | jq-pipe .preview_diff_link | jq-pipe .diff_text_link
+
+while read -r api; do
+    launchpad-api get "$api"
+done < <(jq -r "$@")

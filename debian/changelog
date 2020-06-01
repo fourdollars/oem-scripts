@@ -1,3 +1,12 @@
+oem-scripts (0.46) UNRELEASED; urgency=medium
+
+  * debian/tests/control,
+    debian/tests/jq-pipe,
+    jq-pipe,
+    setup.py: Add a script to make pipe line eaiser.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 01 Jun 2020 16:36:33 +0800
+
 oem-scripts (0.45) bionic; urgency=medium
 
   * launchpad-api: Fix some problems by shellcheck. 
