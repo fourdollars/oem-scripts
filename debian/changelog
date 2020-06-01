@@ -1,10 +1,10 @@
-oem-scripts (0.45) UNRELEASED; urgency=medium
+oem-scripts (0.45) bionic; urgency=medium
 
   * launchpad-api: Fix some problems by shellcheck. 
   * debian/tests/launchpad-api,
     launchpad-api: Make the api url more flexible.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 01 Jun 2020 14:09:21 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 01 Jun 2020 14:10:20 +0800
 
 oem-scripts (0.44) bionic; urgency=medium
 
