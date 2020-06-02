@@ -1,3 +1,23 @@
+oem-scripts (0.46) UNRELEASED; urgency=medium
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * debian/tests/control,
+    debian/tests/jq-pipe,
+    jq-pipe,
+    setup.py: Add a script to make pipe line eaiser.
+  * autopkgtest-collect-credentials,
+    autopkgtest-oem-scripts-auto: Use bash strict mode.
+  * jq-pipe: Refine the bash strict mode.
+  * jq-lp: Rename from jq-pipe.
+  * debian/tests/control,
+    debian/tests/jq-lp: Fix the test case for jq-lp.
+  * setup.py: Fix the installing for jq-lp.
+
+  [ Bin Li]
+  * jq-lp: Get the path of jq-lp, it's same path with launchpad-api.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 01 Jun 2020 16:36:33 +0800
+
 oem-scripts (0.45) bionic; urgency=medium
 
   * launchpad-api: Fix some problems by shellcheck. 

@@ -2,6 +2,9 @@
 # Usage:
 #  autopkgtest-oem-scripts-auto --ssh ~/.ssh/id_ecdsa > auto-provision.sh && chmod +x auto-provision.sh
 
+set -euo pipefail
+IFS=$'\n\t'
+
 # shellcheck source=config.sh
 source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
 
@@ -9,7 +12,7 @@ source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
 cur_dir=$(cd "$(dirname "$0")" || exit; pwd)
 
 if ! valid_oem_scripts_config; then
-    echo "Please execute \`launchpad-api\` to get the token for Launchpad API first."
+    >&2 echo "Please execute \`launchpad-api\` to get the token for Launchpad API first."
     exit 1
 fi
 
