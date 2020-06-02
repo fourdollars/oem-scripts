@@ -1,4 +1,4 @@
-oem-scripts (0.46) UNRELEASED; urgency=medium
+oem-scripts (0.46) focal; urgency=medium
 
   [ Shih-Yuan Lee (FourDollars) ]
   * debian/tests/control,
@@ -16,7 +16,7 @@ oem-scripts (0.46) UNRELEASED; urgency=medium
   [ Bin Li]
   * jq-lp: Get the path of jq-lp, it's same path with launchpad-api.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 01 Jun 2020 16:36:33 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 02 Jun 2020 13:12:44 +0800
 
 oem-scripts (0.45) bionic; urgency=medium
 
