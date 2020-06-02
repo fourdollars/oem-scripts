@@ -11,6 +11,7 @@ oem-scripts (0.46) UNRELEASED; urgency=medium
   * jq-lp: Rename from jq-pipe.
   * debian/tests/control,
     debian/tests/jq-lp: Fix the test case for jq-lp.
+  * setup.py: Fix the installing for jq-lp.
 
   [ Bin Li]
   * jq-lp: Get the path of jq-lp, it's same path with launchpad-api.
