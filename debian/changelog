@@ -6,6 +6,7 @@ oem-scripts (0.46) UNRELEASED; urgency=medium
     setup.py: Add a script to make pipe line eaiser.
   * autopkgtest-collect-credentials,
     autopkgtest-oem-scripts-auto: Use bash strict mode.
+  * jq-pipe: Refine the bash strict mode.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 01 Jun 2020 16:36:33 +0800
 
