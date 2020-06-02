@@ -1,5 +1,5 @@
 Tests: autopkgtest-collect-credentials, autopkgtest-oem-scripts-auto
 Depends: @, shellcheck
 
-Tests: pkg-somerville-meta, pkg-sutton-meta, launchpad-api, get-private-ppa, jq-pipe
+Tests: pkg-somerville-meta, pkg-sutton-meta, launchpad-api, get-private-ppa, jq-lp
 Depends: @
