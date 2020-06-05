@@ -3,19 +3,22 @@ import sys
 from launchpadlib.launchpad import Launchpad
 launchpad = Launchpad.login_with('test', "production")
 
+
 def getValueWithDefault(prompt, default):
     "Prompt user for value, with default"
     result = raw_input("%s [%s]> " % (prompt, default))
     return result and result or default
 
-from_pocket = getValueWithDefault("From Pocket (Proposed|Updates|Release...)?", "Proposed")
+
+from_pocket = getValueWithDefault("From Pocket (Proposed|Updates|Release...)?",
+                                  "Proposed")
 
 team = None
 while not team:
     team_name = getValueWithDefault("PPA owning team?", "oem-archive")
     try:
         team = launchpad.people[team_name]
-    except:
+    except e:
         print("Invalid team")
 
 ppa = None
@@ -23,15 +26,16 @@ while not ppa:
     PPA_name = getValueWithDefault("PPA name?", "sutton")
     try:
         ppa = team.getPPAByName(name=PPA_name)
-    except:
+    except e:
         print("Invalid ppa name")
 
-to_pocket = getValueWithDefault("To Pocket (Proposed|Updates|Release...)?", "Release")
+to_pocket = getValueWithDefault("To Pocket (Proposed|Updates|Release...)?",
+                                "Release")
 to_series = getValueWithDefault("To Series?", "precise")
 
 # Get link to ubuntu archive
 ubuntu = launchpad.distributions["Ubuntu"]
-archive=ubuntu.archives[0] # archives[0] is 'primary' (vs. partner)
+archive = ubuntu.archives[0]  # archives[0] is 'primary' (vs. partner)
 
 while True:
     package_name = getValueWithDefault("Package Name?", "linux")
@@ -46,7 +50,8 @@ while True:
         for i, name in enumerate(names):
             print " %d: %s" % (i, name)
         print("----\n")
-        i = raw_input("Enter pkg to transfer (0..%d/[Q]uit/[a]nother)> " % (len(names) - 1))
+        i = raw_input("Enter pkg to transfer (0..%d/[Q]uit/[a]nother)> "
+                      % (len(names) - 1))
         try:
             pkg = pkgs[int(i)]
 
