@@ -1,10 +1,10 @@
-oem-scripts (0.47) UNRELEASED; urgency=medium
+oem-scripts (0.47) focal; urgency=medium
 
   * copyPackage.py: Fix some PEP8 errors.
   * pkg-oem-meta: Use the public Git repository.
   * pkg-oem-meta: Remove the first empty line in gbp.conf.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 05 Jun 2020 08:40:59 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 22 Jun 2020 17:47:34 +0800
 
 oem-scripts (0.46) focal; urgency=medium
 
