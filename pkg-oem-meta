@@ -16,7 +16,6 @@ if program_name == 'pkg-somerville-meta':
     codename = 'somerville'
     Codename = codename.title()
     brand = 'dell'
-    git_repo_project = 'dell'
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
@@ -26,7 +25,6 @@ elif program_name == 'pkg-stella-meta':
     codename = 'stella'
     Codename = codename.title()
     brand = 'hp'
-    git_repo_project = 'stella'
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
@@ -36,7 +34,6 @@ elif program_name == 'pkg-sutton-meta':
     codename = 'sutton'
     Codename = codename.title()
     brand = 'lenovo'
-    git_repo_project = 'sutton'
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
@@ -125,8 +122,7 @@ os.mkdir(meta)
 os.chdir(meta)
 
 PREFIX = '~oem-solutions-engineers'
-git_repo = PREFIX + '/' + git_repo_project \
-    + '/+git/oem-' + codename + '-projects-meta'
+git_repo = PREFIX + '/pc-enablement/+git/oem-' + codename + '-projects-meta'
 
 
 def generate_debian_package(version, dummy=False, real=False):
@@ -194,8 +190,7 @@ deb http://{brand}.{archive}/ {series} {platform_archive}
         os.mkdir('debian')
     os.chdir('debian')
 
-    gbp_conf = f"""
-[DEFAULT]
+    gbp_conf = f"""[DEFAULT]
 pristine-tar = False
 
 [buildpackage]
