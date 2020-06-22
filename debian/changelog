@@ -2,6 +2,7 @@ oem-scripts (0.47) UNRELEASED; urgency=medium
 
   * copyPackage.py: Fix some PEP8 errors.
   * pkg-oem-meta: Use the public Git repository.
+  * pkg-oem-meta: Remove the first empty line in gbp.conf.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 05 Jun 2020 08:40:59 +0800
 

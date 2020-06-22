@@ -190,8 +190,7 @@ deb http://{brand}.{archive}/ {series} {platform_archive}
         os.mkdir('debian')
     os.chdir('debian')
 
-    gbp_conf = f"""
-[DEFAULT]
+    gbp_conf = f"""[DEFAULT]
 pristine-tar = False
 
 [buildpackage]
