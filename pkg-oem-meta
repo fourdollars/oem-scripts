@@ -211,16 +211,13 @@ debian-branch={branch}
  -- {fullname} <{email}>  {timestamp}
 """)
 
-    with open('compat', 'w') as f:
-        f.write("11\n")
-
     with open('control', 'w') as f:
         f.write(f"""Source: {meta}
 Section: misc
 Priority: optional
 Maintainer: Commercial Engineering <commercial-engineering@canonical.com>
-Build-Depends: debhelper (>= 11~), dh-modaliases
-Standards-Version: 4.1.4
+Build-Depends: debhelper-compat (= 12), dh-modaliases
+Standards-Version: 4.5.0
 Vcs-Git: {git_abbr}
 Vcs-Browser: {git_browser}
 
@@ -236,10 +233,10 @@ Description: hardware support for {Codename} {Platform} platform
             f.write(f"""\nPackage: {factory}
 Architecture: all
 Depends: ${{misc:Depends}}{factory_depends}
-Description: hardware support for {Codename} {Platform} platform
+Description: hardware support for {Codename} {Platform} platform (factory)
  This is a factory metapackage for {Codename} {Platform} platform.\n"""
                     + " It installs packages needed to support this hardware "
-                    + "fully.\n")
+                    + "fully. (factory)\n")
 
     timestamp = strftime("%Y", localtime())
 
