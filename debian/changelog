@@ -1,11 +1,11 @@
-oem-scripts (0.48) UNRELEASED; urgency=medium
+oem-scripts (0.48) focal; urgency=medium
 
   * pkg-oem-meta: Bump debhelper from 11 to 12.
   * pkg-oem-meta: Set debhelper-compat version in Build-Depends.
   * pkg-oem-meta: Update standards version to 4.5.0, no changes needed.
   * pkg-oem-meta: Adjust the description for factory packages.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 15 Jul 2020 10:47:17 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 16 Jul 2020 13:48:03 +0800
 
 oem-scripts (0.47) focal; urgency=medium
 
