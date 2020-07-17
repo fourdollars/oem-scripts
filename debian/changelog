@@ -1,4 +1,4 @@
-oem-scripts (0.49) UNRELEASED; urgency=medium
+oem-scripts (0.49) focal; urgency=medium
 
   * get-private-ppa,
     launchpad-api: Check the status code by httpie and use it to check the subscription
