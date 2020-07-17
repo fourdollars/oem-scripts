@@ -8,11 +8,11 @@
 source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
 
 # Get the path of get-private-ppa, it's same path with launchpad-api
-cur_dir=$(cd "$(dirname "$0")"; pwd)
+cur_dir=$(cd "$(dirname "$0")" || exit; pwd)
 
 launchpad_api="${cur_dir}/launchpad-api"
-jq_file=$(which jq)
-if [ "${jq_file}" = "" ] || [ ! -x ${jq_file} ]; then
+jq_file=$(command -v jq)
+if [ "${jq_file}" = "" ] || [ ! -x "${jq_file}" ]; then
     echo "Please install \`jq\` package!"
     exit 1
 fi
@@ -29,7 +29,13 @@ for PPA in "$@"; do
         GROUP=$(echo "${PPA//[:\/]/ }" | awk '{print $2}')
         ARCHIVE=$(echo "${PPA//[:\/]/ }" | awk '{print $3}')
         if [ "$(${launchpad_api} get "devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .private)" = "true" ]; then
-            URL=$(${launchpad_api} post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=https://api.launchpad.net/devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .)
+            if ${launchpad_api} post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=https://api.launchpad.net/devel/~$GROUP/+archive/ubuntu/$ARCHIVE" >/dev/null 2>&1; then
+                URL=$(${launchpad_api} post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=https://api.launchpad.net/devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .)
+            else
+                echo "You may not have the subscription of $PPA yet so you can not get the source list."
+                echo "Please access https://launchpad.net/~$GROUP/+archive/ubuntu/$ARCHIVE/+subscriptions to subscribe it."
+                exit 1
+            fi
         else
             URL="http://ppa.launchpad.net/$GROUP/$ARCHIVE/ubuntu"
         fi
