@@ -70,7 +70,7 @@ get_api()
     else
         api="https://api.launchpad.net/devel/$1" && shift
     fi
-    http --ignore-stdin --follow GET "$api" \
+    http --check-status --ignore-stdin --follow GET "$api" \
         'OAuth realm'=="https://api.launchpad.net/" \
         oauth_consumer_key=="${oauth_consumer_key}" \
         oauth_nonce=="$(date +%s)" \
@@ -98,7 +98,7 @@ post_api()
     else
         api="https://api.launchpad.net/devel/$1" && shift
     fi
-    http --ignore-stdin --form POST "$api" \
+    http --check-status --ignore-stdin --form POST "$api" \
         'OAuth realm'="https://api.launchpad.net/" \
         oauth_consumer_key="${oauth_consumer_key}" \
         oauth_nonce="$(date +%s)" \

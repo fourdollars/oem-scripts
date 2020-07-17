@@ -1,3 +1,11 @@
+oem-scripts (0.49) UNRELEASED; urgency=medium
+
+  * get-private-ppa,
+    launchpad-api: Check the status code by httpie and use it to check the subscription
+    of private PPA.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 17 Jul 2020 14:50:58 +0800
+
 oem-scripts (0.48) focal; urgency=medium
 
   * pkg-oem-meta: Bump debhelper from 11 to 12.
