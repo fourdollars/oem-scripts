@@ -1,0 +1,3 @@
+#!/bin/bash
+
+git clone -q --depth 1 lp:~oem-solutions-engineers/oem-dev-tools/+git/oem-scripts

@@ -1,4 +1,4 @@
-Tests: autopkgtest-collect-credentials, autopkgtest-oem-scripts-auto
+Tests: autopkgtest-collect-credentials, autopkgtest-oem-scripts-auto, git-url-insteadof-setting
 Depends: @, shellcheck
 
 Tests: pkg-somerville-meta, pkg-sutton-meta, launchpad-api, get-private-ppa, jq-lp
