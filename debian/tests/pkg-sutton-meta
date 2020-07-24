@@ -18,7 +18,7 @@ grep "^# deb-src http://lenovo.archive.canonical.com/ focal sutton$" oem-sutton.
 grep "^deb http://lenovo.archive.canonical.com/ focal sutton.newell$" oem-sutton.newell-adam-meta.list
 grep "^# deb-src http://lenovo.archive.canonical.com/ focal sutton.newell$" oem-sutton.newell-adam-meta.list
 
-grep "oem-sutton.newell-adam-meta (20.04~ubuntu1) focal; urgency=medium" debian/changelog
+grep "oem-sutton.newell-adam-meta (20.04~ubuntu1) UNRELEASED; urgency=medium" debian/changelog
 grep "\* Meta package for Sutton Newell Adam." debian/changelog
 grep '(LP: #123456)' debian/changelog
 
