@@ -18,7 +18,7 @@ grep "^# deb-src http://dell.archive.canonical.com/ focal somerville\$" oem-some
 grep "^deb http://dell.archive.canonical.com/ focal somerville-three-eyed-raven\$" oem-somerville-three-eyed-raven-meta.list
 grep "^# deb-src http://dell.archive.canonical.com/ focal somerville-three-eyed-raven\$" oem-somerville-three-eyed-raven-meta.list
 
-grep "oem-somerville-three-eyed-raven-meta (20.04~ubuntu1) focal; urgency=medium" debian/changelog
+grep "oem-somerville-three-eyed-raven-meta (20.04~ubuntu1) UNRELEASED; urgency=medium" debian/changelog
 grep "Meta package for Somerville Three-Eyed-Raven." debian/changelog
 grep '(LP: #1868254)' debian/changelog
 
