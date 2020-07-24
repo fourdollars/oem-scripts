@@ -1,5 +1,11 @@
-oem-scripts (0.50) UNRELEASED; urgency=medium
+oem-scripts (0.50) focal; urgency=medium
 
+  [ Cyrus Lien ]
+  * autopkgtest-collect-credentials,
+    debian/tests/control,
+    debian/tests/git-url-insteadof-setting: Make git support lp: prefix.
+
+  [ Shih-Yuan Lee (FourDollars) ]
   * debian/tests/pkg-somerville-meta,
     debian/tests/pkg-sutton-meta,
     pkg-oem-meta: Keep UNRELEASED in the bootstrap meta package.
