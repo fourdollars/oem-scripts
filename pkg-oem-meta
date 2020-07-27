@@ -322,11 +322,11 @@ export DH_VERBOSE=1
         os.mkdir('tests')
     os.chdir('tests')
     with open('control', 'w') as f:
-        f.write(f"""Tests: {meta}
+        f.write(f"""Tests: meta
 Depends: @
 Restrictions: needs-root
 """)
-    with open(meta, 'w') as f:
+    with open('meta', 'w') as f:
         f.write(f"""#!/bin/bash
 
 exec 2>&1
