@@ -9,6 +9,8 @@ export DEBEMAIL="commercial-engineering@canonical.com"
 
 pkg-somerville-meta --public-bug 1868254 --private-bug 123456 -s focal -k oem -p three-eyed-raven 0962
 
+pull-lp-source oem-somerville-three-eyed-raven-meta focal
+
 cd oem-somerville-three-eyed-raven-meta || exit 1
 
 git checkout three-eyed-raven-focal-ubuntu
@@ -32,9 +34,11 @@ grep "Upstream-Name: oem-somerville-three-eyed-raven-meta" debian/copyright
 grep "alias pci:\*sv00001028sd00000962\* meta oem-somerville-three-eyed-raven-meta" debian/modaliases
 
 grep "^pristine-tar = False$" debian/gbp.conf
-grep "^debian-branch=three-eyed-raven-focal-ubuntu$" debian/gbp.conf
+grep "^debian-branch = three-eyed-raven-focal-ubuntu$" debian/gbp.conf
 grep "^Restrictions: needs-root$" debian/tests/control
 grep "^apt-get autoremove --purge --yes oem-somerville-three-eyed-raven-meta$" debian/tests/meta
+
+gbp import-dsc ../oem-somerville-three-eyed-raven-meta_*.dsc
 
 git checkout three-eyed-raven-focal-oem
 
@@ -58,7 +62,7 @@ grep "Upstream-Name: oem-somerville-three-eyed-raven-meta" debian/copyright
 grep "alias pci:\*sv00001028sd00000962\* meta oem-somerville-three-eyed-raven-meta" debian/modaliases
 
 grep "^pristine-tar = False$" debian/gbp.conf
-grep "^debian-branch=three-eyed-raven-focal-oem$" debian/gbp.conf
+grep "^debian-branch = three-eyed-raven-focal-oem$" debian/gbp.conf
 grep "^Restrictions: needs-root$" debian/tests/control
 grep "^apt-get autoremove --purge --yes oem-somerville-three-eyed-raven-meta$" debian/tests/meta
 

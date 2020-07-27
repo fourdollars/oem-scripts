@@ -1,3 +1,11 @@
+oem-scripts (0.52) UNRELEASED; urgency=medium
+
+  * debian/tests/control,
+    debian/tests/pkg-somerville-meta,
+    pkg-oem-meta: Fix the problem when gbp import-dsc.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 27 Jul 2020 15:48:05 +0800
+
 oem-scripts (0.51) focal; urgency=medium
 
   * debian/tests/pkg-somerville-meta,
