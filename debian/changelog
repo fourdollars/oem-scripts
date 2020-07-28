@@ -1,4 +1,4 @@
-oem-scripts (0.52) UNRELEASED; urgency=medium
+oem-scripts (0.52) focal; urgency=medium
 
   * debian/tests/control,
     debian/tests/pkg-somerville-meta,
