@@ -195,9 +195,8 @@ deb http://{brand}.{archive}/ {series} {platform_archive}
 
     gbp_conf = f"""[DEFAULT]
 pristine-tar = False
-
-[buildpackage]
-debian-branch={branch}
+debian-branch = {branch}
+debian-tag = {branch}_%(version)s
 """
     with open('gbp.conf', 'w') as f:
         f.write(gbp_conf)
