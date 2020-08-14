@@ -1,3 +1,11 @@
+oem-scripts (0.53) UNRELEASED; urgency=medium
+
+  * debian/tests/get-private-ppa,
+    get-private-ppa: Add options to specify the codename, generate the
+    source list content, and print help manual.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 14 Aug 2020 11:42:03 +0800
+
 oem-scripts (0.52) focal; urgency=medium
 
   * debian/tests/control,
