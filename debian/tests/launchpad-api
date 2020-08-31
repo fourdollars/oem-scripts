@@ -1,6 +1,15 @@
 #!/bin/bash
 
-if [ "$(launchpad-api get https://api.launchpad.net/devel/bugs/1 | jq -r .date_created)" != "2004-08-20T00:00:00+00:00" ]; then
+export LAUNCHPAD_API="https://api.staging.launchpad.net"
+if [ "$(launchpad-api get bugs/1 | jq -r .web_link)" != "https://bugs.staging.launchpad.net/bugs/1" ]; then
+    exit 1
+fi
+export LAUNCHPAD_API="https://api.launchpad.net"
+if [ "$(launchpad-api get bugs/1 | jq -r .web_link)" != "https://bugs.launchpad.net/bugs/1" ]; then
+    exit 1
+fi
+
+if [ "$(launchpad-api get ${LAUNCHPAD_API}/devel/bugs/1 | jq -r .date_created)" != "2004-08-20T00:00:00+00:00" ]; then
     exit 1
 fi
 
