@@ -1,0 +1,93 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+# Usage:
+# ./mir-bug sutton.newell ace "ThinkPad X1 Carbon Gen 8"
+
+# Create new bug for a new Sutton meta package tracker.
+# by BinLi, 2020.
+
+import sys
+import os
+
+if len(sys.argv) != 4:
+    print("./mir-bug oemCodename platformCodename deviceName")
+    print("  oemCodename: somerville, stella, or sutton.simon")
+    print("  platformCodename: Name deined by PM, like ace")
+    print("  deviceName: ThinkPad X1 Carbon Gen 8")
+    print("Examples:")
+    print("  ./mir-bug sutton.newell ace \"ThinkPad X1 Carbon Gen 8\"")
+    quit()
+else:
+    oemCodename = str(sys.argv[1])
+    tempList = oemCodename.split('.')
+    oemCodenameNogroup = tempList[0]
+    if len(tempList) == 2:
+        oemGroupName = tempList[1]
+    else:
+        oemGroupName = ''
+
+    platformCodename = str(sys.argv[2])
+    deviceName = str(sys.argv[3])
+    # metaPkgName's examples
+    # oem-somerville-metapod-meta
+    # oem-sutton.newell-ace-meta
+    metaPkgName = "oem-" + oemCodename + "-" + platformCodename + "-meta"
+
+    if oemGroupName.strip() != '':
+        branchName = oemGroupName + "." + platformCodename + "-focal-ubuntu"
+    else:
+        branchName = platformCodename + "-focal-ubuntu"
+
+from launchpadlib.launchpad import Launchpad
+lp = Launchpad.login_with('mir-bug', 'production', version='devel')
+
+project = lp.projects["oem-priority"]
+
+bt = "[MIR] " + metaPkgName
+# bug description refers to https://bugs.launchpad.net/oem-priority/+bug/1889367.
+bd = f"""[Availability]
+This is a pilot running meta package for https://wiki.ubuntu.com/MIRTeam/Exceptions/OEM that means the package doesn't exist in Debian or Ubuntu archive yet.
+The source code of the {metaPkgName} for focal:
+     git clone -b {branchName} https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{oemCodenameNogroup}-projects-meta
+
+[Rationale]
+We want to improve the hardware support for {deviceName}.
+
+[Security]
+No CVE/known security issue.
+
+[Quality assurance]
+I have used ppa:oem-solutions-engineers/oem-projects-meta to check this package on {deviceName}.
+{metaPkgName} will be upgraded to 20.04ubuntu1 or latest version from OEM archive.
+
+[Dependencies]
+It only depends on ubuntu-oem-keyring.
+
+[Standards compliance]
+This package should have met all requirements of https://wiki.ubuntu.com/MIRTeam/Exceptions/OEM.
+
+[Maintenance]
+Canonical OEM Enablement Team will take care of the maintenance.
+
+[Background information]
+Please check https://wiki.ubuntu.com/MIRTeam/Exceptions/OEM for details.
+
+Please use "oem-metapackage-mir-check" in lp:ubuntu-archive-tools to verify this MIR against the reference package in the archive.
+
+"""
+
+bug = lp.bugs.createBug(description=bd, target=project, title=bt, information_type='Public', tags=["oem-meta-packages","oem-priority"])
+print("meta package public bug: " + bug.web_link)
+
+for task in bug.bug_tasks:
+    task.status = 'Confirmed'
+    task.importance = 'High' # Critical or Medium
+    # Assign to report by default
+    task.assignee = lp.me
+    task.lp_save()
+
+# Also affects 'Ubuntu'
+bug.addTask(target=lp.projects["Ubuntu"])
+# Subscribe the oem-solutions-engineers
+bug.subscribe(person=lp.people['oem-solutions-engineers'])
+bug.lp_save()
