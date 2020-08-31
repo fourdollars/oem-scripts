@@ -117,7 +117,7 @@ bud-bind -p bugnumber private_bugnumber1 private_bugnumber2"""
     parser.add_argument('-p', '--public', help='The public bug number')
     parser.add_argument('-i', '--ihv', help='Launchpad project name for IHV\nExpecting "swe", "hwe", "intel", "amd", "nvidia", "lsi", "emulex"', default='swe')
     parser.add_argument('-v', '--vebose', help='shows debug messages', action='store_true', default=False)
-    # TODO 
+    # TODO
     # parser.add_argument('-c', '--clean', help='unlnk the bug between public and private', action='store_true', default=False)
 
     args, private_bugs = parser.parse_known_args()
