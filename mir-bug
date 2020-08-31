@@ -3,9 +3,6 @@
 # Usage:
 # ./mir-bug sutton.newell ace "ThinkPad X1 Carbon Gen 8"
 
-# Create new bug for a new Sutton meta package tracker.
-# by BinLi, 2020.
-
 import sys
 import os
 
