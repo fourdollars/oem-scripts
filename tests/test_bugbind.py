@@ -11,7 +11,7 @@ class TestBugBind(unittest.TestCase):
         self.bugbind = importlib.import_module("bug-bind")
         # do not mess around production.
         self.bugbind.SERVICE_ROOT = "staging"
-        self.bugbind.lp = Launchpad.login_anonymously(self.bugbind.APP_NAME, service_root=self.bugbind.SERVICE_ROOT, version='1.0')
+        self.bugbind.lp = Launchpad.login_anonymously(self.bugbind.APP_NAME, service_root=self.bugbind.SERVICE_ROOT, version='1.0', launchpadlib_dir="/tmp/launchpadlib")
         self.bugbind.log.setLevel(logging.DEBUG)
         pass
 
