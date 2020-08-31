@@ -2,12 +2,12 @@
 # Copyright 2018-2020 Canonical
 # Helper script to `bind' private to public bug.
 
+import argparse
 import logging
 import re
-import argparse
 
-from launchpadlib.launchpad import Launchpad
 import lazr.restfulclient.resource
+from launchpadlib.launchpad import Launchpad
 
 APP_NAME = 'oem-scripts'
 SERVICE_ROOT = 'production'
@@ -76,8 +76,8 @@ def add_bug_task(bug, bug_task):
     assert(type(bug_task) == lazr.restfulclient.resource.Entry)
 
     # Check if already have the requested
-    for bug_task in bug.bug_tasks:
-        if bug_task == bug_task:
+    for i in bug.bug_tasks:
+        if bug_task == i:
             log.warning('Also-affects on {} already complete.'.format(bug_task))
             return
     bug.addTask(target=bug_task)
