@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 # Usage:
 # ./mir-bug sutton.newell ace "ThinkPad X1 Carbon Gen 8"
+# For unreleased products.
+# ./mir-bug sutton.newell ace "some Lenovo laptops"
+# ./mir-bug somerville metapod "some Dell laptops"
 
 import sys
 import os
@@ -79,7 +82,7 @@ print("meta package public bug: " + bug.web_link)
 for task in bug.bug_tasks:
     task.status = 'Confirmed'
     task.importance = 'High' # Critical or Medium
-    # Assign to report by default
+    # Assign to reporter by default
     task.assignee = lp.me
     task.lp_save()
 
