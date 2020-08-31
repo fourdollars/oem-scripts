@@ -4,6 +4,7 @@ pep8 \
     get-oem-auth-token \
     get-oemshare-auth-token \
     pkg-oem-meta \
-    setup.py
+    setup.py \
+    bug-bind
 
 pep8 --ignore=E501 oem-getiso

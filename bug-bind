@@ -24,8 +24,7 @@ logging.basicConfig(format='%(levelname)s %(asctime)s - %(message)s',
 def lp_login():
     global lp
     if lp is None:
-        log.debug("Logging into launchpad service at " + SERVICE_ROOT +
-                 " with appname " + APP_NAME)
+        log.debug("Logging into launchpad service at " + SERVICE_ROOT + " with appname " + APP_NAME)
         lp = Launchpad.login_with(APP_NAME, SERVICE_ROOT)
     return lp
 
@@ -42,7 +41,7 @@ def link_bugs(public_bugnum, privates, ihv):
         assert(priv.isdigit())
         bug = lp.bugs[priv]
 
-        if re.search(tag, bug.description) == None:
+        if re.search(tag, bug.description) is None:
             # Add the referenced public bug to the private bug, if it's not in already.
             bug.description += "\n\n{}\n".format(tag)
             bug.lp_save()
@@ -67,7 +66,7 @@ def link_bugs(public_bugnum, privates, ihv):
                 log.error('Project ' + ihv + ' not defined')
 
         add_bug_tags(pub_bug, ['originate-from-' + str(bug.id),
-                               bug.bug_tasks_collection[0].bug_target_name, # OEM codename
+                               bug.bug_tasks_collection[0].bug_target_name,  # OEM codename
                                'oem-priority'])
 
     add_bug_task(pub_bug, hwe_next)
@@ -107,16 +106,19 @@ def add_bug_tags(bug, tags):
 
 
 if __name__ == '__main__':
-    help="""The expected live cycle of an oem-priority bug is:
+    description = """bind private bugs with pubilc bug
+bud-bind -p bugnumber private_bugnumber1 private_bugnumber2"""
+    help = """The expected live cycle of an oem-priority bug is:
     1. SWE/HWE manually tag hwe-need-public/swe-need-public on the existed private bug,
     2. SWE/HWE manually create a public bug.
     3. Use bug-bind to bind public and private bug."""
 
-    parser = argparse.ArgumentParser(description="bind private bugs with pubilc bug\nbud-bind -p bugnumber private_bugnumber1 private_bugnumber2", epilog=help, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(description=description, epilog=help, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('-p', '--public', help='The public bug number')
-    parser.add_argument('-i', '--ihv', help='Launchpad project name for IHV. Expecting "swe", "hwe", "intel", "amd", "nvidia", "lsi", "emulex"', default='swe')
+    parser.add_argument('-i', '--ihv', help='Launchpad project name for IHV\nExpecting "swe", "hwe", "intel", "amd", "nvidia", "lsi", "emulex"', default='swe')
     parser.add_argument('-v', '--vebose', help='shows debug messages', action='store_true', default=False)
-    # TODO parser.add_argument('-c', '--clean', help='unlnk the bug between public and private', action='store_true', default=False)
+    # TODO 
+    # parser.add_argument('-c', '--clean', help='unlnk the bug between public and private', action='store_true', default=False)
 
     args, private_bugs = parser.parse_known_args()
     if args.vebose:
