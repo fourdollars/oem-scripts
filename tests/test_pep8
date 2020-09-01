@@ -6,4 +6,5 @@ pep8 \
     pkg-oem-meta \
     setup.py
 
+pep8 --ignore=E501 bug-bind.py
 pep8 --ignore=E501 oem-getiso

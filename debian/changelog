@@ -1,3 +1,12 @@
+oem-scripts (0.54) focal; urgency=medium
+
+  * debian/gitlab-ci.yml: Add gitlab-ci.yml for focal.
+  * bug-bind.py, tests/test_bugbind.py, tests/test_pep8, setup.py: Add bug-bind (from lp-fish-tools)
+  * debian/control: add python3-launchpadlib into build-depends.
+  * debian/rules: override dh_auto_test
+
+ -- Rex Tsai (蔡志展) <rex.tsai@canonical.com>  Tue, 01 Sep 2020 13:18:23 +0800
+
 oem-scripts (0.53) focal; urgency=medium
 
   * debian/tests/get-private-ppa,

@@ -4,7 +4,7 @@
 %:
 	dh $@ --with python3 --buildsystem=pybuild
 
-check:
+override_dh_auto_test:
+	python3 -m unittest discover -v
 	./tests/test_pep8
 
-clean:: check
