@@ -49,5 +49,6 @@ Also there is a meta package oem-dev-tools that installs all scripts''',
           'stap-dbgsym.sh',
           'bug-bind.py'
       ],
-      data_files=[('share/oem-scripts', ['config.sh'])]
+      data_files=[('share/oem-scripts', ['config.sh'])],
+      test_suite="tests",
       )
