@@ -1,4 +1,4 @@
-oem-scripts (0.53) UNRELEASED; urgency=medium
+oem-scripts (0.53) focal; urgency=medium
 
   * debian/tests/get-private-ppa,
     get-private-ppa: Add options to specify the codename, generate the
