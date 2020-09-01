@@ -4,6 +4,45 @@
 #  get-private-ppa ppa:oem-archive/sutton
 #  get-private-ppa ppa:oem-solutions-group/ppa
 
+eval set -- "$(getopt -o c:gh -l "codename:,generate,help" -- "$@")"
+
+print_manual()
+{
+    cat <<ENDLINE
+Usage:
+    $0 [OPTIONS] [PPA] ...
+Options:
+    --help The manual of this script
+    -c|--codename $(lsb_release -cs) by default
+    -g|--generate Generate the source list content for /etc/apt/sources.list.d/
+Example:
+    $0 ppa:oem-solutions-group/ppa -g | tee oem-solutions-group-ubuntu-ppa.list
+    $0 ppa:oem-archive/somerville
+    $0 ppa:oem-archive/sutton
+ENDLINE
+}
+while :; do
+    case "$1" in
+        ('-h'|'--help')
+            print_manual
+            exit;;
+        ('-c'|'--codename')
+            CODENAME="$2"
+            shift 2;;
+        ('-g'|'--generate')
+            GENERATE=1
+            shift;;
+        ('--')
+            shift
+            break;;
+    esac
+done
+
+[ "$#" = 0 ] && print_manual && exit
+
+CODENAME="${CODENAME:=$(lsb_release -cs)}"
+GENERATE="${GENERATE:=}"
+
 # shellcheck source=config.sh
 source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
 
@@ -40,6 +79,12 @@ for PPA in "$@"; do
             URL="http://ppa.launchpad.net/$GROUP/$ARCHIVE/ubuntu"
         fi
         KEY=$(${launchpad_api} get "devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .signing_key_fingerprint)
-        echo "$GROUP-ubuntu-$ARCHIVE" "$URL" "$KEY"
+        if [ -n "$GENERATE" ]; then
+            echo "# apt-key adv --keyserver keyserver.ubuntu.com --recv-key $KEY"
+            echo "deb $URL $CODENAME main"
+            echo "deb-src $URL $CODENAME main"
+        else
+            echo "$GROUP-ubuntu-$ARCHIVE" "$URL" "$KEY"
+        fi
     fi
 done

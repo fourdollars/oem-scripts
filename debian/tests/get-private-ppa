@@ -18,4 +18,6 @@ if [ "$(get-private-ppa ppa:canonical-kernel-team/ppa)" != "canonical-kernel-tea
     exit 1
 fi
 
+get-private-ppa ppa:oem-solutions-group/ppa -g > oem-solutions-group-ubuntu-ppa.list
+
 exit

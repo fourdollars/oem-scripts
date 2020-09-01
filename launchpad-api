@@ -20,11 +20,14 @@ if [ "${http_file}" = "" ] || [ ! -x "${http_file}" ]; then
     exit 1
 fi
 
+LAUNCHPAD_URL="${LAUNCHPAD_URL:=https://launchpad.net}"
+LAUNCHPAD_API="${LAUNCHPAD_API:=https://api.launchpad.net}"
+
 get_token()
 {
     [ "x$debug" = "x1" ] && echo "oauth_consumer_key=${oauth_consumer_key}"
 
-    oauth=$(http --ignore-stdin --form post https://launchpad.net/+request-token oauth_consumer_key="$oauth_consumer_key" oauth_signature_method=PLAINTEXT oauth_signature="&")
+    oauth=$(http --ignore-stdin --form post ${LAUNCHPAD_URL}/+request-token oauth_consumer_key="$oauth_consumer_key" oauth_signature_method=PLAINTEXT oauth_signature="&")
     [ "x$debug" = "x1" ] && echo "$oauth"
 
     eval "${oauth/&*/}"
@@ -33,10 +36,10 @@ get_token()
     eval "${oauth/*&/}"
     [ "x$debug" = "x1" ] && echo "oauth_token_secret=${oauth_token_secret:=}"
 
-    echo "Please open https://launchpad.net/+authorize-token?oauth_token=$oauth_token&allow_permission=DESKTOP_INTEGRATION to authorize the token."
+    echo "Please open ${LAUNCHPAD_URL}/+authorize-token?oauth_token=$oauth_token&allow_permission=DESKTOP_INTEGRATION to authorize the token."
 
     while :; do
-        body=$(http --ignore-stdin --form post https://launchpad.net/+access-token oauth_token="$oauth_token" oauth_consumer_key="$oauth_consumer_key" oauth_signature_method=PLAINTEXT oauth_signature="&$oauth_token_secret")
+        body=$(http --ignore-stdin --form post ${LAUNCHPAD_URL}/+access-token oauth_token="$oauth_token" oauth_consumer_key="$oauth_consumer_key" oauth_signature_method=PLAINTEXT oauth_signature="&$oauth_token_secret")
         if [ "$body" = "Request token has not yet been reviewed. Try again later." ]; then
             sleep 5
         elif [ "$body" = "Invalid OAuth signature." ]; then
@@ -59,19 +62,19 @@ get_api()
     if [ -z "$1" ]; then
         return
     fi
-    if [[ "$1" =~ ^https://api.launchpad.net/ ]]; then
+    if [[ "$1" =~ ^${LAUNCHPAD_API}/ ]]; then
         api="$1" && shift
     elif [[ "$1" =~ ^devel/ ]]; then
-        api="https://api.launchpad.net/$1" && shift
+        api="${LAUNCHPAD_API}/$1" && shift
     elif [[ "$1" =~ ^/devel/ ]]; then
-        api="https://api.launchpad.net$1" && shift
+        api="${LAUNCHPAD_API}$1" && shift
     elif [[ "$1" =~ ^/ ]]; then
-        api="https://api.launchpad.net/devel$1" && shift
+        api="${LAUNCHPAD_API}/devel$1" && shift
     else
-        api="https://api.launchpad.net/devel/$1" && shift
+        api="${LAUNCHPAD_API}/devel/$1" && shift
     fi
     http --check-status --ignore-stdin --follow GET "$api" \
-        'OAuth realm'=="https://api.launchpad.net/" \
+        'OAuth realm'=="${LAUNCHPAD_API}/" \
         oauth_consumer_key=="${oauth_consumer_key}" \
         oauth_nonce=="$(date +%s)" \
         oauth_signature=="&${oauth_token_secret}" \
@@ -87,19 +90,19 @@ post_api()
     if [ -z "$1" ]; then
         return
     fi
-    if [[ "$1" =~ ^https://api.launchpad.net/ ]]; then
+    if [[ "$1" =~ ^${LAUNCHPAD_API}/ ]]; then
         api="$1" && shift
     elif [[ "$1" =~ ^devel/ ]]; then
-        api="https://api.launchpad.net/$1" && shift
+        api="${LAUNCHPAD_API}/$1" && shift
     elif [[ "$1" =~ ^/devel/ ]]; then
-        api="https://api.launchpad.net$1" && shift
+        api="${LAUNCHPAD_API}$1" && shift
     elif [[ "$1" =~ ^/ ]]; then
-        api="https://api.launchpad.net/devel$1" && shift
+        api="${LAUNCHPAD_API}/devel$1" && shift
     else
-        api="https://api.launchpad.net/devel/$1" && shift
+        api="${LAUNCHPAD_API}/devel/$1" && shift
     fi
     http --check-status --ignore-stdin --form POST "$api" \
-        'OAuth realm'="https://api.launchpad.net/" \
+        'OAuth realm'="${LAUNCHPAD_API}/" \
         oauth_consumer_key="${oauth_consumer_key}" \
         oauth_nonce="$(date +%s)" \
         oauth_signature="&${oauth_token_secret}" \
