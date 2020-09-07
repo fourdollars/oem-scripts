@@ -8,6 +8,7 @@
 
 import sys
 import os
+from launchpadlib.launchpad import Launchpad
 
 if len(sys.argv) != 4:
     print("./mir-bug oemCodename platformCodename deviceName")
@@ -38,13 +39,12 @@ else:
     else:
         branchName = platformCodename + "-focal-ubuntu"
 
-from launchpadlib.launchpad import Launchpad
 lp = Launchpad.login_with('mir-bug', 'production', version='devel')
 
 project = lp.projects["oem-priority"]
 
 bt = "[MIR] " + metaPkgName
-# bug description refers to https://bugs.launchpad.net/oem-priority/+bug/1889367.
+# bug description refers to https://bugs.launchpad.net/bugs/1889367.
 bd = f"""[Availability]
 This is a pilot running meta package for https://wiki.ubuntu.com/MIRTeam/Exceptions/OEM that means the package doesn't exist in Debian or Ubuntu archive yet.
 The source code of the {metaPkgName} for focal:
@@ -76,12 +76,12 @@ Please use "oem-metapackage-mir-check" in lp:ubuntu-archive-tools to verify this
 
 """
 
-bug = lp.bugs.createBug(description=bd, target=project, title=bt, information_type='Public', tags=["oem-meta-packages","oem-priority"])
+bug = lp.bugs.createBug(description=bd, target=project, title=bt, information_type='Public', tags=["oem-meta-packages", "oem-priority"])
 print("meta package public bug: " + bug.web_link)
 
 for task in bug.bug_tasks:
     task.status = 'Confirmed'
-    task.importance = 'High' # Critical or Medium
+    task.importance = 'High'  # Critical or Medium
     # Assign to reporter by default
     task.assignee = lp.me
     task.lp_save()
