@@ -1,3 +1,17 @@
+oem-scripts (0.55) UNRELEASED; urgency=medium
+
+  * oem_scripts/LaunchpadLogin.py,
+    oem_scripts/__init__.py,
+    setup.py: Add the oem_scripts.LaunchpadLogin python module.
+  * debian/control,
+    debian/tests/control,
+    debian/tests/mir-bug,
+    mir-bug,
+    setup.py,
+    tests/test_pep8: Add mir-bug, pep8 test and its autopkgtest.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 10 Sep 2020 20:13:46 +0800
+
 oem-scripts (0.54.1) focal; urgency=medium
 
   * debian/rules: removed python units test
