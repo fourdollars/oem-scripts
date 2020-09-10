@@ -41,7 +41,7 @@ def launchpad_login(pkg, service_root='production', version='devel'):
 
 class LaunchpadLogin():
     """Try to unify all Launchpad login"""
-    def __init__(self, application_name='lp-fish-tools',
+    def __init__(self, application_name='oem-scripts',
                  service_root=None, launchpadlib_dir=None,
                  version="devel", bot=False):
 
@@ -72,7 +72,7 @@ class LaunchpadLogin():
                                       cache=launchpadlib_dir,
                                       version=version)
         else:
-            logging.info("Using lp-fish-tools login")
+            logging.info("Using oem-scripts login")
             self.lp = Launchpad.login_with(application_name=application_name,
                                            service_root=service_root,
                                            launchpadlib_dir=launchpadlib_dir,

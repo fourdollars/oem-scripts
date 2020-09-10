@@ -39,7 +39,7 @@ else:
     else:
         branchName = platformCodename + "-focal-ubuntu"
 
-login = LaunchpadLogin('mir-bug')
+login = LaunchpadLogin()
 lp = login.lp
 
 project = lp.projects["oem-priority"]
