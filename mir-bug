@@ -8,7 +8,7 @@
 
 import sys
 import os
-from launchpadlib.launchpad import Launchpad
+from oem_scripts.LaunchpadLogin import LaunchpadLogin
 
 if len(sys.argv) != 4:
     print("./mir-bug oemCodename platformCodename deviceName")
@@ -39,7 +39,8 @@ else:
     else:
         branchName = platformCodename + "-focal-ubuntu"
 
-lp = Launchpad.login_with('mir-bug', 'production', version='devel')
+login = LaunchpadLogin('mir-bug')
+lp = login.lp
 
 project = lp.projects["oem-priority"]
 
