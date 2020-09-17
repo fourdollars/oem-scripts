@@ -6,6 +6,7 @@ Build-Depends:
  dh-python,
  pep8,
  python3-all,
+ python3-debian,
  python3-setuptools,
  python3-launchpadlib
 Standards-Version: 4.5.0

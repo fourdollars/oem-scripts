@@ -8,3 +8,4 @@ pep8 \
 
 pep8 --ignore=E501 bug-bind.py
 pep8 --ignore=E501 oem-getiso
+pep8 --ignore=E501 mir-bug

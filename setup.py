@@ -16,13 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from setuptools import setup
+from setuptools import setup, find_packages
+from debian.changelog import Changelog
 
-import sys
-sys.path[0:0] = ['bin']
+with open("debian/changelog") as f:
+    cl = Changelog(f)
+    version = str(cl.version)
 
 setup(name='oem-scripts',
-      version=0.26,
+      version=version,
       description='Short OEM related scripts',
       long_description='''Short OEM related scripts can go here.
 Also there is a meta package oem-dev-tools that installs all scripts''',
@@ -47,8 +49,10 @@ Also there is a meta package oem-dev-tools that installs all scripts''',
           'setup4test.sh',
           'stap-build-mymodule.sh',
           'stap-dbgsym.sh',
-          'bug-bind.py'
+          'bug-bind.py',
+          'mir-bug'
       ],
+      packages=find_packages(),
       data_files=[('share/oem-scripts', ['config.sh'])],
       test_suite="tests",
       )
