@@ -1,4 +1,4 @@
-oem-scripts (0.55) UNRELEASED; urgency=medium
+oem-scripts (0.55) focal; urgency=medium
 
   [ Shih-Yuan Lee (FourDollars) ]
   * oem_scripts/LaunchpadLogin.py,
