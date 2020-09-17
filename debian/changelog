@@ -1,5 +1,6 @@
 oem-scripts (0.55) UNRELEASED; urgency=medium
 
+  [ Shih-Yuan Lee (FourDollars) ]
   * oem_scripts/LaunchpadLogin.py,
     oem_scripts/__init__.py,
     setup.py: Add the oem_scripts.LaunchpadLogin python module.
@@ -9,6 +10,9 @@ oem-scripts (0.55) UNRELEASED; urgency=medium
     mir-bug,
     setup.py,
     tests/test_pep8: Add mir-bug, pep8 test and its autopkgtest.
+
+  [ Bin Li ]
+  * Add mir-bug script to report a mir bug.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 10 Sep 2020 20:13:46 +0800
 
