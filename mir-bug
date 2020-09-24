@@ -47,7 +47,7 @@ project = lp.projects["oem-priority"]
 bt = "[MIR] " + metaPkgName
 # bug description refers to https://bugs.launchpad.net/bugs/1889367.
 bd = f"""[Availability]
-This is a pilot running meta package for https://wiki.ubuntu.com/MIRTeam/Exceptions/OEM that means the package doesn't exist in Debian or Ubuntu archive yet.
+This is a meta package for https://wiki.ubuntu.com/MIRTeam/Exceptions/OEM that means the package doesn't exist in Debian or Ubuntu archive yet.
 The source code of the {metaPkgName} for focal:
      git clone -b {branchName} https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{oemCodenameNogroup}-projects-meta
 
