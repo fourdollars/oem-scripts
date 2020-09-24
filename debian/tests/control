@@ -4,7 +4,7 @@ Depends: @, shellcheck
 Tests: pkg-somerville-meta, pkg-sutton-meta
 Depends: @, ubuntu-dev-tools, git-buildpackage
 
-Tests: launchpad-api, get-private-ppa, jq-lp, mir-bug
+Tests: launchpad-api, get-private-ppa, jq-lp, mir-bug, run-autopkgtest
 Depends: @
 
 Tests: git-url-insteadof-setting

@@ -1,3 +1,13 @@
+oem-scripts (0.56) UNRELEASED; urgency=medium
+
+  * debian/control,
+    debian/tests/control,
+    debian/tests/run-autopkgtest,
+    run-autopkgtest,
+    setup.py: Add an autopkgtest wrapper to make life easier.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 24 Sep 2020 23:56:21 +0800
+
 oem-scripts (0.55) focal; urgency=medium
 
   [ Shih-Yuan Lee (FourDollars) ]
