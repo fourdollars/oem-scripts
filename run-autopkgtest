@@ -4,18 +4,46 @@ exec 2>&1
 set -euo pipefail
 IFS=$'\n\t'
 
-while :; do
-    TMP=$(mktemp -u "$HOME/tmp.XXXXXXXXXX")
-    if [ -e "$TMP-auto-setup-environment.sh" ]; then
-        continue
-    else
-        break
-    fi
-done
-
 usage()
 {
-    echo "Usage: $0 [lxc|qemu|vm-ubuntu-cloud] {focal,unstable,...} [--test-name XXX] [-F|--flush-cache] [-K|--keep-testbed] [--shell-fail]"
+    cat <<ENDLINE
+Name:
+
+ $(basename "$0") is a general purpose autopkgtest wrapper that can setup the testbed and run tests on the testbed.
+
+Usage:
+
+ $(basename "$0") [lxc|qemu|vm-ubuntu-cloud] [OPTIONS] {focal,unstable,...}
+
+OPTIONS:
+
+ -h | --help
+    Print help manual
+
+ -B | --benchmark
+    Measure the time in each major process
+
+ -C | --credentials
+    Detect and execute the enviroment setup script of credentials.
+
+ -F | --flush-cache
+    Remove the existing testbed and build new one.
+
+ -m | --mirror
+    Specify the mirror site. Now it only works for qemu testbed.
+
+ -R | --rebuild-testbed
+    Rebuild the testbed
+
+ -S | --shell-fail
+    Run an interactive shell in the testbed after a failed build, test, or dependency installation.
+
+ -s | --size
+    Specify the image size for qemu. It is '12G' by default.
+
+ -t | --test-name
+    Run only the given test name (from test control file).
+ENDLINE
 }
 
 if [ "$#" == 0 ]; then
@@ -27,33 +55,42 @@ region=$(grep LANG= /etc/default/locale | cut -c 9-10 | tr '[:upper:]' '[:lower:
 if [ -n "$region" ]; then
     region="$region."
 fi
+benchmark=0
+credentials=0
 flush_cache=0
-keep_testbed=0
+rebuild_testbed=0
 shell_fail=""
 test_name=""
-OPTS=$(getopt -o F,h,K --long help,test-name:,flush-cache,mirror:,keep-testbed,shell-fail,size: -n 'run-autopkgtest' -- "$@")
+
+OPTS=$(getopt -o B,C,F,h,m:,R,S,s:,t: --long benchmark,credentials,flush-cache,help,mirror:,rebuild-testbed,shell-fail,size:,test-name: -n 'run-autopkgtest' -- "$@")
 eval set -- "${OPTS}"
 while :; do
     case "$1" in
         ('-h'|'--help')
             usage
             exit;;
+        ('-B'|'--benchmark')
+            benchmark=1
+            shift;;
+        ('-C'|'--credentials')
+            credentials=1
+            shift;;
         ('-F'|'--flush-cache')
             flush_cache=1
             shift;;
-        ('--mirror')
+        ('-m':'--mirror')
             mirror="$2"
             shift 2;;
-        ('-K'|'--keep-testbed')
-            keep_testbed=1
+        ('-R'|'--rebuild-testbed')
+            rebuild_testbed=1
             shift;;
-        ('--shell-fail')
+        ('-S'|'--shell-fail')
             shell_fail="--shell-fail"
             shift;;
-        ('--size')
+        ('-s'|'--size')
             size="$2"
             shift 2;;
-        ('--test-name')
+        ('-t'|'--test-name')
             test_name="--test-name=$2"
             shift 2;;
         ('--') shift; break ;;
@@ -61,19 +98,32 @@ while :; do
     esac
 done
 
+echo "$(basename "$0")" "$@"
+
 # Get root permission
 sudo cat /dev/null
-# Empty build.log
-:>build.log
+# Empty benchmark.log
+if [ "$benchmark" = 1 ]; then
+    :>benchmark.log
+fi
 # Make consistent output
 export LANG=C
 
 arch="$(dpkg --print-architecture)"
 builder="autopkgtest-build-$1"
-posix_shell_script="$TMP-auto-setup-environment.sh"
-target=$(basename "$PWD")
 
+while :; do
+    TMP=$(mktemp -u "$HOME/tmp.XXXXXXXXXX")
+    if [ -e "$TMP-auto-setup-environment.sh" ]; then
+        continue
+    else
+        break
+    fi
+done
+posix_shell_script="$TMP-auto-setup-environment.sh"
 unset TMP
+
+target=$(basename "$PWD")
 
 case "$1" in
     (lxc|qemu)
@@ -81,18 +131,16 @@ case "$1" in
         ;;
     (lxd)
         echo "'$1' is not supported yet."
-        echo "Please use lxc or qemu instead."
+        echo "Please use other builder instead."
         exit 1
         ;;
     (vm-ubuntu-cloud)
-        echo "'$1' is not supported yet. Work in progress."
-        echo "Please use lxc or qemu instead."
+        echo "Using '$1' testbed."
         builder="autopkgtest-build$1"
-        exit 1
         ;;
     (*)
         echo "'$1' is not supported."
-        echo "Please use lxc or qemu instead."
+        echo "Please use other builder instead."
         exit 1
         ;;
 esac
@@ -101,7 +149,11 @@ shift
 
 generate_auto_setup_script()
 {
-    echo "=== generate auto setup script ===" >> build.log
+    if [ "$benchmark" = 1 ]; then
+        echo "=== generate auto setup script ===" | tee -a benchmark.log
+    else
+        echo "=== generate auto setup script ==="
+    fi
     for cmd in "./autopkgtest-$target-auto" "./bin/autopkgtest-$target-auto" "autopkgtest-$target-auto"; do
         for ssh in ~/.ssh/id_ecdsa ~/.ssh/id_rsa; do
             if command -v "$cmd" >/dev/null && [ -f "$ssh" ]; then
@@ -133,38 +185,45 @@ check_testbed()
             fi
             ;;
         (autopkgtest-buildvm-ubuntu-cloud)
+            if [ -f "$HOME/vm-ubuntu-cloud-$series-$arch.img" ]; then
+                true
+            else
+                false
+            fi
             ;;
     esac
 }
 
 build_testbed()
 {
-    echo "=== build testbed ===" >> build.log
+    if [ "$benchmark" = 1 ]; then
+        echo "=== build testbed ===" | tee -a benchmark.log
+    else
+        echo "=== build testbed ==="
+    fi
     distro="$1"
     series="$2"
     case "$builder" in
         (autopkgtest-build-lxc)
-            if [ -e "$posix_shell_script" ]; then
-                sudo "$builder" "$distro" "$series" "$arch" "$posix_shell_script"
-            else
-                sudo "$builder" "$distro" "$series" "$arch"
-            fi
+            sudo "$builder" "$distro" "$series" "$arch"
             ;;
         (autopkgtest-build-qemu)
-            if [ -e "$posix_shell_script" ]; then
-                sudo "$builder" "$series" "$HOME/$distro-$series-$arch.img" --arch="$arch" --mirror="$mirror" --size="${size:=12G}" --script="$(readlink -f "$posix_shell_script")"
-            else
-                sudo "$builder" "$series" "$HOME/$distro-$series-$arch.img" --arch="$arch" --mirror="$mirror" --size="${size:=12G}"
-            fi
+            sudo "$builder" "$series" "$HOME/$distro-$series-$arch.img" --arch="$arch" --mirror="$mirror" --size="${size:=12G}"
             ;;
         (autopkgtest-buildvm-ubuntu-cloud)
+            sudo "$builder" --verbose --mirror "$mirror" --release "vm-ubuntu-cloud-$series-$arch" -r "$series" -a "$arch"
+            mv ./autopkgtest-focal-amd64.img ~/"vm-ubuntu-cloud-$series-$arch.img"
             ;;
     esac
 }
 
 run_tests_on_testbed()
 {
-    echo "=== run tests on testbed ===" >> build.log
+    if [ "$benchmark" = 1 ]; then
+        echo "=== run tests on testbed ===" | tee -a benchmark.log
+    else
+        echo "=== run tests on testbed ==="
+    fi
     distro="$1"
     series="$2"
     shift 2
@@ -178,6 +237,9 @@ run_tests_on_testbed()
     fi
 
     ARGS=("-U" "--quiet" "--summary-file=$summary" "--log-file=$logfile" "--output-dir=$outputdir")
+    if [ -f "$posix_shell_script" ]; then
+        ARGS+=("--copy=$posix_shell_script:/$(basename "$posix_shell_script")" "--setup-commands=/$(basename "$posix_shell_script")")
+    fi
     if [ -n "$test_name" ]; then
         ARGS+=("$test_name")
     fi
@@ -193,13 +255,18 @@ run_tests_on_testbed()
             sudo autopkgtest "${ARGS[@]}" -- qemu -c 4 --ram-size 8192 "$HOME/$distro-$series-$arch.img"
             ;;
         (autopkgtest-buildvm-ubuntu-cloud)
+            sudo autopkgtest "${ARGS[@]}" -- qemu -c 4 --ram-size 8192 "$HOME/vm-ubuntu-cloud-$series-$arch.img"
             ;;
     esac
 }
 
 clean_testbed()
 {
-    echo "=== clean testbed ===" >> build.log
+    if [ "$benchmark" = 1 ]; then
+        echo "=== clean testbed ===" | tee -a benchmark.log
+    else
+        echo "=== clean testbed ==="
+    fi
     distro="$1"
     series="$2"
     case "$builder" in
@@ -210,6 +277,7 @@ clean_testbed()
             sudo rm "$HOME/$distro-$series-$arch.img"
             ;;
         (autopkgtest-buildvm-ubuntu-cloud)
+            sudo rm "$HOME/vm-ubuntu-cloud-$series-$arch.img"
             ;;
     esac
 }
@@ -228,7 +296,6 @@ cleanup() {
         else
             distro=debian
         fi
-        [ "$keep_testbed" = 0 ] && clean_testbed "$distro" "$series"
         if [ -f "$HOME/$distro-$series-$arch.img.raw" ]; then
             rm -f "$HOME/$distro-$series-$arch.img.raw"
         fi
@@ -237,7 +304,9 @@ cleanup() {
                 sudo chown "$USER":"$USER" -R "$item"
             fi
         done
-        grep -e ^= -e ^real -e ^user -e ^sys build.log
+        if [ "$benchmark" = 1 ]; then
+            grep -e ^= -e ^real -e ^user -e ^sys benchmark.log
+        fi
     done
 }
 trap cleanup EXIT INT TERM
@@ -252,23 +321,42 @@ for series in "$@"; do
         distro=debian
         mirror="${mirror:=http://ftp.${region}debian.org/debian}"
     fi
-    if ! check_testbed "$distro" "$series"; then
-        if [ "$flush_cache" = 1 ] && [ "$builder" = 'autopkgtest-build-lxc' ]; then
-            case "$distro" in
-                (ubuntu)
-                    rm -fr "/var/cache/lxc/$series/rootfs-$arch"
-                    ;;
-                (debian)
-                    rm -fr "/var/cache/lxc/$distro/rootfs-$series-$arch"
+    if ! check_testbed "$distro" "$series" >/dev/null 2>&1 || [ "$rebuild_testbed" = 1 ]; then
+        if [ "$flush_cache" = 1 ]; then
+            case "$builder" in
+                ('autopkgtest-build-lxc')
+                    case "$distro" in
+                        (ubuntu)
+                            sudo rm -fr "/var/cache/lxc/$series/rootfs-$arch"
+                            ;;
+                        (debian)
+                            sudo rm -fr "/var/cache/lxc/$distro/rootfs-$series-$arch"
+                            ;;
+                    esac
                     ;;
             esac
         fi
-        if [ "$builder" != 'autopkgtest-buildvm-ubuntu-cloud' ] && [ ! -e "$posix_shell_script" ]; then
-            time (generate_auto_setup_script) 2>>build.log
+        if check_testbed "$distro" "$series" >/dev/null 2>&1; then
+            clean_testbed "$distro" "$series"
         fi
-        time (build_testbed "$distro" "$series") 2>>build.log
+        if [ "$benchmark" = 1 ]; then
+            time (build_testbed "$distro" "$series") 2>>benchmark.log
+        else
+            build_testbed "$distro" "$series"
+        fi
     fi
-    time (run_tests_on_testbed "$distro" "$series") 2>>build.log
+    if [ "$credentials" = 1 ] && [ ! -e "$posix_shell_script" ]; then
+        if [ "$benchmark" = 1 ]; then
+            time (generate_auto_setup_script) 2>>benchmark.log
+        else
+            generate_auto_setup_script
+        fi
+    fi
+    if [ "$benchmark" = 1 ]; then
+        time (run_tests_on_testbed "$distro" "$series") 2>>benchmark.log
+    else
+        run_tests_on_testbed "$distro" "$series"
+    fi
 done
 
 # print summary in the end
