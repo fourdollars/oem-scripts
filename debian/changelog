@@ -1,4 +1,4 @@
-oem-scripts (0.57) UNRELEASED; urgency=medium
+oem-scripts (0.57) focal; urgency=medium
 
   * run-autopkgtest: Use credentials when running tests instead of including
     credentials in the testbed, enrich the help manual, and start to support
