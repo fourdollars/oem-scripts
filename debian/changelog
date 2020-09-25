@@ -1,4 +1,4 @@
-oem-scripts (0.56) UNRELEASED; urgency=medium
+oem-scripts (0.56) focal; urgency=medium
 
   [ Shih-Yuan Lee (FourDollars) ]
   * debian/control,
