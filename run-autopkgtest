@@ -1,0 +1,278 @@
+#!/bin/bash
+
+exec 2>&1
+set -euo pipefail
+IFS=$'\n\t'
+
+while :; do
+    TMP=$(mktemp -u "$HOME/tmp.XXXXXXXXXX")
+    if [ -e "$TMP-auto-setup-environment.sh" ]; then
+        continue
+    else
+        break
+    fi
+done
+
+usage()
+{
+    echo "Usage: $0 [lxc|qemu|vm-ubuntu-cloud] {focal,unstable,...} [--test-name XXX] [-F|--flush-cache] [-K|--keep-testbed] [--shell-fail]"
+}
+
+if [ "$#" == 0 ]; then
+    usage
+    exit
+fi
+
+region=$(grep LANG= /etc/default/locale | cut -c 9-10 | tr '[:upper:]' '[:lower:]')
+if [ -n "$region" ]; then
+    region="$region."
+fi
+flush_cache=0
+keep_testbed=0
+shell_fail=""
+test_name=""
+OPTS=$(getopt -o F,h,K --long help,test-name:,flush-cache,mirror:,keep-testbed,shell-fail,size: -n 'run-autopkgtest' -- "$@")
+eval set -- "${OPTS}"
+while :; do
+    case "$1" in
+        ('-h'|'--help')
+            usage
+            exit;;
+        ('-F'|'--flush-cache')
+            flush_cache=1
+            shift;;
+        ('--mirror')
+            mirror="$2"
+            shift 2;;
+        ('-K'|'--keep-testbed')
+            keep_testbed=1
+            shift;;
+        ('--shell-fail')
+            shell_fail="--shell-fail"
+            shift;;
+        ('--size')
+            size="$2"
+            shift 2;;
+        ('--test-name')
+            test_name="--test-name=$2"
+            shift 2;;
+        ('--') shift; break ;;
+        (*) break ;;
+    esac
+done
+
+# Get root permission
+sudo cat /dev/null
+# Empty build.log
+:>build.log
+# Make consistent output
+export LANG=C
+
+arch="$(dpkg --print-architecture)"
+builder="autopkgtest-build-$1"
+posix_shell_script="$TMP-auto-setup-environment.sh"
+target=$(basename "$PWD")
+
+unset TMP
+
+case "$1" in
+    (lxc|qemu)
+        echo "Using '$1' testbed."
+        ;;
+    (lxd)
+        echo "'$1' is not supported yet."
+        echo "Please use lxc or qemu instead."
+        exit 1
+        ;;
+    (vm-ubuntu-cloud)
+        echo "'$1' is not supported yet. Work in progress."
+        echo "Please use lxc or qemu instead."
+        builder="autopkgtest-build$1"
+        exit 1
+        ;;
+    (*)
+        echo "'$1' is not supported."
+        echo "Please use lxc or qemu instead."
+        exit 1
+        ;;
+esac
+
+shift
+
+generate_auto_setup_script()
+{
+    echo "=== generate auto setup script ===" >> build.log
+    for cmd in "./autopkgtest-$target-auto" "./bin/autopkgtest-$target-auto" "autopkgtest-$target-auto"; do
+        for ssh in ~/.ssh/id_ecdsa ~/.ssh/id_rsa; do
+            if command -v "$cmd" >/dev/null && [ -f "$ssh" ]; then
+                "$cmd" --ssh "$ssh" > "$posix_shell_script" && chmod +x "$posix_shell_script"
+                break 2
+            fi
+        done
+    done
+    # Do some sanity check for auto setup script.
+    if [ -f "$posix_shell_script" ]; then
+        dash -n "$posix_shell_script"
+        shellcheck "$posix_shell_script"
+    fi
+}
+
+check_testbed()
+{
+    distro="$1"
+    series="$2"
+    case "$builder" in
+        (autopkgtest-build-lxc)
+            sudo lxc-info "autopkgtest-$series-$arch"
+            ;;
+        (autopkgtest-build-qemu)
+            if [ -f "$HOME/$distro-$series-$arch.img" ]; then
+                true
+            else
+                false
+            fi
+            ;;
+        (autopkgtest-buildvm-ubuntu-cloud)
+            ;;
+    esac
+}
+
+build_testbed()
+{
+    echo "=== build testbed ===" >> build.log
+    distro="$1"
+    series="$2"
+    case "$builder" in
+        (autopkgtest-build-lxc)
+            if [ -e "$posix_shell_script" ]; then
+                sudo "$builder" "$distro" "$series" "$arch" "$posix_shell_script"
+            else
+                sudo "$builder" "$distro" "$series" "$arch"
+            fi
+            ;;
+        (autopkgtest-build-qemu)
+            if [ -e "$posix_shell_script" ]; then
+                sudo "$builder" "$series" "$HOME/$distro-$series-$arch.img" --arch="$arch" --mirror="$mirror" --size="${size:=12G}" --script="$(readlink -f "$posix_shell_script")"
+            else
+                sudo "$builder" "$series" "$HOME/$distro-$series-$arch.img" --arch="$arch" --mirror="$mirror" --size="${size:=12G}"
+            fi
+            ;;
+        (autopkgtest-buildvm-ubuntu-cloud)
+            ;;
+    esac
+}
+
+run_tests_on_testbed()
+{
+    echo "=== run tests on testbed ===" >> build.log
+    distro="$1"
+    series="$2"
+    shift 2
+    summary="$builder-$SHA-$series-summary.log"
+    logfile="$builder-$SHA-$series-complete.log"
+    outputdir="$builder-$SHA-$series"
+
+    # Remove previous log output folder
+    if [ -d "$outputdir" ]; then
+        rm -fr "$outputdir"
+    fi
+
+    ARGS=("-U" "--quiet" "--summary-file=$summary" "--log-file=$logfile" "--output-dir=$outputdir")
+    if [ -n "$test_name" ]; then
+        ARGS+=("$test_name")
+    fi
+    if [ -n "$shell_fail" ]; then
+        ARGS+=("$shell_fail")
+    fi
+
+    case "$builder" in
+        (autopkgtest-build-lxc)
+            sudo autopkgtest "${ARGS[@]}" -- lxc "autopkgtest-$series-$arch"
+            ;;
+        (autopkgtest-build-qemu)
+            sudo autopkgtest "${ARGS[@]}" -- qemu -c 4 --ram-size 8192 "$HOME/$distro-$series-$arch.img"
+            ;;
+        (autopkgtest-buildvm-ubuntu-cloud)
+            ;;
+    esac
+}
+
+clean_testbed()
+{
+    echo "=== clean testbed ===" >> build.log
+    distro="$1"
+    series="$2"
+    case "$builder" in
+        (autopkgtest-build-lxc)
+            sudo lxc-destroy -n "autopkgtest-$series-amd64"
+            ;;
+        (autopkgtest-build-qemu)
+            sudo rm "$HOME/$distro-$series-$arch.img"
+            ;;
+        (autopkgtest-buildvm-ubuntu-cloud)
+            ;;
+    esac
+}
+
+if [ -d .git ]; then
+    SHA=$(git rev-parse --short HEAD)
+else
+    SHA=nogit
+fi
+
+cleanup() {
+    rm -f "$posix_shell_script"
+    for series in "${SERIES[@]}"; do
+        if command -v ubuntu-distro-info >/dev/null && [[ "$(ubuntu-distro-info --all)" =~ $series ]]; then
+            distro=ubuntu
+        else
+            distro=debian
+        fi
+        [ "$keep_testbed" = 0 ] && clean_testbed "$distro" "$series"
+        if [ -f "$HOME/$distro-$series-$arch.img.raw" ]; then
+            rm -f "$HOME/$distro-$series-$arch.img.raw"
+        fi
+        for item in "$builder-$SHA-$series-summary.log" "$builder-$SHA-$series-complete.log" "$builder-$SHA-$series"; do
+            if [ -e "$item" ]; then
+                sudo chown "$USER":"$USER" -R "$item"
+            fi
+        done
+        grep -e ^= -e ^real -e ^user -e ^sys build.log
+    done
+}
+trap cleanup EXIT INT TERM
+
+SERIES=()
+for series in "$@"; do
+    SERIES+=("$series")
+    if command -v ubuntu-distro-info >/dev/null && [[ "$(ubuntu-distro-info --all)" =~ $series ]]; then
+        distro=ubuntu
+        mirror="${mirror:=http://${region}archive.ubuntu.com/ubuntu}"
+    else
+        distro=debian
+        mirror="${mirror:=http://ftp.${region}debian.org/debian}"
+    fi
+    if ! check_testbed "$distro" "$series"; then
+        if [ "$flush_cache" = 1 ] && [ "$builder" = 'autopkgtest-build-lxc' ]; then
+            case "$distro" in
+                (ubuntu)
+                    rm -fr "/var/cache/lxc/$series/rootfs-$arch"
+                    ;;
+                (debian)
+                    rm -fr "/var/cache/lxc/$distro/rootfs-$series-$arch"
+                    ;;
+            esac
+        fi
+        if [ "$builder" != 'autopkgtest-buildvm-ubuntu-cloud' ] && [ ! -e "$posix_shell_script" ]; then
+            time (generate_auto_setup_script) 2>>build.log
+        fi
+        time (build_testbed "$distro" "$series") 2>>build.log
+    fi
+    time (run_tests_on_testbed "$distro" "$series") 2>>build.log
+done
+
+# print summary in the end
+for series in "$@"; do
+    echo "=== $builder-$SHA-$series-summary.log ==="
+    cat "$builder-$SHA-$series-summary.log"
+done

@@ -8,7 +8,8 @@ Build-Depends:
  python3-all,
  python3-debian,
  python3-setuptools,
- python3-launchpadlib
+ python3-launchpadlib,
+ shellcheck
 Standards-Version: 4.5.0
 Maintainer: Commercial Engineering <commercial-engineering@canonical.com>
 Vcs-Browser: https://code.launchpad.net/~oem-solutions-engineers/oem-dev-tools/+git/oem-scripts
