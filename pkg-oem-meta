@@ -171,6 +171,10 @@ def generate_debian_package(version, dummy=False, real=False):
             extra = extra + ', oem-' + platform_archive + '-meta'
             factory_depends = factory_depends + ', oem-' + platform_archive + \
                 '-factory-meta'
+        if codename == 'stella':
+            extra = extra + ', oem-' + platform_archive + '-meta'
+            factory_depends = factory_depends + ', oem-' + platform_archive + \
+                '-factory-meta'
 
     git_abbr = f"https://git.launchpad.net/{git_repo} -b {branch}"
     git_browser = f"https://code.launchpad.net/{git_repo}/+ref/{branch}"
