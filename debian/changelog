@@ -1,4 +1,4 @@
-oem-scripts (0.58) UNRELEASED; urgency=medium
+oem-scripts (0.58) focal; urgency=medium
 
   [ Jeremy Su ]
   * debian/tests/control,
