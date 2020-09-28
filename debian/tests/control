@@ -1,7 +1,7 @@
 Tests: autopkgtest-collect-credentials, autopkgtest-oem-scripts-auto
 Depends: @, shellcheck
 
-Tests: pkg-somerville-meta, pkg-sutton-meta
+Tests: pkg-somerville-meta, pkg-sutton-meta, pkg-stella-meta
 Depends: @, ubuntu-dev-tools, git-buildpackage
 
 Tests: launchpad-api, get-private-ppa, jq-lp, mir-bug, run-autopkgtest
