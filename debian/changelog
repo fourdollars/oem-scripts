@@ -1,3 +1,9 @@
+oem-scripts (0.59) UNRELEASED; urgency=medium
+
+  * run-autopkgtest: Fix some typos.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 29 Sep 2020 09:56:17 +0800
+
 oem-scripts (0.58) focal; urgency=medium
 
   [ Jeremy Su ]

@@ -9,7 +9,7 @@ usage()
     cat <<ENDLINE
 Name:
 
- $(basename "$0") is a general purpose autopkgtest wrapper that can setup the testbed and run tests on the testbed.
+ $(basename "$0") is a general purpose autopkgtest wrapper that can set up the testbed and run tests on the testbed.
 
 Usage:
 
@@ -24,10 +24,10 @@ OPTIONS:
     Measure the time in each major process
 
  -C | --credentials
-    Detect and execute the enviroment setup script of credentials.
+    Detect and execute the environment setup script of credentials.
 
  -F | --flush-cache
-    Remove the existing testbed and build new one.
+    Remove the existing testbed and build a new one.
 
  -m | --mirror
     Specify the mirror site. Now it only works for qemu testbed.
