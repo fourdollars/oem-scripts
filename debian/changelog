@@ -1,4 +1,4 @@
-oem-scripts (0.59) UNRELEASED; urgency=medium
+oem-scripts (0.59) focal; urgency=medium
 
   * run-autopkgtest: Fix some typos.
   * autopkgtest-collect-credentials,
