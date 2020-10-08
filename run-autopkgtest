@@ -91,7 +91,7 @@ while :; do
         ('-F'|'--flush-cache')
             flush_cache=1
             shift;;
-        ('-m':'--mirror')
+        ('-m'|'--mirror')
             mirror="$2"
             shift 2;;
         ('-R'|'--rebuild-testbed')

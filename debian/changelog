@@ -1,6 +1,7 @@
 oem-scripts (0.60) UNRELEASED; urgency=medium
 
   * run-autopkgtest: Try to support different architecture.
+  * run-autopkgtest: Fix the typo of mirror option.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 08 Oct 2020 10:20:39 +0800
 
