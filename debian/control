@@ -32,11 +32,10 @@ Depends:
  python3-distro-info,
  python3-distutils-extra,
  python3-mechanize,
- ubuntu-dev-tools,
- zsync-curl
+ ubuntu-dev-tools
 Breaks: lp-fish-tools (<<1.192.40)
 Replaces: lp-fish-tools (<<1.192.40)
-Recommends: qemu-user-static
+Recommends: qemu-user-static, zsync-curl
 Description: Short OEM related scripts
  Short OEM related scripts can go here. 
  Also there is a meta package oem-dev-tools that installs all scripts
