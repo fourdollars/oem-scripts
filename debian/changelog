@@ -1,4 +1,4 @@
-oem-scripts (0.60) UNRELEASED; urgency=medium
+oem-scripts (0.60) focal; urgency=medium
 
   * run-autopkgtest: Try to support different architecture.
   * run-autopkgtest: Fix the typo of mirror option.
