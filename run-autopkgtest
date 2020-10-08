@@ -20,11 +20,17 @@ OPTIONS:
  -h | --help
     Print help manual
 
+ -A | --architecture
+    Specify the architecture such as amd64, arm64, ...
+
  -B | --benchmark
     Measure the time in each major process
 
  -C | --credentials
     Detect and execute the environment setup script of credentials.
+
+ -d | --debug
+    Enable debug mode.
 
  -F | --flush-cache
     Remove the existing testbed and build a new one.
@@ -57,23 +63,30 @@ if [ -n "$region" ]; then
 fi
 benchmark=0
 credentials=0
+debug=0
 flush_cache=0
 rebuild_testbed=0
 shell_fail=""
 test_name=""
 
-OPTS=$(getopt -o B,C,F,h,m:,R,S,s:,t: --long benchmark,credentials,flush-cache,help,mirror:,rebuild-testbed,shell-fail,size:,test-name: -n 'run-autopkgtest' -- "$@")
+OPTS=$(getopt -o A:,B,C,d,F,h,m:,R,S,s:,t: --long architecture:,benchmark,credentials,debug,flush-cache,help,mirror:,rebuild-testbed,shell-fail,size:,test-name: -n 'run-autopkgtest' -- "$@")
 eval set -- "${OPTS}"
 while :; do
     case "$1" in
         ('-h'|'--help')
             usage
             exit;;
+        ('-A'|'--architecture')
+            arch="$2"
+            shift 2;;
         ('-B'|'--benchmark')
             benchmark=1
             shift;;
         ('-C'|'--credentials')
             credentials=1
+            shift;;
+        ('-d'|'--debug')
+            debug=1
             shift;;
         ('-F'|'--flush-cache')
             flush_cache=1
@@ -109,7 +122,7 @@ fi
 # Make consistent output
 export LANG=C
 
-arch="$(dpkg --print-architecture)"
+arch="${arch:=$(dpkg --print-architecture)}"
 builder="autopkgtest-build-$1"
 
 while :; do
@@ -220,7 +233,7 @@ build_testbed()
             ;;
         (autopkgtest-buildvm-ubuntu-cloud)
             sudo "$builder" --verbose --mirror "$mirror" --release "vm-ubuntu-cloud-$series-$arch" -r "$series" -a "$arch"
-            mv ./autopkgtest-focal-amd64.img ~/"vm-ubuntu-cloud-$series-$arch.img"
+            mv "./autopkgtest-focal-$arch.img" ~/"vm-ubuntu-cloud-$series-$arch.img"
             ;;
     esac
 }
@@ -254,6 +267,32 @@ run_tests_on_testbed()
     if [ -n "$shell_fail" ]; then
         ARGS+=("$shell_fail")
     fi
+    QEMU_ARGS=(-c 4 --ram-size 8192)
+    if [ "$debug" = 1 ]; then
+        QEMU_ARGS+=(-d)
+    fi
+    if [ "$(dpkg --print-architecture)" != "$arch" ]; then
+        CPU="x86_64"
+        case "$arch" in
+            (arm64)
+                CPU="aarch64"
+                QEMU_ARGS+=("--qemu-options=-machine raspi3")
+                ;;
+            (armhf|armel)
+                CPU="arm"
+                QEMU_ARGS+=("--qemu-options=-machine raspi2")
+                ;;
+            (i386)
+                CPU="i386"
+                QEMU_ARGS+=("--qemu-options=-machine ubuntu")
+                ;;
+            (*)
+                echo "'$arch' is not supported."
+                exit 1
+                ;;
+        esac
+        QEMU_ARGS+=("--qemu-command=qemu-system-$CPU")
+    fi
     if [ -f "${posix_shell_script}.copy" ]; then
         while read -r line; do
             ARGS+=("--copy=$line")
@@ -265,10 +304,10 @@ run_tests_on_testbed()
             sudo autopkgtest "${ARGS[@]}" -- lxc "autopkgtest-$series-$arch"
             ;;
         (autopkgtest-build-qemu)
-            sudo autopkgtest "${ARGS[@]}" -- qemu -c 4 --ram-size 8192 "$HOME/$distro-$series-$arch.img"
+            sudo autopkgtest "${ARGS[@]}" -- qemu "${QEMU_ARGS[@]}" "$HOME/$distro-$series-$arch.img"
             ;;
         (autopkgtest-buildvm-ubuntu-cloud)
-            sudo autopkgtest "${ARGS[@]}" -- qemu -c 4 --ram-size 8192 "$HOME/vm-ubuntu-cloud-$series-$arch.img"
+            sudo autopkgtest "${ARGS[@]}" -- qemu "${QEMU_ARGS[@]}" "$HOME/vm-ubuntu-cloud-$series-$arch.img"
             ;;
     esac
 }
@@ -284,7 +323,7 @@ clean_testbed()
     series="$2"
     case "$builder" in
         (autopkgtest-build-lxc)
-            sudo lxc-destroy -n "autopkgtest-$series-amd64"
+            sudo lxc-destroy -n "autopkgtest-$series-$arch"
             ;;
         (autopkgtest-build-qemu)
             sudo rm "$HOME/$distro-$series-$arch.img"

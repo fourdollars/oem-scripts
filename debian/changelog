@@ -1,3 +1,9 @@
+oem-scripts (0.60) UNRELEASED; urgency=medium
+
+  * run-autopkgtest: Try to support different architecture.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 08 Oct 2020 10:20:39 +0800
+
 oem-scripts (0.59) focal; urgency=medium
 
   * run-autopkgtest: Fix some typos.
