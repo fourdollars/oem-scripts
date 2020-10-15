@@ -1,3 +1,13 @@
+oem-scripts (0.61) UNRELEASED; urgency=medium
+
+  * debian/control,
+    debian/tests/mir-bug,
+    oem_scripts/__init__.py,
+    mir-bug: Refactor mir-bug to create subcommand, add other subcommands and
+    don't also affect 'Ubuntu' when creating MIR bug.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 08 Oct 2020 18:07:28 +0800
+
 oem-scripts (0.60) focal; urgency=medium
 
   * run-autopkgtest: Try to support different architecture.

@@ -20,11 +20,14 @@ Architecture: all
 Depends:
  ${misc:Depends},
  ${python3:Depends},
+ build-essential,
+ colordiff,
  debhelper,
  devscripts,
  dh-modaliases,
  diffutils,
  dkms,
+ dpkg-dev,
  git,
  httpie,
  jq,
@@ -32,7 +35,8 @@ Depends:
  python3-distro-info,
  python3-distutils-extra,
  python3-mechanize,
- ubuntu-dev-tools
+ ubuntu-dev-tools,
+ wget
 Breaks: lp-fish-tools (<<1.192.40)
 Replaces: lp-fish-tools (<<1.192.40)
 Recommends: qemu-user-static, zsync-curl

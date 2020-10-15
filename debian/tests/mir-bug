@@ -1,5 +1,17 @@
 #!/bin/bash
 
+set -euo pipefail
+IFS=$'\n\t'
+
 export LAUNCHPAD_API="https://api.staging.launchpad.net/"
 
-mir-bug sutton.newell ace "ThinkPad X1 Carbon Gen 8"
+mir-bug update --yes 1868254
+
+if ! mir-bug check --skip-git-oem-branch 1868254; then
+    true # Checking LP: #1868254 is expected to fail
+else
+    false
+fi
+mir-bug collect "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs.json
+
+mir-bug create sutton.newell ace "ThinkPad X1 Carbon Gen 8"

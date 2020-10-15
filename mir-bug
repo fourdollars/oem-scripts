@@ -1,65 +1,131 @@
-#!/usr/bin/python3
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Usage:
-# ./mir-bug sutton.newell ace "ThinkPad X1 Carbon Gen 8"
-# For unreleased products.
-# ./mir-bug sutton.newell ace "some Lenovo laptops"
-# ./mir-bug somerville metapod "some Dell laptops"
+# Copyright (C) 2020  Canonical Ltd.
+# Author: Bin Li <bin.li@canonical.com>
+#         Shih-Yuan Lee (FourDollars) <sylee@canonical.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import sys
+import argparse
+import difflib
+import json
+import logging
+import oem_scripts
 import os
+import re
+import shutil
+import subprocess
+import sys
+
+from copy import copy
+from datetime import datetime
+from glob import glob
+from launchpadlib.launchpad import Launchpad
+from logging import debug, info, warning, error, critical
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
+from pathlib import Path
+from string import Template
+from tempfile import TemporaryDirectory
 
-if len(sys.argv) != 4:
-    print("./mir-bug oemCodename platformCodename deviceName")
-    print("  oemCodename: somerville, stella, or sutton.simon")
-    print("  platformCodename: Name deined by PM, like ace")
-    print("  deviceName: ThinkPad X1 Carbon Gen 8")
-    print("Examples:")
-    print("  ./mir-bug sutton.newell ace \"ThinkPad X1 Carbon Gen 8\"")
-    quit()
+SUBSCRIBER_LIST = ('oem-solutions-engineers', 'ubuntu-sponsors', 'ubuntu-desktop')
+TAG_LIST = ('oem-meta-packages', 'oem-priority', f'oem-scripts-{oem_scripts.__version__}')
+
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+                                 epilog="""
+examples:
+    mir-bug create sutton.newell ace \"ThinkPad X1 Carbon Gen 8\"
+    mir-bug check BUG_NUMBER
+    mir-bug update BUG_NUMBER (WIP)
+    mir-bug collect oem-meta-mir-bugs.json""")
+
+parser.add_argument("-d", "--debug",
+                    help="print debug messages", action="store_true")
+parser.add_argument("-q", "--quiet",
+                    help="Don't print info messages", action="store_true")
+
+subparsers = parser.add_subparsers(dest="subcommand")
+
+create = subparsers.add_parser('create', help='create -h')
+create.add_argument("oemCodename",
+                    help="Such as somerville, stella, or sutton.simon")
+create.add_argument("platformCodename",
+                    help="Name deined by PM, like ace.")
+create.add_argument("deviceName",
+                    help="ThinkPad X1 Carbon Gen 8")
+
+update = subparsers.add_parser('update', help='update -h')
+update.add_argument("bugNumber",
+                    help="Specify the bug number on Launchpad to update.", type=int)
+update.add_argument("--yes",
+                    help="Say yes for all prompts.", action="store_true")
+
+check = subparsers.add_parser('check', help='check -h')
+check.add_argument("bugNumber",
+                   help="Specify the bug number on Launchpad to do some sanity checks.", type=int)
+check.add_argument("--skip-git-oem-branch",
+                   help="Skip checking oem branch of Git repository.", action="store_true")
+
+collect = subparsers.add_parser('collect', help='collect -h')
+collect.add_argument("json",
+                     help="Specify the json file name to write.",
+                     type=argparse.FileType('w', encoding='UTF-8'))
+
+args = parser.parse_args()
+
+logging.addLevelName(logging.DEBUG,
+                     "\033[1;96m%s\033[1;0m" %
+                     logging.getLevelName(logging.DEBUG))
+logging.addLevelName(logging.INFO,
+                     "\033[1;32m%s\033[1;0m" %
+                     logging.getLevelName(logging.INFO))
+logging.addLevelName(logging.WARNING,
+                     "\033[1;33m%s\033[1;0m" %
+                     logging.getLevelName(logging.WARNING))
+logging.addLevelName(logging.ERROR,
+                     "\033[1;31m%s\033[1;0m" %
+                     logging.getLevelName(logging.ERROR))
+logging.addLevelName(logging.CRITICAL,
+                     "\033[1;41m%s\033[1;0m" %
+                     logging.getLevelName(logging.CRITICAL))
+
+if args.debug:
+    logging.basicConfig(format='<%(levelname)s> %(message)s',
+                        level=logging.DEBUG,
+                        handlers=[logging.StreamHandler(sys.stdout)])
+elif not args.quiet:
+    logging.basicConfig(format='<%(levelname)s> %(message)s',
+                        level=logging.INFO,
+                        handlers=[logging.StreamHandler(sys.stdout)])
 else:
-    oemCodename = str(sys.argv[1])
-    tempList = oemCodename.split('.')
-    oemCodenameNogroup = tempList[0]
-    if len(tempList) == 2:
-        oemGroupName = tempList[1]
-    else:
-        oemGroupName = ''
+    logging.basicConfig(format='<%(levelname)s> %(message)s',
+                        handlers=[logging.StreamHandler(sys.stdout)])
 
-    platformCodename = str(sys.argv[2])
-    deviceName = str(sys.argv[3])
-    # metaPkgName's examples
-    # oem-somerville-metapod-meta
-    # oem-sutton.newell-ace-meta
-    metaPkgName = "oem-" + oemCodename + "-" + platformCodename + "-meta"
-
-    if oemGroupName.strip() != '':
-        branchName = oemGroupName + "." + platformCodename + "-focal-ubuntu"
-    else:
-        branchName = platformCodename + "-focal-ubuntu"
-
-login = LaunchpadLogin()
-lp = login.lp
-
-project = lp.projects["oem-priority"]
-
-bt = "[MIR] " + metaPkgName
-# bug description refers to https://bugs.launchpad.net/bugs/1889367.
-bd = f"""[Availability]
+mir_bug_description_template = Template(f"""[Availability]
 This is a meta package for https://wiki.ubuntu.com/MIRTeam/Exceptions/OEM that means the package doesn't exist in Debian or Ubuntu archive yet.
-The source code of the {metaPkgName} for focal:
-     git clone -b {branchName} https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{oemCodenameNogroup}-projects-meta
+The source code of the $metaPkgName for focal:
+    git clone -b $branchName https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-$oemCodenameNogroup-projects-meta
 
 [Rationale]
-We want to improve the hardware support for {deviceName}.
+We want to improve the hardware support for $deviceName.
 
 [Security]
 No CVE/known security issue.
 
 [Quality assurance]
-I have used ppa:oem-solutions-engineers/oem-projects-meta to check this package on {deviceName}.
-{metaPkgName} will be upgraded to 20.04ubuntu1 or latest version from OEM archive.
+I have used ppa:oem-solutions-engineers/oem-projects-meta to check this package on $deviceName.
+$metaPkgName will be upgraded to 20.04ubuntu1 or latest version from OEM archive.
 
 [Dependencies]
 It only depends on ubuntu-oem-keyring.
@@ -73,22 +139,507 @@ Canonical OEM Enablement Team will take care of the maintenance.
 [Background information]
 Please check https://wiki.ubuntu.com/MIRTeam/Exceptions/OEM for details.
 
-Please use "oem-metapackage-mir-check" in lp:ubuntu-archive-tools to verify this MIR against the reference package in the archive.
+Please use "oem-metapackage-mir-check" in lp:ubuntu-archive-tools to verify this MIR against the reference package in the archive.""")
 
-"""
+pattern = re.compile(r'.*\[MIR\]\W*oem-([^-]*)-(.*)-meta\W*')
 
-bug = lp.bugs.createBug(description=bd, target=project, title=bt, information_type='Public', tags=["oem-meta-packages", "oem-priority"])
-print("meta package public bug: " + bug.web_link)
 
-for task in bug.bug_tasks:
-    task.status = 'Confirmed'
-    task.importance = 'High'  # Critical or Medium
-    # Assign to reporter by default
-    task.assignee = lp.me
-    task.lp_save()
+def create_bug(lp, oemCodename, platformCodename, deviceName):
+    tempList = oemCodename.split('.')
+    oemCodenameNogroup = tempList[0]
+    if len(tempList) == 2:
+        oemGroupName = tempList[1]
+    else:
+        oemGroupName = ''
 
-# Also affects 'Ubuntu'
-bug.addTask(target=lp.projects["Ubuntu"])
-# Subscribe the oem-solutions-engineers
-bug.subscribe(person=lp.people['oem-solutions-engineers'])
-bug.lp_save()
+    # metaPkgName's examples
+    # oem-somerville-metapod-meta
+    # oem-sutton.newell-ace-meta
+    metaPkgName = "oem-" + oemCodename + "-" + platformCodename + "-meta"
+
+    if oemGroupName.strip() != '':
+        branchName = oemGroupName + "." + platformCodename + "-focal-ubuntu"
+    else:
+        branchName = platformCodename + "-focal-ubuntu"
+
+    project = lp.projects["oem-priority"]
+
+    bt = "[DRAFT][MIR] " + metaPkgName
+    bd = mir_bug_description_template.substitute(
+        metaPkgName=metaPkgName,
+        branchName=branchName,
+        oemCodenameNogroup=oemCodenameNogroup,
+        deviceName=deviceName)
+    bug = lp.bugs.createBug(description=bd, target=project, title=bt, information_type='Public', tags=TAG_LIST)
+
+    info("meta package public bug: " + bug.web_link)
+
+    for task in bug.bug_tasks:
+        task.status = 'Confirmed'
+        task.importance = 'Critical'
+        # Assign to reporter by default
+        task.assignee = lp.me
+        task.lp_save()
+
+    # Subscribe the oem-solutions-engineers
+    bug.subscribe(person=lp.people['oem-solutions-engineers'])
+    bug.lp_save()
+
+
+def collect_bugs(lp, output):
+    project = lp.projects['oem-priority']
+    tasks = project.searchTasks(
+        status=['New', 'Incomplete', 'Triaged', 'Opinion', 'Confirmed', 'In Progress', 'Fix Committed'],
+        search_text='[MIR]')
+    try:
+        total = int(tasks.total_size)
+    except TypeError:  # When the total size becomes more than 50, it won't return 'int' but 'ScalarValue' instead.
+        total = tasks.total_size.value
+
+    bugs = []
+    counter = 0
+    for task in tasks:
+        bug = task.bug
+        counter = counter + 1
+        if '[MIR]' in bug.title and 'oem' in bug.title and 'meta' in bug.title:
+            result = pattern.match(bug.title)
+            git = None
+            subscribe = []
+            attach = []
+            if result:
+                if '.' in result.group(1):
+                    project, group = result.group(1).split('.')
+                else:
+                    project = result.group(1)
+                    group = None
+                platform = result.group(2)
+                if group:
+                    git = f"git clone --depth 1 -b {group}.{platform}-focal-ubuntu https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta oem-{project}.{group}-{platform}-meta"
+                else:
+                    git = f"git clone --depth 1 -b {platform}-focal-ubuntu https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta oem-{project}-{platform}-meta"
+            subscriptions = lp.load(bug.subscriptions_collection_link)
+            for entry in subscriptions.entries:
+                subscribe.append(Path(entry['person_link']).name[1:])
+            attachments = lp.load(bug.attachments_collection_link)
+            for entry in attachments.entries:
+                attach.append({'title': entry['title'], 'data_link': entry['data_link']})
+            clip = {
+                'bug': "https://bugs.launchpad.net/bugs/%s" % bug.id,
+                'link': bug.self_link,
+                'title': bug.title,
+                'importance': task.importance,
+                'tag': bug.tags,
+                'description': bug.description,
+                'status': task.status,
+                'owner': task.owner.name,
+                'assignee': task.assignee.name if task.assignee else 'none',
+                'subscriptions': subscribe,
+                'attachments': attach,
+                'git': git
+            }
+            bugs.append(clip)
+            info(f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status})")
+        else:
+            info(f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status}) **NOT MATCHED**")
+
+    info("total: %d matched" % len(bugs))
+    output.write(json.dumps(bugs))
+
+
+def yes_or_ask(yes: bool, message: str) -> bool:
+    if yes:
+        print(f"> \033[1;34m{message}\033[1;0m (y/n) y")
+        return True
+    while True:
+        res = input(f"> \033[1;34m{message}\033[1;0m (y/n) ").lower()
+        if res not in {"y", "n"}:
+            continue
+        if res == 'y':
+            return True
+        else:
+            return False
+
+
+def update_bug(lp, bug_number: int, yes: bool, force=False) -> None:
+    info(f"Updating LP: #{bug_number} ...")
+    bug = lp.bugs[bug_number]
+    desc, pkg_name = check_bug_description(bug)
+    bug_modified = False
+    task_modified = False
+
+    if desc and yes_or_ask(yes, "Do you want to update the bug description?"):
+        bug_modified = True
+        bug.description = desc
+
+    if check_bug_title(bug, pkg_name) is False and yes_or_ask(yes, "Do you want to update the bug title?"):
+        bug_modified = True
+        bug.title = f"[MIR] {pkg_name}"
+
+    if check_bug_importance(bug) is False:
+        for task in bug.bug_tasks:
+            if task.importance != 'Critical':
+                if task.bug_target_name == 'oem-priority' and \
+                        yes_or_ask(yes, f"Do you want to update the importance of {task.bug_target_name} from {task.importance} to Critical?"):
+                    task_modified = True
+                    task.importance = 'Critical'
+                    task.lp_save()
+
+    if check_bug_subscriptions(lp, bug) is False:
+        subscriptions = lp.load(bug.subscriptions_collection_link)
+        subscribe = []
+        for entry in subscriptions.entries:
+            subscribe.append(Path(entry['person_link']).name[1:])
+        for subscriber in SUBSCRIBER_LIST:
+            if subscriber not in subscribe and yes_or_ask(yes, f"Do you want to subscribe '{subscriber}'?"):
+                bug_modified = True
+                bug.subscribe(person=lp.people[subscriber])
+
+    if check_bug_tags(bug) is False:
+        tags = copy(bug.tags)
+        for tag in TAG_LIST:
+            if tag not in bug.tags and yes_or_ask(yes, f"Do you want to tag '{tag}'?"):
+                bug_modified = True
+                tags.append(tag)
+        if tags != bug.tags:
+            bug.tags = tags
+
+    if check_git_repo(bug, pkg_name, bootstrap=True) is False:
+        pass  # XXX
+
+    if check_bug_attachments(bug, pkg_name) is False:
+        pass  # XXX
+
+    if bug_modified:
+        bug.lp_save()
+        info(f'LP: #{bug_number} is updated.')
+    elif task_modified:
+        info(f'LP: #{bug_number} is updated.')
+    elif yes:
+        info('Everything looks OK.')
+
+
+def check_bug(lp, bug_number: int) -> None:
+    info(f"Checking LP: #{bug_number} ...")
+    bug = lp.bugs[bug_number]
+    need_fixing = False
+    desc, pkg_name = check_bug_description(bug)
+    if desc:
+        need_fixing = True
+    if check_bug_title(bug, pkg_name) is False:
+        need_fixing = True
+    if check_bug_importance(bug) is False:
+        need_fixing = True
+    if check_bug_subscriptions(lp, bug) is False:
+        need_fixing = True
+    if check_bug_tags(bug) is False:
+        need_fixing = True
+    if check_git_repo(bug, pkg_name, bootstrap=True) is False:
+        need_fixing = True
+    if check_bug_attachments(bug, pkg_name) is False:
+        need_fixing = True
+    if not args.skip_git_oem_branch and check_git_repo(bug, pkg_name, bootstrap=False) is False:
+        need_fixing = True
+
+    if need_fixing is False:
+        info('Everything looks OK.')
+    else:
+        exit(1)
+
+
+def check_bug_description(bug) -> (str, str):
+    debug("Checking description...")
+    result = pattern.match(bug.title)
+    if not result:
+        critical(f"LP: #{bug.id} '{bug.title}' is NOT MATCHED")
+        exit(1)
+
+    if '.' in result.group(1):
+        project, group = result.group(1).split('.')
+        platform = result.group(2)
+        branchName = group + "." + platform + "-focal-ubuntu"
+    else:
+        project = result.group(1)
+        platform = result.group(2)
+        group = None
+        branchName = platform + "-focal-ubuntu"
+
+    metaPkgName = f"oem-{result.group(1)}-{result.group(2)}-meta"
+    prog = re.compile(r'\W*We want to improve the hardware support for ([^.]*).\W*')
+    deviceName = None
+
+    for line in bug.description.split('\n'):
+        result = prog.match(line)
+        if not result:
+            continue
+        deviceName = result.group(1)
+        if deviceName.endswith(" on focal"):
+            deviceName = deviceName[:-9]
+        break
+    else:
+        critical(f"LP: #{bug.id} '{bug.title}' can not find the device name.")
+        exit(1)
+
+    desc = mir_bug_description_template.substitute(
+        metaPkgName=metaPkgName,
+        branchName=branchName,
+        oemCodenameNogroup=project,
+        deviceName=deviceName)
+
+    if bug.description != desc:
+        d = difflib.Differ()
+        diff = d.compare(bug.description.split('\n'), desc.split('\n'))
+        error("The description needs to be updated.")
+        if not args.quiet:
+            for i, line in enumerate(diff):
+                if i == 0:
+                    info(line)
+                else:
+                    print(line)
+        return (desc, metaPkgName)
+    return (None, metaPkgName)
+
+
+def check_bug_title(bug, pkg_name: str) -> bool:
+    debug("Checking title...")
+    if bug.title == f"[MIR] {pkg_name}":
+        return True
+    error(f"The bug title shall be '[MIR] {pkg_name}' but it is '{bug.title}'.")
+    return False
+
+
+def check_bug_importance(bug) -> bool:
+    debug("Checking importance...")
+    result = True
+    for task in bug.bug_tasks:
+        if task.bug_target_name == 'oem-priority' and task.importance != 'Critical':
+            error(f'The importance for {task.bug_target_name} is {task.importance}. (It shall be Critical instead.)')
+            result = False
+    return result
+
+
+def check_bug_subscriptions(lp, bug) -> bool:
+    debug("Checking subscriptions...")
+    subscriptions = lp.load(bug.subscriptions_collection_link)
+    subscribe = []
+    result = True
+    for entry in subscriptions.entries:
+        subscribe.append(Path(entry['person_link']).name[1:])
+    for subscriber in SUBSCRIBER_LIST:
+        if subscriber not in subscribe:
+            error(f"{subscriber} is not in the subscriptions.")
+            result = False
+    return result
+
+
+def check_bug_tags(bug) -> bool:
+    debug("Checking tags...")
+    result = True
+    for tag in TAG_LIST:
+        if tag not in bug.tags:
+            error(f"'{tag}' is not in the tags.")
+            result = False
+    return result
+
+
+def _run_command(command: list or tuple, returncode=(0,)) -> (str, str):
+    debug("$ " + " ".join(command))
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = proc.communicate()
+
+    if out:
+        out = out.decode('utf-8').strip()
+    if err:
+        err = err.decode('utf-8').strip()
+
+    if proc.returncode not in returncode:
+        critical(f"return {proc.returncode}")
+        if out:
+            info(out)
+        if err:
+            critical(err)
+        exit(1)
+
+    if out:
+        debug(out)
+    if err:
+        debug(err)
+
+    return (out, err, proc.returncode)
+
+
+def check_bug_attachments(bug, pkg_name: str) -> bool:
+    debug("Checking attachments...")
+    result = pattern.match(f"[MIR] {pkg_name}")
+    debdiff = None
+    found = False
+
+    if result is None:
+        critical(f"{pkg_name} failed.")
+        exit(1)
+
+    if '.' in result.group(1):
+        project, group = result.group(1).split('.')
+    else:
+        project = result.group(1)
+        group = None
+    platform = result.group(2)
+
+    if group:
+        branch = f"{group}.{platform}-focal-ubuntu"
+    else:
+        branch = f"{platform}-focal-ubuntu"
+
+    git_command = ("git", "clone", "--depth", "1", "-b", branch, f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta", pkg_name)
+
+    with TemporaryDirectory() as tmpdir:
+        os.chdir(tmpdir)
+        _run_command(['wget', 'https://bazaar.launchpad.net/~ubuntu-archive/ubuntu-archive-tools/trunk/download/head:/oem-metapackage-mir-check'])
+        _run_command(git_command)
+        git_dir = os.path.join(tmpdir, pkg_name)
+        os.chdir(git_dir)
+        _run_command(['dpkg-buildpackage', '-S', '-us', '-uc'])
+        os.chdir(tmpdir)
+        dsc = glob(f'{pkg_name}*.dsc')[0]
+        prog = re.compile(fr'{pkg_name}_(.*).dsc')
+        result = prog.match(dsc)
+        version = result.group(1)
+        debdiff = f"{pkg_name}_{version}.debdiff"
+        out, _, _ = _run_command(['bash', 'oem-metapackage-mir-check', dsc], returncode=(0, 1))
+        with open(debdiff, 'w') as f:
+            f.write(out)
+            f.write("\n")
+
+        attachments = lp.load(bug.attachments_collection_link)
+        for entry in attachments.entries:
+            if 'debdiff' in entry['title']:
+                found = False
+                _run_command(['wget', entry['data_link'], '-O', 'data'])
+                out, err, returncode = _run_command(['colordiff', '-ur', 'data', debdiff], returncode=(0, 1))
+                if returncode == 1:
+                    warning(f"{entry['title']} - {entry['web_link']} has unexpected content.")
+                    info(f"{out}")
+                elif returncode == 0:
+                    info(f"{entry['title']} - {entry['data_link']} looks OK.")
+                    return True
+
+    error(f"{debdiff} needs to update.")
+    return False
+
+
+def update_git_repo_bootstrap_branch(bug, pkg_name: str) -> bool:  # XXX
+    pass
+
+
+def check_git_repo(bug, pkg_name: str, bootstrap: bool) -> bool:
+    debug("Checking git repo...")
+    result = pattern.match(f"[MIR] {pkg_name}")
+
+    if result is None:
+        critical(f"{pkg_name} failed.")
+        exit(1)
+
+    if '.' in result.group(1):
+        project, group = result.group(1).split('.')
+    else:
+        project = result.group(1)
+        group = None
+    platform = result.group(2)
+
+    if bootstrap:
+        suffix = 'ubuntu'
+    else:
+        suffix = 'oem'
+
+    if group:
+        branch = f"{group}.{platform}-focal-{suffix}"
+    else:
+        branch = f"{platform}-focal-{suffix}"
+
+    git_command = ("git", "clone", "--depth", "1", "-b", branch, f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta", pkg_name)
+
+    with TemporaryDirectory() as tmpdir:
+        os.chdir(tmpdir)
+        _run_command(git_command)
+
+        git_dir = os.path.join(tmpdir, pkg_name)
+        shutil.rmtree(os.path.join(git_dir, '.git'))
+        os.remove(os.path.join(git_dir, 'debian', 'changelog'))
+
+        os.rename(git_dir, git_dir + '.git')
+        git_dir += '.git'
+
+        ids = []
+        if project == 'somerville':
+            prog = re.compile(r"alias pci:\*sv00001028sd0000(\w+)\* meta (.*)")
+        elif project == 'stella':
+            prog = re.compile(r"alias pci:\*sv0000103Csd0000(\w+)\* meta (.*)")
+        else:
+            prog = re.compile(r"alias dmi:\*bvn([0-9a-zA-Z]+):bvr([0-9a-zA-Z]{3})\* meta (.*)")
+
+        with open(os.path.join(git_dir, 'debian', 'modaliases'), 'r') as modaliases:
+            for line in modaliases:
+                result = prog.match(line.strip())
+                if result.group(result.lastindex) != pkg_name:
+                    error("Something wrong in debian/modaliases. Please fix it manually first.")
+                    return False
+                if result.lastindex == 3:
+                    ids.append((result.group(1), result.group(2)))
+                else:
+                    ids.append(result.group(1))
+        if ids == []:
+            error("Something wrong in debian/modaliases. Please fix it manually first.")
+            return False
+        with open(os.path.join(git_dir, 'debian', 'control'), 'r') as control:
+            for line in control:
+                if line.startswith('XB-Ubuntu-OEM-Kernel-Flavour:'):
+                    kernel_flavour = line[len('XB-Ubuntu-OEM-Kernel-Flavour:'):].strip()
+        if project == 'somerville':
+            command = ['pkg-somerville-meta', '-s', 'focal', '-k', kernel_flavour, '-p', platform]
+            command.extend(ids)
+        elif project == 'stella':
+            command = ['pkg-stella-meta', '-s', 'focal', '-k', kernel_flavour, '-g', group, '-p', platform]
+            command.extend(ids)
+        elif project == 'sutton':
+            command = ['pkg-sutton-meta', '-s', 'focal', '-k', kernel_flavour, '-g', group, '-p', platform]
+            for bvn, bvr in ids:
+                command.append(f"bvn{bvn}:bvr{bvr}")
+
+        _run_command(command)
+        new_dir = os.path.join(tmpdir, pkg_name)
+        os.chdir(new_dir)
+        if bootstrap:
+            _run_command(['git', 'checkout', branch])
+
+        os.chdir(tmpdir)
+        shutil.rmtree(os.path.join(new_dir, '.git'))
+        os.remove(os.path.join(new_dir, 'debian', 'changelog'))
+
+        _run_command(['find', '.'])
+
+        out, err, _ = _run_command(['colordiff', '-ur', f"{pkg_name}.git", pkg_name], returncode=(0, 1))
+        if out:
+            if bootstrap:
+                error(f"The '{branch}' branch of {pkg_name} in Git repository needs to update.")
+            else:
+                warning(f"The '{branch}' branch of {pkg_name} in Git repository may need to update.")
+            info(out)
+            return False
+        else:
+            info(f"The '{branch}' branch of {pkg_name} in Git repository looks fine.")
+            return True
+
+
+if args.subcommand:
+    login = LaunchpadLogin()
+    lp = login.lp
+
+if args.subcommand == 'create':
+    create_bug(lp, args.oemCodename, args.platformCodename, args.deviceName)
+elif args.subcommand == 'update':
+    update_bug(lp, args.bugNumber, args.yes)
+elif args.subcommand == 'check':
+    check_bug(lp, args.bugNumber)
+elif args.subcommand == 'collect':
+    collect_bugs(lp, args.json)
+else:
+    parser.print_help()
