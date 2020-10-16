@@ -471,7 +471,7 @@ def check_bug_attachments(bug, pkg_name: str) -> bool:
     debug("Checking attachments...")
     result = pattern.match(f"[MIR] {pkg_name}")
     debdiff = None
-    found = False
+    found_and_ok = False
 
     if result is None:
         critical(f"{pkg_name} failed.")
@@ -512,7 +512,6 @@ def check_bug_attachments(bug, pkg_name: str) -> bool:
         attachments = lp.load(bug.attachments_collection_link)
         for entry in attachments.entries:
             if 'debdiff' in entry['title']:
-                found = False
                 _run_command(['wget', entry['data_link'], '-O', 'data'])
                 out, err, returncode = _run_command(['colordiff', '-ur', 'data', debdiff], returncode=(0, 1))
                 if returncode == 1:
@@ -520,10 +519,11 @@ def check_bug_attachments(bug, pkg_name: str) -> bool:
                     info(f"{out}")
                 elif returncode == 0:
                     info(f"{entry['title']} - {entry['data_link']} looks OK.")
-                    return True
+                    found_and_ok = True
 
-    error(f"{debdiff} needs to update.")
-    return False
+    if not found_and_ok:
+        error(f"{debdiff} needs to update.")
+    return found_and_ok
 
 
 def update_git_repo_bootstrap_branch(bug, pkg_name: str) -> bool:  # XXX
