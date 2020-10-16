@@ -5,5 +5,5 @@
 	dh $@ --with python3 --buildsystem=pybuild
 
 override_dh_auto_test:
+	./tests/test_flake8
 	./tests/test_pep8
-

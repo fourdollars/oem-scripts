@@ -4,11 +4,12 @@ Priority: optional
 Build-Depends:
  debhelper (>=11),
  dh-python,
+ flake8,
  pep8,
  python3-all,
  python3-debian,
- python3-setuptools,
  python3-launchpadlib,
+ python3-setuptools,
  shellcheck
 Standards-Version: 4.5.0
 Maintainer: Commercial Engineering <commercial-engineering@canonical.com>
@@ -20,11 +21,14 @@ Architecture: all
 Depends:
  ${misc:Depends},
  ${python3:Depends},
+ build-essential,
+ colordiff,
  debhelper,
  devscripts,
  dh-modaliases,
  diffutils,
  dkms,
+ dpkg-dev,
  git,
  httpie,
  jq,
@@ -32,7 +36,8 @@ Depends:
  python3-distro-info,
  python3-distutils-extra,
  python3-mechanize,
- ubuntu-dev-tools
+ ubuntu-dev-tools,
+ wget
 Breaks: lp-fish-tools (<<1.192.40)
 Replaces: lp-fish-tools (<<1.192.40)
 Recommends: qemu-user-static, zsync-curl
