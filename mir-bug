@@ -208,6 +208,7 @@ def collect_bugs(lp, output):
         if '[MIR]' in bug.title and 'oem' in bug.title and 'meta' in bug.title:
             result = pattern.match(bug.title)
             git = None
+            ubuntu_status = None
             subscribe = []
             attach = []
             if result:
@@ -225,6 +226,10 @@ def collect_bugs(lp, output):
             for entry in subscriptions.entries:
                 subscribe.append(Path(entry['person_link']).name[1:])
             attachments = lp.load(bug.attachments_collection_link)
+            for bug_task in bug.bug_tasks:
+                if bug_task.bug_target_name == 'ubuntu':
+                    ubuntu_status = bug_task.status
+
             for entry in attachments.entries:
                 attach.append({'title': entry['title'], 'data_link': entry['data_link']})
             clip = {
@@ -235,6 +240,7 @@ def collect_bugs(lp, output):
                 'tag': bug.tags,
                 'description': bug.description,
                 'status': task.status,
+                'ubuntu_status': ubuntu_status,
                 'owner': task.owner.name,
                 'assignee': task.assignee.name if task.assignee else 'none',
                 'subscriptions': subscribe,
@@ -288,8 +294,7 @@ def update_bug(lp, bug_number: int, yes: bool, force=False) -> None:
                     task.importance = 'Critical'
                     task.lp_save()
 
-    if check_bug_status(bug) is False:
-        pass  # XXX
+    update_bug_status(bug)
 
     if check_bug_subscriptions(lp, bug) is False:
         subscriptions = lp.load(bug.subscriptions_collection_link)
@@ -464,6 +469,31 @@ def check_bug_status(bug) -> bool:
         result = False
         error("There is no 'ubuntu' status.")
     return result
+
+
+def update_bug_status(bug) -> bool:
+    debug("Updating status...")
+    saw_ubuntu_task = False
+    for task in bug.bug_tasks:
+        if task.bug_target_name == 'oem-priority':
+            if args.ready:
+                if _expected_status(task.bug_target_name, task.status, 'Fix Committed') is False:
+                    pass  # XXX
+            else:
+                if _expected_status(task.bug_target_name, task.status, 'In Progress') is False:
+                    pass  # XXX
+        elif task.bug_target_name == 'ubuntu':
+            saw_ubuntu_task = True
+            if args.ready:
+                if _expected_status(task.bug_target_name, task.status, 'Confirmed') is False:
+                    pass  # XXX
+            else:
+                if _expected_status(task.bug_target_name, task.status, 'Incomplete') is False:
+                    pass  # XXX
+        else:
+            critical(f"It is unexpected to have '{task.bug_target_name}' task")
+    if args.ready and saw_ubuntu_task is False:
+        pass  # XXX
 
 
 def check_bug_subscriptions(lp, bug) -> bool:
