@@ -304,9 +304,14 @@ def update_bug(lp, bug_number: int, yes: bool, force=False) -> None:
     if check_bug_tags(bug) is False:
         tags = copy(bug.tags)
         for tag in TAG_LIST:
-            if tag not in bug.tags and yes_or_ask(yes, f"Do you want to tag '{tag}'?"):
+            if tag not in bug.tags and yes_or_ask(yes, f"Do you want to add '{tag}' tag?"):
                 bug_modified = True
                 tags.append(tag)
+        for tag in bug.tags:
+            if tag.startswith('oem-scripts-'):
+                if tag[len("oem-scripts-"):] != str(oem_scripts.__version__):
+                    if yes_or_ask(yes, f"Do you want to remove '{tag}' tag?"):
+                        tags.remove(tag)
         if tags != bug.tags:
             bug.tags = tags
 
