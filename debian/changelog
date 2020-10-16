@@ -5,6 +5,9 @@ oem-scripts (0.61) UNRELEASED; urgency=medium
     oem_scripts/__init__.py,
     mir-bug: Refactor mir-bug to create subcommand, add other subcommands and
     don't also affect 'Ubuntu' when creating MIR bug.
+  * debian/control,
+    debian/rules,
+    tests/test_flake8: Test mir-bug by flake8.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 08 Oct 2020 18:07:28 +0800
 
