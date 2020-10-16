@@ -68,12 +68,18 @@ update.add_argument("bugNumber",
                     help="Specify the bug number on Launchpad to update.", type=int)
 update.add_argument("--yes",
                     help="Say yes for all prompts.", action="store_true")
+update.add_argument("--ready",
+                    action="store_true",
+                    help="Update the bug to Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.")
 
 check = subparsers.add_parser('check', help='check -h')
 check.add_argument("bugNumber",
                    help="Specify the bug number on Launchpad to do some sanity checks.", type=int)
-check.add_argument("--skip-git-oem-branch",
+check.add_argument("--skip",
                    help="Skip checking oem branch of Git repository.", action="store_true")
+check.add_argument("--ready",
+                   action="store_true",
+                   help="Check if the bug is Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.")
 
 collect = subparsers.add_parser('collect', help='collect -h')
 collect.add_argument("json",
@@ -282,6 +288,9 @@ def update_bug(lp, bug_number: int, yes: bool, force=False) -> None:
                     task.importance = 'Critical'
                     task.lp_save()
 
+    if check_bug_status(bug) is False:
+        pass  # XXX
+
     if check_bug_subscriptions(lp, bug) is False:
         subscriptions = lp.load(bug.subscriptions_collection_link)
         subscribe = []
@@ -327,6 +336,8 @@ def check_bug(lp, bug_number: int) -> None:
         need_fixing = True
     if check_bug_importance(bug) is False:
         need_fixing = True
+    if check_bug_status(bug) is False:
+        need_fixing = True
     if check_bug_subscriptions(lp, bug) is False:
         need_fixing = True
     if check_bug_tags(bug) is False:
@@ -335,7 +346,7 @@ def check_bug(lp, bug_number: int) -> None:
         need_fixing = True
     if check_bug_attachments(bug, pkg_name) is False:
         need_fixing = True
-    if not args.skip_git_oem_branch and check_git_repo(bug, pkg_name, bootstrap=False) is False:
+    if not args.skip and check_git_repo(bug, pkg_name, bootstrap=False) is False:
         need_fixing = True
 
     if need_fixing is False:
@@ -386,7 +397,7 @@ def check_bug_description(bug) -> (str, str):
     if bug.description != desc:
         d = difflib.Differ()
         diff = d.compare(bug.description.split('\n'), desc.split('\n'))
-        error("The description needs to be updated.")
+        error("The description needs to update.")
         if not args.quiet:
             for i, line in enumerate(diff):
                 if i == 0:
@@ -410,8 +421,43 @@ def check_bug_importance(bug) -> bool:
     result = True
     for task in bug.bug_tasks:
         if task.bug_target_name == 'oem-priority' and task.importance != 'Critical':
-            error(f'The importance for {task.bug_target_name} is {task.importance}. (It shall be Critical instead.)')
+            error(f"The '{task.bug_target_name}' importance is expected to be 'Critical' instead of '{task.importance}'.")
             result = False
+    return result
+
+
+def _expected_status(target_name: str, status: str, expected: str) -> bool:
+    if status != expected:
+        error(f"The '{target_name}' status is expected to be '{expected}' instead of '{status}'.")
+        return False
+    return True
+
+
+def check_bug_status(bug) -> bool:
+    debug("Checking status...")
+    result = True
+    saw_ubuntu_task = False
+    for task in bug.bug_tasks:
+        if task.bug_target_name == 'oem-priority':
+            if args.ready:
+                if _expected_status(task.bug_target_name, task.status, 'Fix Committed') is False:
+                    result = False
+            else:
+                if _expected_status(task.bug_target_name, task.status, 'In Progress') is False:
+                    result = False
+        elif task.bug_target_name == 'ubuntu':
+            saw_ubuntu_task = True
+            if args.ready:
+                if _expected_status(task.bug_target_name, task.status, 'Confirmed') is False:
+                    result = False
+            else:
+                if _expected_status(task.bug_target_name, task.status, 'Incomplete') is False:
+                    result = False
+        else:
+            critical(f"It is unexpected to have '{task.bug_target_name}' task")
+    if args.ready and saw_ubuntu_task is False:
+        result = False
+        error("There is no 'ubuntu' status.")
     return result
 
 
@@ -424,7 +470,7 @@ def check_bug_subscriptions(lp, bug) -> bool:
         subscribe.append(Path(entry['person_link']).name[1:])
     for subscriber in SUBSCRIBER_LIST:
         if subscriber not in subscribe:
-            error(f"{subscriber} is not in the subscriptions.")
+            error(f"'{subscriber}' is not in the subscriptions.")
             result = False
     return result
 
