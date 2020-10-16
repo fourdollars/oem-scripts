@@ -1,4 +1,4 @@
-oem-scripts (0.61) UNRELEASED; urgency=medium
+oem-scripts (0.61) focal; urgency=medium
 
   * debian/control,
     debian/tests/mir-bug,
