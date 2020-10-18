@@ -77,7 +77,7 @@ def add_bug_task(bug, bug_task):
 
     # Check if already have the requested
     for i in bug.bug_tasks:
-        if bug_task == i:
+        if bug_task.name == i.bug_target_name:
             log.warning('Also-affects on {} already complete.'.format(bug_task))
             return
     bug.addTask(target=bug_task)
