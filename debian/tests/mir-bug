@@ -5,13 +5,12 @@ IFS=$'\n\t'
 
 export LAUNCHPAD_API="https://api.staging.launchpad.net/"
 
-mir-bug update --yes 1868254
+mir-bug update --yes 1897551
 
-if ! mir-bug check --skip-git-oem-branch 1868254; then
-    true # Checking LP: #1868254 is expected to fail
-else
-    false
-fi
+mir-bug check 1897551
+
+mir-bug update --yes --ready 1897551
+
+mir-bug check --ready 1897551
+
 mir-bug collect "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs.json
-
-mir-bug create sutton.newell ace "ThinkPad X1 Carbon Gen 8"
