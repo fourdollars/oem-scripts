@@ -68,6 +68,8 @@ update.add_argument("bugNumber",
                     help="Specify the bug number on Launchpad to update.", type=int)
 update.add_argument("--yes",
                     help="Say yes for all prompts.", action="store_true")
+update.add_argument("--skip",
+                    help="Skip updating bootstrap branch of Git repository.", action="store_true")
 update.add_argument("--ready",
                     action="store_true",
                     help="Update the bug to Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.")
@@ -271,8 +273,8 @@ def yes_or_ask(yes: bool, message: str) -> bool:
 
 
 def update_bug(lp, bug_number: int, yes: bool, force=False) -> None:
-    info(f"Updating LP: #{bug_number} ...")
     bug = lp.bugs[bug_number]
+    info(f'Updating LP: #{bug_number} - "{bug.title}" ...')
     desc, pkg_name = check_bug_description(bug)
     bug_modified = False
     task_modified = False
@@ -320,8 +322,7 @@ def update_bug(lp, bug_number: int, yes: bool, force=False) -> None:
         if tags != bug.tags:
             bug.tags = tags
 
-    if check_git_repo(bug, pkg_name, bootstrap=True) is False:
-        pass  # XXX
+    check_and_update_git_repo(bug, pkg_name, yes=yes, update=True, username=lp.me.name)
 
     if check_bug_attachments(bug, pkg_name) is False:
         pass  # XXX
@@ -336,8 +337,8 @@ def update_bug(lp, bug_number: int, yes: bool, force=False) -> None:
 
 
 def check_bug(lp, bug_number: int) -> None:
-    info(f"Checking LP: #{bug_number} ...")
     bug = lp.bugs[bug_number]
+    info(f'Checking LP: #{bug_number} - "{bug.title}" ...')
     need_fixing = False
     desc, pkg_name = check_bug_description(bug)
     if desc:
@@ -346,17 +347,17 @@ def check_bug(lp, bug_number: int) -> None:
         need_fixing = True
     if check_bug_importance(bug) is False:
         need_fixing = True
-    if check_bug_status(bug) is False:
+    if check_bug_status(bug, pkg_name) is False:
         need_fixing = True
     if check_bug_subscriptions(lp, bug) is False:
         need_fixing = True
     if check_bug_tags(bug) is False:
         need_fixing = True
-    if check_git_repo(bug, pkg_name, bootstrap=True) is False:
+    if check_and_update_git_repo(bug, pkg_name) is False:
         need_fixing = True
     if check_bug_attachments(bug, pkg_name) is False:
         need_fixing = True
-    if not args.skip and check_git_repo(bug, pkg_name, bootstrap=False) is False:
+    if not args.skip and check_and_update_git_repo(bug, pkg_name, bootstrap=False) is False:
         need_fixing = True
 
     if need_fixing is False:
@@ -443,7 +444,7 @@ def _expected_status(target_name: str, status: str, expected: str) -> bool:
     return True
 
 
-def check_bug_status(bug) -> bool:
+def check_bug_status(bug, pkg_name: str) -> bool:
     debug("Checking status...")
     result = True
     saw_ubuntu_task = False
@@ -463,7 +464,7 @@ def check_bug_status(bug) -> bool:
             else:
                 if _expected_status(task.bug_target_name, task.status, 'Incomplete') is False:
                     result = False
-        else:
+        elif f"{pkg_name} (Ubuntu)" not in task.bug_target_name:
             critical(f"It is unexpected to have '{task.bug_target_name}' task")
     if args.ready and saw_ubuntu_task is False:
         result = False
@@ -619,12 +620,45 @@ def check_bug_attachments(bug, pkg_name: str) -> bool:
     return found_and_ok
 
 
-def update_git_repo_bootstrap_branch(bug, pkg_name: str) -> bool:  # XXX
-    pass
+def _get_items_from_git(project: str, branch: str, pkg_name: str) -> tuple:
+    git_command = ("git", "clone", "--depth", "1", "-b", branch, f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta", pkg_name)
+    with TemporaryDirectory() as tmpdir:
+        os.chdir(tmpdir)
+        _run_command(git_command)
+        git_dir = os.path.join(tmpdir, pkg_name)
+
+        if project == 'somerville':
+            prog = re.compile(r"alias pci:\*sv00001028sd0000(\w+)\* meta (.*)")
+        elif project == 'stella':
+            prog = re.compile(r"alias pci:\*sv0000103Csd0000(\w+)\* meta (.*)")
+        else:
+            prog = re.compile(r"alias dmi:\*bvn([0-9a-zA-Z]+):bvr([0-9a-zA-Z]{3})\* meta (.*)")
+
+        ids = []
+        with open(os.path.join(git_dir, 'debian', 'modaliases'), 'r') as modaliases:
+            for line in modaliases:
+                result = prog.match(line.strip())
+                if result.group(result.lastindex) != pkg_name:
+                    error("Something wrong in debian/modaliases. Please fix it manually first.")
+                    return False
+                if result.lastindex == 3:
+                    ids.append((result.group(1), result.group(2)))
+                else:
+                    ids.append(result.group(1))
+        kernel_flavour = None
+        with open(os.path.join(git_dir, 'debian', 'control'), 'r') as control:
+            for line in control:
+                if line.startswith('XB-Ubuntu-OEM-Kernel-Flavour:'):
+                    kernel_flavour = line[len('XB-Ubuntu-OEM-Kernel-Flavour:'):].strip()
+        return kernel_flavour, ids
 
 
-def check_git_repo(bug, pkg_name: str, bootstrap: bool) -> bool:
-    debug("Checking git repo...")
+def check_and_update_git_repo(bug, pkg_name: str, yes=False, bootstrap=True, update=False, username=None) -> bool:
+    if update:
+        debug("Updating git repo...")
+    else:
+        debug("Checking git repo...")
+
     result = pattern.match(f"[MIR] {pkg_name}")
 
     if result is None:
@@ -648,55 +682,25 @@ def check_git_repo(bug, pkg_name: str, bootstrap: bool) -> bool:
     else:
         branch = f"{platform}-focal-{suffix}"
 
-    git_command = ("git", "clone", "--depth", "1", "-b", branch, f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta", pkg_name)
+    kernel_flavour, ids = _get_items_from_git(project, branch, pkg_name)
+
+    if ids == []:
+        error("Something wrong in debian/modaliases. Please fix it manually first.")
+        return False
 
     with TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
-        _run_command(git_command)
-
-        git_dir = os.path.join(tmpdir, pkg_name)
-        shutil.rmtree(os.path.join(git_dir, '.git'))
-        os.remove(os.path.join(git_dir, 'debian', 'changelog'))
-
-        os.rename(git_dir, git_dir + '.git')
-        git_dir += '.git'
-
-        ids = []
+        # Generated the meta package by pkg-oem-meta
         if project == 'somerville':
-            prog = re.compile(r"alias pci:\*sv00001028sd0000(\w+)\* meta (.*)")
-        elif project == 'stella':
-            prog = re.compile(r"alias pci:\*sv0000103Csd0000(\w+)\* meta (.*)")
-        else:
-            prog = re.compile(r"alias dmi:\*bvn([0-9a-zA-Z]+):bvr([0-9a-zA-Z]{3})\* meta (.*)")
-
-        with open(os.path.join(git_dir, 'debian', 'modaliases'), 'r') as modaliases:
-            for line in modaliases:
-                result = prog.match(line.strip())
-                if result.group(result.lastindex) != pkg_name:
-                    error("Something wrong in debian/modaliases. Please fix it manually first.")
-                    return False
-                if result.lastindex == 3:
-                    ids.append((result.group(1), result.group(2)))
-                else:
-                    ids.append(result.group(1))
-        if ids == []:
-            error("Something wrong in debian/modaliases. Please fix it manually first.")
-            return False
-        with open(os.path.join(git_dir, 'debian', 'control'), 'r') as control:
-            for line in control:
-                if line.startswith('XB-Ubuntu-OEM-Kernel-Flavour:'):
-                    kernel_flavour = line[len('XB-Ubuntu-OEM-Kernel-Flavour:'):].strip()
-        if project == 'somerville':
-            command = ['pkg-somerville-meta', '-s', 'focal', '-k', kernel_flavour, '-p', platform]
+            command = ['pkg-somerville-meta', '-s', 'focal', '-k', kernel_flavour, '-p', platform, '--public-bug', str(bug.id)]
             command.extend(ids)
         elif project == 'stella':
-            command = ['pkg-stella-meta', '-s', 'focal', '-k', kernel_flavour, '-g', group, '-p', platform]
+            command = ['pkg-stella-meta', '-s', 'focal', '-k', kernel_flavour, '-g', group, '-p', platform, '--public-bug', str(bug.id)]
             command.extend(ids)
         elif project == 'sutton':
-            command = ['pkg-sutton-meta', '-s', 'focal', '-k', kernel_flavour, '-g', group, '-p', platform]
+            command = ['pkg-sutton-meta', '-s', 'focal', '-k', kernel_flavour, '-g', group, '-p', platform, '--public-bug', str(bug.id)]
             for bvn, bvr in ids:
                 command.append(f"bvn{bvn}:bvr{bvr}")
-
         _run_command(command)
         new_dir = os.path.join(tmpdir, pkg_name)
         os.chdir(new_dir)
@@ -704,19 +708,66 @@ def check_git_repo(bug, pkg_name: str, bootstrap: bool) -> bool:
             _run_command(['git', 'checkout', branch])
 
         os.chdir(tmpdir)
+        os.rename(new_dir, new_dir + '.new')
+        new_dir += ".new"
         shutil.rmtree(os.path.join(new_dir, '.git'))
         os.remove(os.path.join(new_dir, 'debian', 'changelog'))
 
-        _run_command(['find', '.'])
+        if username:
+            git_repo = f"git+ssh://{username}@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta"
+        else:
+            git_repo = f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta"
+        git_command = ("git", "clone", "--depth", "1", "-b", branch, git_repo, pkg_name)
+        _run_command(git_command)
+        os.chdir(os.path.join(tmpdir, pkg_name))
+        shutil.copytree(new_dir, ".", dirs_exist_ok=True)
 
-        out, err, _ = _run_command(['colordiff', '-ur', f"{pkg_name}.git", pkg_name], returncode=(0, 1))
-        if out:
-            if bootstrap:
-                error(f"The '{branch}' branch of {pkg_name} in Git repository needs to update.")
+        if bootstrap:
+            lines = None
+            changelog = os.path.join(tmpdir, pkg_name, 'debian', 'changelog')
+            with open(changelog, 'r') as f:
+                lines = f.readlines()
+
+            lines[0] = f"{pkg_name} (20.04~ubuntu1) UNRELEASED; urgency=medium\n"
+
+            with open(changelog, 'w') as f:
+                f.writelines(lines)
+
+        # Remove deprecated autopkgtest file
+        deprecated_test = os.path.join(tmpdir, pkg_name, 'debian', 'tests', pkg_name)
+        if os.path.exists(deprecated_test):
+            _run_command(["git", "rm", f"debian/tests/{pkg_name}"])
+
+        # Remove deprecated debian/compat
+        deprecated_compat = os.path.join(tmpdir, pkg_name, 'debian', 'compat')
+        if os.path.exists(deprecated_compat):
+            _run_command(["git", "rm", f"debian/compat"])
+
+        # Check git status
+        if args.debug:
+            debug("$ git status")
+            out, _, _ = _run_command(["git", "status"])
+            print(out)
+
+        _run_command(["git", "add", "."])
+        out, _, _ = _run_command(["git", "diff", "--color=always", "--cached"])
+        if out != b'':
+            warning("$ git diff")
+            print(out)
+            if update is True:
+                if args.skip:
+                    warning(f"The update of the '{branch}' branch of {pkg_name}'s Git repository is skipped on demand.")
+                    return False
+                elif yes_or_ask(yes, f"Do you want to commit and push the changes above into the '{branch}' branch of {pkg_name}'s Git repository?"):
+                    _run_command(['git', 'commit', '-a', '-m', f"Updated by oem-scripts {oem_scripts.__version__}."])
+                    _run_command(['git', 'push'])
+                    return True
             else:
-                warning(f"The '{branch}' branch of {pkg_name} in Git repository may need to update.")
-            info(out)
-            return False
+                if bootstrap:
+                    error(f"The '{branch}' branch of {pkg_name} in Git repository needs to update.")
+                else:
+                    warning(f"The '{branch}' branch of {pkg_name} in Git repository may need to update.")
+                return False
         else:
             info(f"The '{branch}' branch of {pkg_name} in Git repository looks fine.")
             return True
