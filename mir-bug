@@ -33,7 +33,6 @@ from copy import copy
 from glob import glob
 from logging import debug, info, warning, error, critical
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
-from pathlib import Path
 from string import Template
 from tempfile import TemporaryDirectory
 
@@ -210,9 +209,6 @@ def collect_bugs(lp, output):
         if '[MIR]' in bug.title and 'oem' in bug.title and 'meta' in bug.title:
             result = pattern.match(bug.title)
             git = None
-            ubuntu_status = None
-            subscribe = []
-            attach = []
             if result:
                 if '.' in result.group(1):
                     project, group = result.group(1).split('.')
@@ -224,16 +220,19 @@ def collect_bugs(lp, output):
                     git = f"git clone --depth 1 -b {group}.{platform}-focal-ubuntu https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta oem-{project}.{group}-{platform}-meta"
                 else:
                     git = f"git clone --depth 1 -b {platform}-focal-ubuntu https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta oem-{project}-{platform}-meta"
-            subscriptions = lp.load(bug.subscriptions_collection_link)
-            for entry in subscriptions.entries:
-                subscribe.append(Path(entry['person_link']).name[1:])
-            attachments = lp.load(bug.attachments_collection_link)
+
+            subscriptions = []
+            for subscription in bug.subscriptions:
+                subscriptions.append(subscription.person.name)
+
+            ubuntu_status = None
             for bug_task in bug.bug_tasks:
                 if bug_task.bug_target_name == 'ubuntu':
                     ubuntu_status = bug_task.status
 
-            for entry in attachments.entries:
-                attach.append({'title': entry['title'], 'data_link': entry['data_link']})
+            attachments = []
+            for attachment in bug.attachments:
+                attachments.append({'title': attachment.title, 'data_link': attachment.data_link, 'type': attachment.type})
             clip = {
                 'bug': "https://bugs.launchpad.net/bugs/%s" % bug.id,
                 'link': bug.self_link,
@@ -245,8 +244,8 @@ def collect_bugs(lp, output):
                 'ubuntu_status': ubuntu_status,
                 'owner': task.owner.name,
                 'assignee': task.assignee.name if task.assignee else 'none',
-                'subscriptions': subscribe,
-                'attachments': attach,
+                'subscriptions': subscriptions,
+                'attachments': attachments,
                 'git': git
             }
             bugs.append(clip)
@@ -299,12 +298,11 @@ def update_bug(lp, bug_number: int, yes: bool, force=False) -> None:
     update_bug_status(bug, yes)
 
     if check_bug_subscriptions(lp, bug) is False:
-        subscriptions = lp.load(bug.subscriptions_collection_link)
-        subscribe = []
-        for entry in subscriptions.entries:
-            subscribe.append(Path(entry['person_link']).name[1:])
+        subscriptions = []
+        for subscription in bug.subscriptions:
+            subscriptions.append(subscription.person.name)
         for subscriber in SUBSCRIBER_LIST:
-            if subscriber not in subscribe and yes_or_ask(yes, f"Do you want to subscribe '{subscriber}'?"):
+            if subscriber not in subscriptions and yes_or_ask(yes, f"Do you want to subscribe '{subscriber}'?"):
                 bug_modified = True
                 bug.subscribe(person=lp.people[subscriber])
 
@@ -513,13 +511,12 @@ def update_bug_status(bug, yes: bool) -> None:
 
 def check_bug_subscriptions(lp, bug) -> bool:
     debug("Checking subscriptions...")
-    subscriptions = lp.load(bug.subscriptions_collection_link)
-    subscribe = []
     result = True
-    for entry in subscriptions.entries:
-        subscribe.append(Path(entry['person_link']).name[1:])
+    subscriptions = []
+    for subscription in bug.subscriptions:
+        subscriptions.append(subscription.person.name)
     for subscriber in SUBSCRIBER_LIST:
-        if subscriber not in subscribe:
+        if subscriber not in subscriptions:
             error(f"'{subscriber}' is not in the subscriptions.")
             result = False
     return result
@@ -603,16 +600,15 @@ def check_bug_attachments(bug, pkg_name: str) -> bool:
             f.write(out)
             f.write("\n")
 
-        attachments = lp.load(bug.attachments_collection_link)
-        for entry in attachments.entries:
-            if 'debdiff' in entry['title']:
-                _run_command(['wget', entry['data_link'], '-O', 'data'])
+        for attachment in bug.attachments:
+            if 'debdiff' in attachment.title:
+                _run_command(['wget', attachment.data_link, '-O', 'data'])
                 out, err, returncode = _run_command(['colordiff', '-ur', 'data', debdiff], returncode=(0, 1))
                 if returncode == 1:
-                    warning(f"{entry['title']} - {entry['web_link']} has unexpected content.")
+                    warning(f"{attachment.title} - {attachment.web_link} has unexpected content.")
                     info(f"{out}")
                 elif returncode == 0:
-                    info(f"{entry['title']} - {entry['data_link']} looks OK.")
+                    info(f"{attachment.title} - {attachment.web_link} looks OK.")
                     found_and_ok = True
 
     if not found_and_ok:
