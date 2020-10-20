@@ -62,6 +62,9 @@ create.add_argument("platformCodename",
                     help="Name deined by PM, like ace.")
 create.add_argument("deviceName",
                     help="ThinkPad X1 Carbon Gen 8")
+create.add_argument("-o", "--output",
+                    help="Specify a file name to write the bug number.",
+                    type=argparse.FileType('w', encoding='UTF-8'))
 
 update = subparsers.add_parser('update', help='update -h')
 update.add_argument("bugNumber",
@@ -155,6 +158,7 @@ pattern = re.compile(r'.*\[MIR\]\W*oem-([^-]*)-(.*)-meta\W*')
 
 
 def create_bug(lp, oemCodename, platformCodename, deviceName):
+    info("Creating bug...")
     tempList = oemCodename.split('.')
     oemCodenameNogroup = tempList[0]
     if len(tempList) == 2:
@@ -184,6 +188,9 @@ def create_bug(lp, oemCodename, platformCodename, deviceName):
 
     info("meta package public bug: " + bug.web_link)
 
+    if args.output:
+        args.output.write(f"{bug.id}\n")
+
     for task in bug.bug_tasks:
         task.status = 'Confirmed'
         task.importance = 'Critical'
@@ -197,6 +204,7 @@ def create_bug(lp, oemCodename, platformCodename, deviceName):
 
 
 def collect_bugs(lp, output):
+    info("Collecting bugs...")
     project = lp.projects['oem-priority']
     tasks = project.searchTasks(
         status=['New', 'Incomplete', 'Triaged', 'Opinion', 'Confirmed', 'In Progress', 'Fix Committed'],
@@ -302,14 +310,7 @@ def update_bug(lp, bug_number: int, yes: bool, force=False) -> None:
 
     update_bug_status(bug, yes)
 
-    if check_bug_subscriptions(lp, bug) is False:
-        subscriptions = []
-        for subscription in bug.subscriptions:
-            subscriptions.append(subscription.person.name)
-        for subscriber in SUBSCRIBER_LIST:
-            if subscriber not in subscriptions and yes_or_ask(yes, f"Do you want to subscribe '{subscriber}'?"):
-                bug_modified = True
-                bug.subscribe(person=lp.people[subscriber])
+    check_and_update_bug_subscriptions(lp, bug, update=True, yes=yes)
 
     if check_bug_tags(bug) is False:
         tags = copy(bug.tags)
@@ -351,7 +352,7 @@ def check_bug(lp, bug_number: int) -> None:
         need_fixing = True
     if check_bug_status(bug, pkg_name) is False:
         need_fixing = True
-    if check_bug_subscriptions(lp, bug) is False:
+    if check_and_update_bug_subscriptions(lp, bug) is False:
         need_fixing = True
     if check_bug_tags(bug) is False:
         need_fixing = True
@@ -369,7 +370,7 @@ def check_bug(lp, bug_number: int) -> None:
 
 
 def check_bug_description(bug) -> (str, str):
-    debug("Checking description...")
+    info("Checking bug description...")
     result = pattern.match(bug.title)
     if not result:
         critical(f"LP: #{bug.id} '{bug.title}' is NOT MATCHED")
@@ -422,7 +423,7 @@ def check_bug_description(bug) -> (str, str):
 
 
 def check_bug_title(bug, pkg_name: str) -> bool:
-    debug("Checking title...")
+    info("Checking bug title...")
     if bug.title == f"[MIR] {pkg_name}":
         return True
     error(f"The bug title shall be '[MIR] {pkg_name}' but it is '{bug.title}'.")
@@ -430,7 +431,7 @@ def check_bug_title(bug, pkg_name: str) -> bool:
 
 
 def check_bug_importance(bug) -> bool:
-    debug("Checking importance...")
+    info("Checking bug importance...")
     result = True
     for task in bug.bug_tasks:
         if task.bug_target_name == 'oem-priority' and task.importance != 'Critical':
@@ -447,7 +448,7 @@ def _expected_status(target_name: str, status: str, expected: str) -> bool:
 
 
 def check_bug_status(bug, pkg_name: str) -> bool:
-    debug("Checking status...")
+    info("Checking bug status...")
     result = True
     saw_ubuntu_task = False
     for task in bug.bug_tasks:
@@ -490,7 +491,7 @@ def _change_task_status(task, new_status: str, yes: bool) -> bool:
 
 
 def update_bug_status(bug, yes: bool) -> None:
-    debug("Updating status...")
+    info("Updating bug status...")
     saw_ubuntu_task = False
     for task in bug.bug_tasks:
         if task.bug_target_name == 'oem-priority':
@@ -513,21 +514,47 @@ def update_bug_status(bug, yes: bool) -> None:
                 _change_task_status(task, 'Confirmed', yes)
 
 
-def check_bug_subscriptions(lp, bug) -> bool:
-    debug("Checking subscriptions...")
+def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool:
+    if update:
+        info("Checking and updating subscriptions...")
+    else:
+        info("Checking subscriptions...")
     result = True
     subscriptions = []
     for subscription in bug.subscriptions:
         subscriptions.append(subscription.person.name)
-    for subscriber in SUBSCRIBER_LIST:
-        if subscriber not in subscriptions:
-            error(f"'{subscriber}' is not in the subscriptions.")
-            result = False
+        if not args.ready:
+            for subscriber in ('ubuntu-sponsors', 'ubuntu-desktop'):
+                if subscriber == subscription.person.name:
+                    error(f"'{subscriber}' should not be in the subscriptions.")
+                    if update and yes_or_ask(yes, f"Do you want to unsubscribe '{subscriber}'?"):
+                        if subscription.canBeUnsubscribedByUser():
+                            bug.unsubscribe(person=lp.people[subscriber])
+                        else:
+                            warning(f"{lp.me.name} doesn't have the permission to unsubscribe {subscriber}.")
+                            result = False
+                    else:
+                        result = False
+    if args.ready:
+        for subscriber in ('oem-solutions-engineers', 'ubuntu-sponsors', 'ubuntu-desktop'):
+            if subscriber not in subscriptions:
+                error(f"'{subscriber}' is not in the subscriptions.")
+                if update and yes_or_ask(yes, f"Do you want to subscribe '{subscriber}'?"):
+                    bug.subscribe(person=lp.people[subscriber])
+                else:
+                    result = False
+    else:
+        if 'oem-solutions-engineers' not in subscriptions:
+            error(f"'oem-solutions-engineers' is not in the subscriptions.")
+            if update and yes_or_ask(yes, f"Do you want to subscribe 'oem-solutions-engineers'?"):
+                bug.subscribe(person=lp.people[subscriber])
+            else:
+                result = False
     return result
 
 
 def check_bug_tags(bug) -> bool:
-    debug("Checking tags...")
+    info("Checking bug tags...")
     result = True
     for tag in TAG_LIST:
         if tag not in bug.tags:
@@ -564,9 +591,9 @@ def _run_command(command: list or tuple, returncode=(0,), env=None) -> (str, str
 
 def check_and_update_bug_attachments(bug, pkg_name: str, update=False, yes=False) -> bool:
     if update:
-        debug("Updating attachments...")
+        info("Checking and updating attachments...")
     else:
-        debug("Checking attachments...")
+        info("Checking attachments...")
     result = pattern.match(f"[MIR] {pkg_name}")
 
     if result is None:
@@ -589,6 +616,7 @@ def check_and_update_bug_attachments(bug, pkg_name: str, update=False, yes=False
 
     debdiff = None
     content = None
+    found = False  # some debdiff is found
 
     with TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
@@ -617,6 +645,7 @@ def check_and_update_bug_attachments(bug, pkg_name: str, update=False, yes=False
                 if returncode == 1:
                     warning(f"{attachment.title} - {attachment.web_link} has unexpected content.")
                     info(f"{out}")
+                    found = True
                     if update and yes_or_ask(yes, f"Do you want to remove {attachment.title} - {attachment.web_link}?"):
                         try:
                             attachment.removeFromBug()
@@ -626,7 +655,10 @@ def check_and_update_bug_attachments(bug, pkg_name: str, update=False, yes=False
                     info(f"{attachment.title} - {attachment.web_link} looks OK.")
                     return True
 
-    error(f"{debdiff} needs to update.")
+    if found:
+        error(f"{debdiff} needs to update.")
+    else:
+        error(f"There is no {debdiff}.")
     info(content)
     if update and yes_or_ask(yes, f"Do you want to attach {debdiff}?"):
         bug.addAttachment(filename=debdiff, data=content.encode("utf-8"), comment=f"Attach {debdiff} by oem-scripts {oem_scripts.__version__}.", is_patch=True)
@@ -670,9 +702,15 @@ def _get_items_from_git(project: str, branch: str, pkg_name: str) -> tuple:
 
 def check_and_update_git_repo(bug, pkg_name: str, yes=False, bootstrap=True, update=False, username=None) -> bool:
     if update:
-        debug("Updating git repo...")
+        if bootstrap:
+            info("Checking and updating git repo for bootstrap branch...")
+        else:
+            info("Checking and updating git repo for oem branch...")
     else:
-        debug("Checking git repo...")
+        if bootstrap:
+            info("Checking git repo for bootstrap branch...")
+        else:
+            info("Checking git repo for oem branch...")
 
     result = pattern.match(f"[MIR] {pkg_name}")
 

@@ -5,12 +5,15 @@ IFS=$'\n\t'
 
 export LAUNCHPAD_API="https://api.staging.launchpad.net/"
 
-mir-bug update --yes --skip --tz=UTC 1897551
+mir-bug create -o bug_id somerville bronn "some Dell platforms"
+BUG_ID=$(cat bug_id)
 
-mir-bug check --tz=UTC 1897551
+mir-bug update --yes --skip --ready "$BUG_ID"
 
-mir-bug update --yes --skip --ready 1897551
+mir-bug check --ready "$BUG_ID"
 
-mir-bug check --ready 1897551
+mir-bug update --yes --skip --tz=UTC "$BUG_ID"
+
+mir-bug check --tz=UTC "$BUG_ID"
 
 mir-bug collect "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs.json
