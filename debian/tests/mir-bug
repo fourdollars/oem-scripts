@@ -5,9 +5,9 @@ IFS=$'\n\t'
 
 export LAUNCHPAD_API="https://api.staging.launchpad.net/"
 
-mir-bug update --yes --skip 1897551
+mir-bug update --yes --skip --tz=UTC 1897551
 
-mir-bug check 1897551
+mir-bug check --tz=UTC 1897551
 
 mir-bug update --yes --skip --ready 1897551
 

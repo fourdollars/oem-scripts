@@ -21,6 +21,7 @@
 import argparse
 import difflib
 import json
+import lazr
 import logging
 import oem_scripts
 import os
@@ -69,6 +70,8 @@ update.add_argument("--yes",
                     help="Say yes for all prompts.", action="store_true")
 update.add_argument("--skip",
                     help="Skip updating bootstrap branch of Git repository.", action="store_true")
+update.add_argument("--tz",
+                    help="Specify the value for TZ. (UTC-8 by default)", default="UTC-8")
 update.add_argument("--ready",
                     action="store_true",
                     help="Update the bug to Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.")
@@ -78,6 +81,8 @@ check.add_argument("bugNumber",
                    help="Specify the bug number on Launchpad to do some sanity checks.", type=int)
 check.add_argument("--skip",
                    help="Skip checking oem branch of Git repository.", action="store_true")
+check.add_argument("--tz",
+                   help="Specify the value for TZ. (UTC-8 by default)", default="UTC-8")
 check.add_argument("--ready",
                    action="store_true",
                    help="Check if the bug is Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.")
@@ -322,8 +327,7 @@ def update_bug(lp, bug_number: int, yes: bool, force=False) -> None:
 
     check_and_update_git_repo(bug, pkg_name, yes=yes, update=True, username=lp.me.name)
 
-    if check_bug_attachments(bug, pkg_name) is False:
-        pass  # XXX
+    check_and_update_bug_attachments(bug, pkg_name, update=True, yes=yes)
 
     if bug_modified:
         bug.lp_save()
@@ -353,7 +357,7 @@ def check_bug(lp, bug_number: int) -> None:
         need_fixing = True
     if check_and_update_git_repo(bug, pkg_name) is False:
         need_fixing = True
-    if check_bug_attachments(bug, pkg_name) is False:
+    if check_and_update_bug_attachments(bug, pkg_name) is False:
         need_fixing = True
     if not args.skip and check_and_update_git_repo(bug, pkg_name, bootstrap=False) is False:
         need_fixing = True
@@ -558,11 +562,12 @@ def _run_command(command: list or tuple, returncode=(0,), env=None) -> (str, str
     return (out, err, proc.returncode)
 
 
-def check_bug_attachments(bug, pkg_name: str) -> bool:
-    debug("Checking attachments...")
+def check_and_update_bug_attachments(bug, pkg_name: str, update=False, yes=False) -> bool:
+    if update:
+        debug("Updating attachments...")
+    else:
+        debug("Checking attachments...")
     result = pattern.match(f"[MIR] {pkg_name}")
-    debdiff = None
-    found_and_ok = False
 
     if result is None:
         critical(f"{pkg_name} failed.")
@@ -582,6 +587,9 @@ def check_bug_attachments(bug, pkg_name: str) -> bool:
 
     git_command = ("git", "clone", "--depth", "1", "-b", branch, f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta", pkg_name)
 
+    debdiff = None
+    content = None
+
     with TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
         _run_command(['wget', 'https://bazaar.launchpad.net/~ubuntu-archive/ubuntu-archive-tools/trunk/download/head:/oem-metapackage-mir-check'])
@@ -595,10 +603,12 @@ def check_bug_attachments(bug, pkg_name: str) -> bool:
         result = prog.match(dsc)
         version = result.group(1)
         debdiff = f"{pkg_name}_{version}.debdiff"
-        out, _, _ = _run_command(['bash', 'oem-metapackage-mir-check', dsc], returncode=(0, 1), env=dict(os.environ, TZ="UTC-8"))
+        # It should generate some debdiff so the return code should be 1 unless comparing to oem-qemu-meta itself.
+        debug(f"TZ={args.tz}")
+        content, _, _ = _run_command(['bash', 'oem-metapackage-mir-check', dsc], returncode=(1,), env=dict(os.environ, TZ=args.tz))
+        content += "\n"
         with open(debdiff, 'w') as f:
-            f.write(out)
-            f.write("\n")
+            f.write(content)
 
         for attachment in bug.attachments:
             if 'debdiff' in attachment.title:
@@ -607,13 +617,22 @@ def check_bug_attachments(bug, pkg_name: str) -> bool:
                 if returncode == 1:
                     warning(f"{attachment.title} - {attachment.web_link} has unexpected content.")
                     info(f"{out}")
+                    if update and yes_or_ask(yes, f"Do you want to remove {attachment.title} - {attachment.web_link}?"):
+                        try:
+                            attachment.removeFromBug()
+                        except lazr.restfulclient.errors.NotFound as e:
+                            debug(e)
                 elif returncode == 0:
                     info(f"{attachment.title} - {attachment.web_link} looks OK.")
-                    found_and_ok = True
+                    return True
 
-    if not found_and_ok:
-        error(f"{debdiff} needs to update.")
-    return found_and_ok
+    error(f"{debdiff} needs to update.")
+    info(content)
+    if update and yes_or_ask(yes, f"Do you want to attach {debdiff}?"):
+        bug.addAttachment(filename=debdiff, data=content.encode("utf-8"), comment=f"Attach {debdiff} by oem-scripts {oem_scripts.__version__}.", is_patch=True)
+        return True
+    else:
+        return False
 
 
 def _get_items_from_git(project: str, branch: str, pkg_name: str) -> tuple:
