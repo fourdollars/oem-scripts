@@ -185,7 +185,7 @@ def create_bug(lp, oemCodename, platformCodename, deviceName):
     project = lp.projects["oem-priority"]
 
     bt = "[DRAFT][MIR] " + metaPkgName
-    bd = mir_bug_description_template.substitute(
+    bd = "[DRAFT]" + mir_bug_description_template.substitute(
         metaPkgName=metaPkgName,
         branchName=branchName,
         oemCodenameNogroup=oemCodenameNogroup,
@@ -350,6 +350,10 @@ def update_bug(lp, bug_number: int, yes: bool) -> None:
     if check_bug_title(bug, pkg_name) is False and yes_or_ask(yes, "Do you want to update the bug title?"):
         bug_modified = True
         bug.title = f"[MIR] {pkg_name}"
+
+    if bug_modified:
+        bug.lp_save()
+        bug_modified = False
 
     if check_bug_importance(bug) is False:
         for task in bug.bug_tasks:
