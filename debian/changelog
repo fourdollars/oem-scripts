@@ -1,3 +1,19 @@
+oem-scripts (0.62) UNRELEASED; urgency=medium
+
+  * oem_scripts/__init__.py: Bump to 0.62.
+  * debian/tests/mir-bug,
+    mir-bug: Check and update bug status, check and update Git repository,
+    remove old oem-scripts-* tag when updating tags, remove the create test,
+    hardcode TZ=UTC-8 for oem-metapackage-mir-check for consistent debdiff,
+    correct the usage of attachments and subscriptions for Launchpad API, and
+    update the attachments of debdiff, add '--tz' options for 'check' and
+    'update' subcommands, check and update subscriptions, polish the help
+    manual, add 'remove' subcommand to remove all information from the bug,
+    fix the modifying issues of title and description, and remove the '(WIP)'
+    wording of the 'update' subcommand.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 19 Oct 2020 12:49:53 +0800
+
 oem-scripts (0.61) focal; urgency=medium
 
   * debian/control,
