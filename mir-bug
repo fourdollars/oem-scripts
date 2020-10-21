@@ -46,6 +46,7 @@ examples:
     mir-bug create sutton.newell ace \"ThinkPad X1 Carbon Gen 8\"
     mir-bug check BUG_NUMBER
     mir-bug update BUG_NUMBER
+    mir-bug remove BUG_NUMBER
     mir-bug collect oem-meta-mir-bugs.json""")
 
 parser.add_argument("-d", "--debug",
