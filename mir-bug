@@ -560,7 +560,7 @@ def update_bug_status(bug, yes: bool) -> None:
             saw_ubuntu_task = True
             if args.ready:
                 _change_task_status(bug_task, 'Confirmed', yes)
-            elif yes_or_ask(yes, f"Would you like to delete the '{bug_task.bug_target_name}' bug_task?"):
+            elif yes_or_ask(yes, f"Would you like to delete the '{bug_task.bug_target_name}' bug_task? (Don't affect '{bug_task.bug_target_display_name}')"):
                 try:
                     bug_task.lp_delete()
                 except lazr.restfulclient.errors.BadRequest as e:
