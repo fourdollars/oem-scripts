@@ -1,4 +1,4 @@
-oem-scripts (0.62) UNRELEASED; urgency=medium
+oem-scripts (0.62) focal; urgency=medium
 
   * oem_scripts/__init__.py: Bump to 0.62.
   * debian/tests/mir-bug,
