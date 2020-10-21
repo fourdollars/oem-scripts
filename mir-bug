@@ -55,7 +55,7 @@ parser.add_argument("-q", "--quiet",
 
 subparsers = parser.add_subparsers(dest="subcommand")
 
-create = subparsers.add_parser('create', help='create -h')
+create = subparsers.add_parser('create', help='[-h] [-o=bugID|--output=bugID] oemCodename platformCodename deviceName')
 create.add_argument("oemCodename",
                     help="Such as somerville, stella, or sutton.simon")
 create.add_argument("platformCodename",
@@ -66,7 +66,7 @@ create.add_argument("-o", "--output",
                     help="Specify a file name to write the bug number.",
                     type=argparse.FileType('w', encoding='UTF-8'))
 
-update = subparsers.add_parser('update', help='update -h')
+update = subparsers.add_parser('update', help='[-h] [--ready] [--skip] [--tz=UTC-8] [--yes] bugNumber')
 update.add_argument("bugNumber",
                     help="Specify the bug number on Launchpad to update.", type=int)
 update.add_argument("--yes",
@@ -79,7 +79,7 @@ update.add_argument("--ready",
                     action="store_true",
                     help="Update the bug to Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.")
 
-check = subparsers.add_parser('check', help='check -h')
+check = subparsers.add_parser('check', help='[-h] [--ready] [--skip] [--tz=UTC-8] bugNumber')
 check.add_argument("bugNumber",
                    help="Specify the bug number on Launchpad to do some sanity checks.", type=int)
 check.add_argument("--skip",
@@ -90,7 +90,7 @@ check.add_argument("--ready",
                    action="store_true",
                    help="Check if the bug is Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.")
 
-collect = subparsers.add_parser('collect', help='collect -h')
+collect = subparsers.add_parser('collect', help='[-h] json')
 collect.add_argument("json",
                      help="Specify the json file name to write.",
                      type=argparse.FileType('w', encoding='UTF-8'))
