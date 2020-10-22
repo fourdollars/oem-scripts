@@ -1,4 +1,4 @@
-oem-scripts (0.63) UNRELEASED; urgency=medium
+oem-scripts (0.63) focal; urgency=medium
 
   * oem_scripts/__init__.py: Bump to 0.63.
   * mir-bug: When updating the bug, delete the bug_task of Ubuntu if it is not
