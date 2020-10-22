@@ -46,6 +46,7 @@ examples:
     mir-bug create sutton.newell ace \"ThinkPad X1 Carbon Gen 8\"
     mir-bug check BUG_NUMBER
     mir-bug update BUG_NUMBER
+    mir-bug remove BUG_NUMBER
     mir-bug collect oem-meta-mir-bugs.json""")
 
 parser.add_argument("-d", "--debug",
@@ -549,25 +550,32 @@ def _change_task_status(task, new_status: str, yes: bool) -> bool:
 def update_bug_status(bug, yes: bool) -> None:
     info("Updating bug status...")
     saw_ubuntu_task = False
-    for task in bug.bug_tasks:
-        if task.bug_target_name == 'oem-priority':
+    for bug_task in bug.bug_tasks:
+        if bug_task.bug_target_name == 'oem-priority':
             if args.ready:
-                _change_task_status(task, 'Fix Committed', yes)
+                _change_task_status(bug_task, 'Fix Committed', yes)
             else:
-                _change_task_status(task, 'In Progress', yes)
-        elif task.bug_target_name == 'ubuntu':
+                _change_task_status(bug_task, 'In Progress', yes)
+        elif bug_task.bug_target_name == 'ubuntu':
             saw_ubuntu_task = True
             if args.ready:
-                _change_task_status(task, 'Confirmed', yes)
+                _change_task_status(bug_task, 'Confirmed', yes)
+            elif yes_or_ask(yes, f"Would you like to delete the '{bug_task.bug_target_name}' bug_task? (Don't affect '{bug_task.bug_target_display_name}')"):
+                try:
+                    bug_task.lp_delete()
+                except lazr.restfulclient.errors.BadRequest as e:
+                    warning(f"{bug_task.bug_target_name} can not be deleted, so changing the status to Incomplete instead.")
+                    debug(e)
+                    _change_task_status(bug_task, 'Incomplete', yes)
             else:
-                _change_task_status(task, 'Incomplete', yes)
+                _change_task_status(bug_task, 'Incomplete', yes)
         else:
-            warning(f"{task.bug_target_name} {task.status}")
+            warning(f"{bug_task.bug_target_name} {bug_task.status}")
     if args.ready and saw_ubuntu_task is False:
         bug.addTask(target=lp.projects["Ubuntu"])
-        for task in bug.bug_tasks:
-            if task.bug_target_name == 'ubuntu':
-                _change_task_status(task, 'Confirmed', yes)
+        for bug_task in bug.bug_tasks:
+            if bug_task.bug_target_name == 'ubuntu':
+                _change_task_status(bug_task, 'Confirmed', yes)
 
 
 def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool:

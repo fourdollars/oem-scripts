@@ -1,3 +1,11 @@
+oem-scripts (0.63) UNRELEASED; urgency=medium
+
+  * oem_scripts/__init__.py: Bump to 0.63.
+  * mir-bug: When updating the bug, delete the bug_task of Ubuntu if it is not
+    ready, and add the example for 'remove' subcommand.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 21 Oct 2020 17:08:48 +0800
+
 oem-scripts (0.62) focal; urgency=medium
 
   * oem_scripts/__init__.py: Bump to 0.62.
