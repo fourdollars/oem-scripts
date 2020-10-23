@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -euo pipefail
+IFS=$'\n\t'
+
+export LAUNCHPAD_API="https://api.staging.launchpad.net/"
+
+mir-bug create -o bug_id somerville bronn "some Dell platforms"
+BUG_ID=$(cat bug_id)
+
+bug-bind.py -p "$BUG_ID" 1900097
+
+launchpad-api get bugs/"$BUG_ID" | jq -r .tags[]
+launchpad-api get bugs/1900097 | jq -r .tags[]
+
+mir-bug remove --yes "$BUG_ID"
