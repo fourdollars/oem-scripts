@@ -138,11 +138,11 @@ def remove_bug(lp, bug_number: int, yes: bool) -> None:
         if bug_task.bug_target_name == 'null-and-void':
             found = True
 
-    if not found:
+    if not found and bug.information_type == 'Public':
         bug.addTask(target=lp.projects["null-and-void"])
 
     for bug_task in bug.bug_tasks:
-        if bug_task.bug_target_name != 'null-and-void':
+        if bug_task.bug_target_name != 'null-and-void' and bug.information_type == 'Public':
             try:
                 bug_task.lp_delete()
             except lazr.restfulclient.errors.BadRequest as e:
