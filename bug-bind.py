@@ -7,10 +7,8 @@ import logging
 import re
 
 import lazr.restfulclient.resource
-from launchpadlib.launchpad import Launchpad
+from oem_scripts.LaunchpadLogin import LaunchpadLogin
 
-APP_NAME = 'oem-scripts'
-SERVICE_ROOT = 'production'
 HWE_PUBLIC_PROJECT = 'hwe-next'
 OEM_PUBLIC_PROJECT = 'oem-priority'
 
@@ -21,17 +19,10 @@ logging.basicConfig(format='%(levelname)s %(asctime)s - %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p')
 
 
-def lp_login():
-    global lp
-    if lp is None:
-        log.debug("Logging into launchpad service at " + SERVICE_ROOT + " with appname " + APP_NAME)
-        lp = Launchpad.login_with(APP_NAME, SERVICE_ROOT)
-    return lp
-
-
 def link_bugs(public_bugnum, privates, ihv):
     assert(public_bugnum.isdigit())
-    lp = lp_login()
+    login = LaunchpadLogin()
+    lp = login.lp
     pub_bug = lp.bugs[public_bugnum]
 
     tag = "X-HWE-Bug: Bug #" + public_bugnum
