@@ -1,0 +1,170 @@
+#! /usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Copyright (C) 2020  Canonical Ltd.
+# Author: Shih-Yuan Lee (FourDollars) <sylee@canonical.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+import argparse
+import lazr
+import logging
+import sys
+
+from logging import debug, warning
+from oem_scripts.LaunchpadLogin import LaunchpadLogin
+
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+                                 epilog="""
+examples:
+    lp-bug copy --output=target_bug_id SOURCE_BUG_ID
+    lp-bug remove BUG_ID""")
+
+parser.add_argument("-d", "--debug",
+                    help="print debug messages", action="store_true")
+parser.add_argument("-q", "--quiet",
+                    help="Don't print info messages", action="store_true")
+
+subparsers = parser.add_subparsers(dest="subcommand")
+
+copy = subparsers.add_parser('copy', help='[-h] [-o=targetBugID|--output=targetBugID] sourceBugID')
+copy.add_argument("-o", "--output",
+                  help="Specify a file name to write the bug number.",
+                  type=argparse.FileType('w', encoding='UTF-8'))
+copy.add_argument("-t", "--target",
+                  help="Specify the target project, 'null-and-void' by default.",
+                  type=str)
+copy.add_argument("bugID",
+                  help="Specify the bug number on Launchpad to copy from.", type=int)
+
+remove = subparsers.add_parser('remove', help='[-h] [--yes] bugID')
+remove.add_argument("bugID",
+                    help="Specify the bug number on Launchpad to remove.", type=int)
+remove.add_argument("--yes",
+                    help="Say yes for all prompts.", action="store_true")
+
+args = parser.parse_args()
+
+logging.addLevelName(logging.DEBUG,
+                     "\033[1;96m%s\033[1;0m" %
+                     logging.getLevelName(logging.DEBUG))
+logging.addLevelName(logging.INFO,
+                     "\033[1;32m%s\033[1;0m" %
+                     logging.getLevelName(logging.INFO))
+logging.addLevelName(logging.WARNING,
+                     "\033[1;33m%s\033[1;0m" %
+                     logging.getLevelName(logging.WARNING))
+logging.addLevelName(logging.ERROR,
+                     "\033[1;31m%s\033[1;0m" %
+                     logging.getLevelName(logging.ERROR))
+logging.addLevelName(logging.CRITICAL,
+                     "\033[1;41m%s\033[1;0m" %
+                     logging.getLevelName(logging.CRITICAL))
+
+if args.debug:
+    logging.basicConfig(format='<%(levelname)s> %(message)s',
+                        level=logging.DEBUG,
+                        handlers=[logging.StreamHandler(sys.stdout)])
+elif not args.quiet:
+    logging.basicConfig(format='<%(levelname)s> %(message)s',
+                        level=logging.INFO,
+                        handlers=[logging.StreamHandler(sys.stdout)])
+else:
+    logging.basicConfig(format='<%(levelname)s> %(message)s',
+                        handlers=[logging.StreamHandler(sys.stdout)])
+
+
+def _yes_or_ask(yes: bool, message: str) -> bool:
+    if yes:
+        print(f"> \033[1;34m{message}\033[1;0m (y/n) y")
+        return True
+    while True:
+        res = input(f"> \033[1;34m{message}\033[1;0m (y/n) ").lower()
+        if res not in {"y", "n"}:
+            continue
+        if res == 'y':
+            return True
+        else:
+            return False
+
+
+def copy_bug(lp, bug_number: int, output=None, target: str = "null-and-void") -> None:
+    bug = lp.bugs[bug_number]
+    project = lp.projects[target]
+    new_bug = lp.bugs.createBug(
+        description=bug.description,
+        target=project,
+        title=bug.title,
+        information_type=bug.information_type,
+        tags=bug.tags)
+    if args.output:
+        args.output.write(f"{new_bug.id}\n")
+
+
+def remove_bug(lp, bug_number: int, yes: bool) -> None:
+    bug = lp.bugs[bug_number]
+    if not _yes_or_ask(yes, f'Do you want to remove all information on LP: #{bug_number} - "{bug.title}"?'):
+        return
+
+    if bug.title != "null":
+        bug.title = "null"
+
+    if bug.description != "null":
+        bug.description = "null"
+
+    if bug.tags != []:
+        bug.tags = []
+
+    bug.lp_save()
+
+    found = False
+
+    for bug_task in bug.bug_tasks:
+        if bug_task.bug_target_name == 'null-and-void':
+            found = True
+
+    if not found:
+        bug.addTask(target=lp.projects["null-and-void"])
+
+    for bug_task in bug.bug_tasks:
+        if bug_task.bug_target_name != 'null-and-void':
+            try:
+                bug_task.lp_delete()
+            except lazr.restfulclient.errors.BadRequest as e:
+                warning(f"{bug_task.bug_target_name} can not be deleted.")
+                debug(e)
+
+    for attachment in bug.attachments:
+        try:
+            attachment.removeFromBug()
+        except lazr.restfulclient.errors.NotFound as e:
+            debug(e)
+
+    for subscription in bug.subscriptions:
+        if subscription.canBeUnsubscribedByUser():
+            bug.unsubscribe(person=lp.people[subscription.person.name])
+        else:
+            warning(f"{lp.me.name} doesn't have the permission to unsubscribe {subscription.person.name}.")
+
+
+if args.subcommand:
+    login = LaunchpadLogin()
+    lp = login.lp
+
+if args.subcommand == 'copy':
+    copy_bug(lp, args.bugID, args.output, args.target)
+elif args.subcommand == 'remove':
+    remove_bug(lp, args.bugID, args.yes)
+else:
+    parser.print_help()

@@ -1,3 +1,5 @@
 #!/bin/sh
 
-flake8 --ignore E501 mir-bug
+flake8 --ignore E501 \
+    lp-bug \
+    mir-bug

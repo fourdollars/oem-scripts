@@ -46,7 +46,6 @@ examples:
     mir-bug create sutton.newell ace \"ThinkPad X1 Carbon Gen 8\"
     mir-bug check BUG_NUMBER
     mir-bug update BUG_NUMBER
-    mir-bug remove BUG_NUMBER
     mir-bug collect oem-meta-mir-bugs.json""")
 
 parser.add_argument("-d", "--debug",
@@ -66,12 +65,6 @@ create.add_argument("deviceName",
 create.add_argument("-o", "--output",
                     help="Specify a file name to write the bug number.",
                     type=argparse.FileType('w', encoding='UTF-8'))
-
-remove = subparsers.add_parser('remove', help='[-h] [--yes] bugNumber')
-remove.add_argument("bugNumber",
-                    help="Specify the bug number on Launchpad to remove.", type=int)
-remove.add_argument("--yes",
-                    help="Say yes for all prompts.", action="store_true")
 
 update = subparsers.add_parser('update', help='[-h] [--ready] [--skip] [--tz=UTC-8] [--yes] bugNumber')
 update.add_argument("bugNumber",
@@ -208,52 +201,6 @@ def create_bug(lp, oemCodename, platformCodename, deviceName):
     # Subscribe the oem-solutions-engineers
     bug.subscribe(person=lp.people['oem-solutions-engineers'])
     bug.lp_save()
-
-
-def remove_bug(lp, bug_number: int, yes: bool) -> None:
-    bug = lp.bugs[bug_number]
-    if not yes_or_ask(yes, f'Do you want to remove all information on LP: #{bug_number} - "{bug.title}"?'):
-        return
-
-    if bug.title != "null":
-        bug.title = "null"
-
-    if bug.description != "null":
-        bug.description = "null"
-
-    if bug.tags != []:
-        bug.tags = []
-
-    bug.lp_save()
-
-    found = False
-
-    for bug_task in bug.bug_tasks:
-        if bug_task.bug_target_name == 'null-and-void':
-            found = True
-
-    if not found:
-        bug.addTask(target=lp.projects["null-and-void"])
-
-    for bug_task in bug.bug_tasks:
-        if bug_task.bug_target_name != 'null-and-void':
-            try:
-                bug_task.lp_delete()
-            except lazr.restfulclient.errors.BadRequest as e:
-                warning(f"{bug_task.bug_target_name} can not be deleted.")
-                debug(e)
-
-    for attachment in bug.attachments:
-        try:
-            attachment.removeFromBug()
-        except lazr.restfulclient.errors.NotFound as e:
-            debug(e)
-
-    for subscription in bug.subscriptions:
-        if subscription.canBeUnsubscribedByUser():
-            bug.unsubscribe(person=lp.people[subscription.person.name])
-        else:
-            warning(f"{lp.me.name} doesn't have the permission to unsubscribe {subscription.person.name}.")
 
 
 def collect_bugs(lp, output):
@@ -896,8 +843,6 @@ if args.subcommand:
 
 if args.subcommand == 'create':
     create_bug(lp, args.oemCodename, args.platformCodename, args.deviceName)
-elif args.subcommand == 'remove':
-    remove_bug(lp, args.bugNumber, args.yes)
 elif args.subcommand == 'update':
     update_bug(lp, args.bugNumber, args.yes)
 elif args.subcommand == 'check':

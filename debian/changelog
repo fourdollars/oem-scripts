@@ -7,8 +7,15 @@ oem-scripts (0.64) UNRELEASED; urgency=medium
   * bug-bind.py: Use oem_scripts.LaunchpadLogin for Launchpad API.
   * debian/tests/bug-bind,
     debian/tests/control: Add the autopkgtest for bug-bind.py.
+  * debian/tests/mir-bug,
+    lp-bug,
+    mir-bug,
+    setup.py,
+    tests/test_flake8,
+    tests/test_pep8: Move the generic 'remove' subcommand to lp-bug, and add
+    'copy' subcommand to lp-bug.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 23 Oct 2020 12:04:35 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 23 Oct 2020 13:48:39 +0800
 
 oem-scripts (0.63) focal; urgency=medium
 
