@@ -1,4 +1,4 @@
-oem-scripts (0.64) UNRELEASED; urgency=medium
+oem-scripts (0.64) focal; urgency=medium
 
   [ Yuan-Chen Cheng ]
   * bug-bind.py: correctly detect if target has been associated.
