@@ -111,7 +111,7 @@ def copy_bug(lp, bug_number: int, target: str, output=None) -> None:
         title=bug.title,
         information_type=bug.information_type,
         tags=bug.tags)
-    info(f'LP: #{new_bug.id} - "{new_bug.title}" is created. {bug.web_link}')
+    info(f'LP: #{new_bug.id} - "{new_bug.title}" is created. {new_bug.web_link}')
     if args.output:
         args.output.write(f"{new_bug.id}\n")
 

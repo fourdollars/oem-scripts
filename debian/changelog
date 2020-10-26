@@ -22,6 +22,7 @@ oem-scripts (0.64) UNRELEASED; urgency=medium
   * debian/tests/bug-bind,
     debian/tests/mir-bug,
     lp-bug: Rename the 'remove' subcommand to 'cleanup'.
+  * lp-bug: Fix the wrong web_link.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 23 Oct 2020 14:30:00 +0800
 
