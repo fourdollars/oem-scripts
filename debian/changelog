@@ -23,6 +23,9 @@ oem-scripts (0.64) UNRELEASED; urgency=medium
     debian/tests/mir-bug,
     lp-bug: Rename the 'remove' subcommand to 'cleanup'.
   * lp-bug: Fix the wrong web_link.
+  * debian/tests/bug-bind,
+    lp-bug: Add an option '--public' for the 'copy' subcommand to avoid the
+    "HTTP Error 503" issue on Launchpad staging when cleaning up the bug.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 23 Oct 2020 14:30:00 +0800
 

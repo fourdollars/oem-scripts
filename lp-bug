@@ -47,10 +47,12 @@ copy.add_argument("-t", "--target",
                   type=str)
 copy.add_argument("bugID",
                   help="Specify the bug number on Launchpad to copy from.", type=int)
+copy.add_argument("--public",
+                  help="Make the bug public.", action="store_true")
 
 cleanup = subparsers.add_parser('cleanup', help='[-h] [--yes] bugID')
 cleanup.add_argument("bugID",
-                     help="Specify the bug number on Launchpad to cleanup.", type=int)
+                     help="Specify the bug number on Launchpad to clean up.", type=int)
 cleanup.add_argument("--yes",
                      help="Say yes for all prompts.", action="store_true")
 
@@ -99,21 +101,27 @@ def _yes_or_ask(yes: bool, message: str) -> bool:
             return False
 
 
-def copy_bug(lp, bug_number: int, target: str, output=None) -> None:
+def copy_bug(lp, bug_number: int, target: str, public: bool, output=None) -> None:
     bug = lp.bugs[bug_number]
     if target:
         project = lp.projects[target]
     else:
         project = lp.projects["oem-priority"]
+
+    if public:
+        information_type = 'Public'
+    else:
+        information_type = bug.information_type
+
     new_bug = lp.bugs.createBug(
         description=bug.description,
         target=project,
         title=bug.title,
-        information_type=bug.information_type,
+        information_type=information_type,
         tags=bug.tags)
     info(f'LP: #{new_bug.id} - "{new_bug.title}" is created. {new_bug.web_link}')
-    if args.output:
-        args.output.write(f"{new_bug.id}\n")
+    if output:
+        output.write(f"{new_bug.id}\n")
 
 
 def cleanup_bug(lp, bug_number: int, yes: bool) -> None:
@@ -169,7 +177,7 @@ if args.subcommand:
     lp = login.lp
 
 if args.subcommand == 'copy':
-    copy_bug(lp, args.bugID, output=args.output, target=args.target)
+    copy_bug(lp, args.bugID, output=args.output, target=args.target, public=args.public)
 elif args.subcommand == 'cleanup':
     cleanup_bug(lp, args.bugID, args.yes)
 else:

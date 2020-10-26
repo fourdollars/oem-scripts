@@ -8,7 +8,7 @@ export LAUNCHPAD_API="https://api.staging.launchpad.net/"
 mir-bug create -o bug_id somerville bronn "some Dell platforms"
 PUBLIC_BUG=$(cat bug_id)
 
-lp-bug copy -o bug_id 1900097  # <- This is a private bug.
+lp-bug copy --public -o bug_id 1827852  # <- This is a private bug with less important information.
 PRIVATE_BUG=$(cat bug_id)
 
 bug-bind.py -p "$PUBLIC_BUG" "$PRIVATE_BUG" 2>&1
