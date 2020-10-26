@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -euo pipefail
+IFS=$'\n\t'
+
+export LAUNCHPAD_API="https://api.staging.launchpad.net/"
+
+mir-bug create -o bug_id somerville bronn "some Dell platforms"
+PUBLIC_BUG=$(cat bug_id)
+
+lp-bug copy --public -o bug_id 1827852  # <- This is a private bug with less important information.
+PRIVATE_BUG=$(cat bug_id)
+
+bug-bind.py -p "$PUBLIC_BUG" "$PRIVATE_BUG" 2>&1
+
+launchpad-api get bugs/"$PUBLIC_BUG" | jq -r .tags[] | grep "originate-from-$PRIVATE_BUG"
+launchpad-api get bugs/"$PRIVATE_BUG" | jq -r .description | grep "X-HWE-Bug: Bug #$PUBLIC_BUG"
+
+lp-bug cleanup --yes "$PUBLIC_BUG"
+lp-bug cleanup --yes "$PRIVATE_BUG"

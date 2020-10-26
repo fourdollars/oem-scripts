@@ -16,6 +16,6 @@ mir-bug update --yes --skip --tz=UTC "$BUG_ID"
 
 mir-bug check --tz=UTC "$BUG_ID"
 
-mir-bug remove --yes "$BUG_ID"
+lp-bug cleanup --yes "$BUG_ID"
 
 mir-bug collect "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs.json

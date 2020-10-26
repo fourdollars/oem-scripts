@@ -1,3 +1,34 @@
+oem-scripts (0.64) UNRELEASED; urgency=medium
+
+  [ Yuan-Chen Cheng ]
+  * bug-bind.py: correctly detect if target has been associated.
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * bug-bind.py: Use oem_scripts.LaunchpadLogin for Launchpad API.
+  * debian/tests/bug-bind,
+    debian/tests/control: Add the autopkgtest for bug-bind.py.
+  * debian/tests/mir-bug,
+    lp-bug,
+    mir-bug,
+    setup.py,
+    tests/test_flake8,
+    tests/test_pep8: Move the generic 'remove' subcommand to lp-bug, and add
+    'copy' subcommand to lp-bug.
+  * debian/tests/bug-bind,
+    lp-bug: Improve the autopkgtest for bug-bind by copying a private bug.
+  * lp-bug: Fix the problem when the bug is not public.
+  * debian/tests/bug-bind: Any output from stderr will break the test so it is
+    redirected to stdout.
+  * debian/tests/bug-bind,
+    debian/tests/mir-bug,
+    lp-bug: Rename the 'remove' subcommand to 'cleanup'.
+  * lp-bug: Fix the wrong web_link.
+  * debian/tests/bug-bind,
+    lp-bug: Add an option '--public' for the 'copy' subcommand to avoid the
+    "HTTP Error 503" issue on Launchpad staging when cleaning up the bug.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 23 Oct 2020 14:30:00 +0800
+
 oem-scripts (0.63) focal; urgency=medium
 
   * oem_scripts/__init__.py: Bump to 0.63.
