@@ -29,7 +29,7 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpForm
                                  epilog="""
 examples:
     lp-bug copy --output=target_bug_id SOURCE_BUG_ID
-    lp-bug remove BUG_ID""")
+    lp-bug cleanup BUG_ID""")
 
 parser.add_argument("-d", "--debug",
                     help="print debug messages", action="store_true")
@@ -48,11 +48,11 @@ copy.add_argument("-t", "--target",
 copy.add_argument("bugID",
                   help="Specify the bug number on Launchpad to copy from.", type=int)
 
-remove = subparsers.add_parser('remove', help='[-h] [--yes] bugID')
-remove.add_argument("bugID",
-                    help="Specify the bug number on Launchpad to remove.", type=int)
-remove.add_argument("--yes",
-                    help="Say yes for all prompts.", action="store_true")
+cleanup = subparsers.add_parser('cleanup', help='[-h] [--yes] bugID')
+cleanup.add_argument("bugID",
+                     help="Specify the bug number on Launchpad to cleanup.", type=int)
+cleanup.add_argument("--yes",
+                     help="Say yes for all prompts.", action="store_true")
 
 args = parser.parse_args()
 
@@ -116,9 +116,9 @@ def copy_bug(lp, bug_number: int, target: str, output=None) -> None:
         args.output.write(f"{new_bug.id}\n")
 
 
-def remove_bug(lp, bug_number: int, yes: bool) -> None:
+def cleanup_bug(lp, bug_number: int, yes: bool) -> None:
     bug = lp.bugs[bug_number]
-    if not _yes_or_ask(yes, f'Do you want to remove all information on LP: #{bug_number} - "{bug.title}"? {bug.web_link}'):
+    if not _yes_or_ask(yes, f'Do you want to cleanup all information on LP: #{bug_number} - "{bug.title}"? {bug.web_link}'):
         return
 
     if bug.title != "null":
@@ -170,7 +170,7 @@ if args.subcommand:
 
 if args.subcommand == 'copy':
     copy_bug(lp, args.bugID, output=args.output, target=args.target)
-elif args.subcommand == 'remove':
-    remove_bug(lp, args.bugID, args.yes)
+elif args.subcommand == 'cleanup':
+    cleanup_bug(lp, args.bugID, args.yes)
 else:
     parser.print_help()

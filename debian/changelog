@@ -19,6 +19,9 @@ oem-scripts (0.64) UNRELEASED; urgency=medium
   * lp-bug: Fix the problem when the bug is not public.
   * debian/tests/bug-bind: Any output from stderr will break the test so it is
     redirected to stdout.
+  * debian/tests/bug-bind,
+    debian/tests/mir-bug,
+    lp-bug: Rename the 'remove' subcommand to 'cleanup'.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 23 Oct 2020 14:30:00 +0800
 
