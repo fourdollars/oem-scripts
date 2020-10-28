@@ -42,6 +42,7 @@ done
 
 CODENAME="${CODENAME:=$(lsb_release -cs)}"
 GENERATE="${GENERATE:=}"
+LAUNCHPAD_API="${LAUNCHPAD_API:=https://api.launchpad.net/}"
 
 # shellcheck source=config.sh
 source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
@@ -68,8 +69,8 @@ for PPA in "$@"; do
         GROUP=$(echo "${PPA//[:\/]/ }" | awk '{print $2}')
         ARCHIVE=$(echo "${PPA//[:\/]/ }" | awk '{print $3}')
         if [ "$(${launchpad_api} get "devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .private)" = "true" ]; then
-            if ${launchpad_api} post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=https://api.launchpad.net/devel/~$GROUP/+archive/ubuntu/$ARCHIVE" >/dev/null 2>&1; then
-                URL=$(${launchpad_api} post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=https://api.launchpad.net/devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .)
+            if ${launchpad_api} post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=${LAUNCHPAD_API}devel/~$GROUP/+archive/ubuntu/$ARCHIVE" >/dev/null 2>&1; then
+                URL=$(${launchpad_api} post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=${LAUNCHPAD_API}devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .)
             else
                 echo "You may not have the subscription of $PPA yet so you can not get the source list."
                 echo "Please access https://launchpad.net/~$GROUP/+archive/ubuntu/$ARCHIVE/+subscriptions to subscribe it."

@@ -1,10 +1,16 @@
 #!/bin/bash
 
-export LAUNCHPAD_API="https://api.staging.launchpad.net"
+export LAUNCHPAD_API="https://api.staging.launchpad.net/"
 if [ "$(launchpad-api get bugs/1 | jq -r .web_link)" != "https://bugs.staging.launchpad.net/bugs/1" ]; then
     exit 1
 fi
-export LAUNCHPAD_API="https://api.launchpad.net"
+
+export LAUNCHPAD_API="https://api.launchpad.net/"
+if [ "$(launchpad-api get bugs/1 | jq -r .web_link)" != "https://bugs.launchpad.net/bugs/1" ]; then
+    exit 1
+fi
+
+unset LAUNCHPAD_API
 if [ "$(launchpad-api get bugs/1 | jq -r .web_link)" != "https://bugs.launchpad.net/bugs/1" ]; then
     exit 1
 fi
