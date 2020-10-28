@@ -8,6 +8,7 @@ oem-scripts (0.65) UNRELEASED; urgency=medium
     .shellspec,
     spec/oem-scripts_spec.sh,
     spec/spec_helper.sh: Introduce https://shellspec.info/.
+  * debian/tests/get-private-ppa: Refine the test script.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 27 Oct 2020 14:58:21 +0800
 
