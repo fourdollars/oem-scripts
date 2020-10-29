@@ -1,3 +1,10 @@
+oem-scripts (0.66) UNRELEASED; urgency=medium
+
+  * debian/control,
+    debian/copyright: Move Vcs to the public.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 29 Oct 2020 14:02:19 +0800
+
 oem-scripts (0.65) focal; urgency=medium
 
   * debian/tests/get-private-ppa,
