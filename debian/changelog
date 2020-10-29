@@ -2,6 +2,8 @@ oem-scripts (0.66) UNRELEASED; urgency=medium
 
   * debian/control,
     debian/copyright: Move Vcs to the public.
+  * debian/tests/pkg-somerville-meta,
+    pkg-oem-meta: Set GRUB_FLAVOUR_ORDER in /etc/default/grub.d/oem-flavour.cfg.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 29 Oct 2020 14:02:19 +0800
 

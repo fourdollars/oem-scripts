@@ -38,6 +38,11 @@ grep "^debian-branch = three-eyed-raven-focal-ubuntu$" debian/gbp.conf
 grep "^Restrictions: needs-root$" debian/tests/control
 grep "^apt-get autoremove --purge --yes oem-somerville-three-eyed-raven-meta$" debian/tests/meta
 
+# oem-flavour.cfg only exists in oem branch.
+if [ -f oem-flavour.cfg ]; then
+    exit 1
+fi
+
 gbp import-dsc ../oem-somerville-three-eyed-raven-meta_*.dsc
 
 git checkout three-eyed-raven-focal-oem
@@ -66,6 +71,12 @@ grep "^debian-branch = three-eyed-raven-focal-oem$" debian/gbp.conf
 grep "^Restrictions: needs-root$" debian/tests/control
 grep "^apt-get autoremove --purge --yes oem-somerville-three-eyed-raven-meta$" debian/tests/meta
 
+# oem-flavour.cfg only exists in oem branch.
+if [ ! -f oem-flavour.cfg ]; then
+    exit 1
+fi
+grep ^GRUB_FLAVOUR_ORDER=oem$ oem-flavour.cfg
+
 cd ..
 rm -fr oem-somerville-three-eyed-raven-meta
 
@@ -79,3 +90,8 @@ grep "XB-Ubuntu-OEM-Kernel-Flavour: default" debian/control
 git checkout three-eyed-raven-focal-oem
 grep "XB-Ubuntu-OEM-Kernel-Flavour: default" debian/control
 grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-generic-hwe-20.04, oem-somerville-meta$" debian/control
+# oem-flavour.cfg only exists in oem branch.
+if [ ! -f oem-flavour.cfg ]; then
+    exit 1
+fi
+grep ^GRUB_FLAVOUR_ORDER=generic$ oem-flavour.cfg
