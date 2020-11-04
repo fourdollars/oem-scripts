@@ -90,10 +90,13 @@ check.add_argument("--ready",
                    action="store_true",
                    help="Check if the bug is Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.")
 
-collect = subparsers.add_parser('collect', help='[-h] json')
+collect = subparsers.add_parser('collect', help='[-h] [--ubuntu-certified] jsonFile')
 collect.add_argument("json",
                      help="Specify the json file name to write.",
                      type=argparse.FileType('w', encoding='UTF-8'))
+collect.add_argument("--ubuntu-certified",
+                     action="store_true",
+                     help="Only collect those bugs with the 'ubuntu-certified' tag.")
 
 args = parser.parse_args()
 
@@ -215,56 +218,60 @@ def collect_bugs(lp, output):
         total = tasks.total_size.value
 
     bugs = []
-    counter = 0
-    for task in tasks:
+    for counter, task in enumerate(tasks, 1):
         bug = task.bug
-        counter = counter + 1
-        if '[MIR]' in bug.title and 'oem' in bug.title and 'meta' in bug.title:
-            result = pattern.match(bug.title)
-            git = None
-            if result:
-                if '.' in result.group(1):
-                    project, group = result.group(1).split('.')
-                else:
-                    project = result.group(1)
-                    group = None
-                platform = result.group(2)
-                if group:
-                    git = f"git clone --depth 1 -b {group}.{platform}-focal-ubuntu https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta oem-{project}.{group}-{platform}-meta"
-                else:
-                    git = f"git clone --depth 1 -b {platform}-focal-ubuntu https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta oem-{project}-{platform}-meta"
 
-            subscriptions = []
-            for subscription in bug.subscriptions:
-                subscriptions.append(subscription.person.name)
-
-            ubuntu_status = None
-            for bug_task in bug.bug_tasks:
-                if bug_task.bug_target_name == 'ubuntu':
-                    ubuntu_status = bug_task.status
-
-            attachments = []
-            for attachment in bug.attachments:
-                attachments.append({'title': attachment.title, 'data_link': attachment.data_link, 'type': attachment.type})
-            clip = {
-                'bug': "https://bugs.launchpad.net/bugs/%s" % bug.id,
-                'link': bug.self_link,
-                'title': bug.title,
-                'importance': task.importance,
-                'tag': bug.tags,
-                'description': bug.description,
-                'status': task.status,
-                'ubuntu_status': ubuntu_status,
-                'owner': task.owner.name,
-                'assignee': task.assignee.name if task.assignee else 'none',
-                'subscriptions': subscriptions,
-                'attachments': attachments,
-                'git': git
-            }
-            bugs.append(clip)
-            info(f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status})")
-        else:
+        if '[MIR]' not in bug.title or 'oem' not in bug.title or 'meta' not in bug.title:
             info(f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status}) **NOT MATCHED**")
+            continue
+
+        if args.ubuntu_certified and 'ubuntu-certified' not in bug.tags:
+            info(f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status}) **NOT CERTIFIED**")
+            continue
+
+        result = pattern.match(bug.title)
+        git = None
+        if result:
+            if '.' in result.group(1):
+                project, group = result.group(1).split('.')
+            else:
+                project = result.group(1)
+                group = None
+            platform = result.group(2)
+            if group:
+                git = f"git clone --depth 1 -b {group}.{platform}-focal-ubuntu https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta oem-{project}.{group}-{platform}-meta"
+            else:
+                git = f"git clone --depth 1 -b {platform}-focal-ubuntu https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta oem-{project}-{platform}-meta"
+
+        subscriptions = []
+        for subscription in bug.subscriptions:
+            subscriptions.append(subscription.person.name)
+
+        ubuntu_status = None
+        for bug_task in bug.bug_tasks:
+            if bug_task.bug_target_name == 'ubuntu':
+                ubuntu_status = bug_task.status
+
+        attachments = []
+        for attachment in bug.attachments:
+            attachments.append({'title': attachment.title, 'data_link': attachment.data_link, 'type': attachment.type})
+        clip = {
+            'bug': "https://bugs.launchpad.net/bugs/%s" % bug.id,
+            'link': bug.self_link,
+            'title': bug.title,
+            'importance': task.importance,
+            'tag': bug.tags,
+            'description': bug.description,
+            'status': task.status,
+            'ubuntu_status': ubuntu_status,
+            'owner': task.owner.name,
+            'assignee': task.assignee.name if task.assignee else 'none',
+            'subscriptions': subscriptions,
+            'attachments': attachments,
+            'git': git
+        }
+        bugs.append(clip)
+        info(f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status})")
 
     info("total: %d matched" % len(bugs))
     output.write(json.dumps(bugs))
