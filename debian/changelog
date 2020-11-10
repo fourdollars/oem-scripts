@@ -1,4 +1,4 @@
-oem-scripts (0.66) UNRELEASED; urgency=medium
+oem-scripts (0.66) focal; urgency=medium
 
   * debian/control,
     debian/copyright: Move Vcs to the public.
@@ -6,6 +6,7 @@ oem-scripts (0.66) UNRELEASED; urgency=medium
     pkg-oem-meta: Set GRUB_FLAVOUR_ORDER in /etc/default/grub.d/oem-flavour.cfg.
   * debian/tests/mir-bug,
     mir-bug: Add an option to collect ubuntu-certified MIR bugs.
+  * oem_scripts/__init__.py: Bump to 0.66.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 04 Nov 2020 16:48:40 +0800
 
