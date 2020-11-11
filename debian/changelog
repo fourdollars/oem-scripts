@@ -1,7 +1,8 @@
-oem-scripts (0.67) UNRELEASED; urgency=medium
+oem-scripts (0.67) focal; urgency=medium
 
   * debian/tests/pkg-somerville-meta,
     pkg-oem-meta: Fix oem-flavour.cfg installing path.
+  * oem_scripts/__init__.py: Bump to 0.67.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 11 Nov 2020 14:54:38 +0800
 
