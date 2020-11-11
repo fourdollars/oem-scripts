@@ -75,7 +75,8 @@ grep "^apt-get autoremove --purge --yes oem-somerville-three-eyed-raven-meta$" d
 if [ ! -f oem-flavour.cfg ]; then
     exit 1
 fi
-grep ^GRUB_FLAVOUR_ORDER=oem$ oem-flavour.cfg
+grep "^GRUB_FLAVOUR_ORDER=oem$" oem-flavour.cfg
+grep "^oem-flavour.cfg /usr/share/oem-somerville-three-eyed-raven-meta/$" debian/install
 
 cd ..
 rm -fr oem-somerville-three-eyed-raven-meta
@@ -94,4 +95,5 @@ grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-generic-hwe-20.04, oe
 if [ ! -f oem-flavour.cfg ]; then
     exit 1
 fi
-grep ^GRUB_FLAVOUR_ORDER=generic$ oem-flavour.cfg
+grep "^GRUB_FLAVOUR_ORDER=generic$" oem-flavour.cfg
+grep "^oem-flavour.cfg /usr/share/oem-somerville-three-eyed-raven-meta/$" debian/install
