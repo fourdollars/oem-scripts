@@ -31,7 +31,7 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpForm
                                  epilog="""
 examples:
     pkg-list ubuntu-desktop --recommends > ubuntu-desktop.list
-    pkg-list dkms --recommends --exclude ubuntu-desktop.list > dkms.list
+    pkg-list dkms --exclude ubuntu-desktop.list > dkms.list
     cat ubuntu-desktop.list dkms.list > all.list
     pkg-list nvidia-settings nvidia-prime nvidia-driver-455 --exclude all.list
     pkg-list linux-generic --exclude all.list
