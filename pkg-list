@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Copyright (C) 2020  Canonical Ltd.
+# Author: Shih-Yuan Lee (FourDollars) <sylee@canonical.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+import argparse
+import logging
+import sys
+import types
+
+from apt import apt_pkg
+from logging import debug, error  # info, warning, critical
+from urllib.parse import urljoin
+
+
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+                                 epilog="""
+examples:
+    pkg-list ubuntu-desktop --recommends > ubuntu-desktop.list
+    pkg-list dkms --recommends --exclude ubuntu-desktop.list > dkms.list
+    cat ubuntu-desktop.list dkms.list > all.list
+    pkg-list nvidia-settings nvidia-prime nvidia-driver-455 --exclude all.list
+    pkg-list linux-generic --exclude all.list
+    pkg-list linux-generic-hwe-20.04 --exclude all.list
+    pkg-list linux-oem-20.04 --exclude all.list
+    pkg-list linux-oem-20.04-edge --exclude all.list""")
+
+parser.add_argument("-d", "--debug",
+                    help="print debug messages", action="store_true")
+parser.add_argument("-v", "--verbose",
+                    help="print verbose list", action="store_true")
+parser.add_argument("--recommends",
+                    help="include recommends packages", action="store_true")
+parser.add_argument("--suggests",
+                    help="include suggests packages", action="store_true")
+parser.add_argument("--uninstalled",
+                    help="only list uninstalled packages", action="store_true")
+parser.add_argument("--exclude", metavar='pkg.list',
+                    help="package names and versions to exclude.",
+                    type=argparse.FileType('r', encoding='UTF-8'))
+parser.add_argument('pkgs', metavar='PKG_NAME', type=str, nargs='+',
+                    help='the names of Debian binary packages')
+
+args = parser.parse_args()
+
+logging.addLevelName(logging.DEBUG,
+                     "\033[1;96m%s\033[1;0m" %
+                     logging.getLevelName(logging.DEBUG))
+logging.addLevelName(logging.INFO,
+                     "\033[1;32m%s\033[1;0m" %
+                     logging.getLevelName(logging.INFO))
+logging.addLevelName(logging.WARNING,
+                     "\033[1;33m%s\033[1;0m" %
+                     logging.getLevelName(logging.WARNING))
+logging.addLevelName(logging.ERROR,
+                     "\033[1;31m%s\033[1;0m" %
+                     logging.getLevelName(logging.ERROR))
+logging.addLevelName(logging.CRITICAL,
+                     "\033[1;41m%s\033[1;0m" %
+                     logging.getLevelName(logging.CRITICAL))
+
+if args.debug:
+    logging.basicConfig(format='<%(levelname)s> %(message)s',
+                        level=logging.DEBUG,
+                        handlers=[logging.StreamHandler(sys.stdout)])
+else:
+    logging.basicConfig(format='<%(levelname)s> %(message)s',
+                        handlers=[logging.StreamHandler(sys.stdout)])
+
+cache = apt_pkg.Cache(progress=None)
+record = apt_pkg.PackageRecords(cache)
+source = apt_pkg.SourceList()
+source.read_main_list()
+
+
+def debug_pkg(pkg):
+
+    if not args.debug:
+        return
+
+    debug(dir(pkg))
+
+    for attr in dir(pkg):
+        if not attr.startswith('__'):
+            if not isinstance(pkg.__getattribute__(attr), types.BuiltinFunctionType):
+                debug(f"{attr}: {pkg.__getattribute__(attr)}")
+
+
+def get_depends(pkg_name, depends_list=None, recommends=False, suggests=False, uninstalled=False):
+
+    if depends_list is None:
+        depends_list = []
+
+    if pkg_name not in cache:
+        error(f"It can not find any Debian binary package named '{pkg_name}'.")
+        exit(1)
+
+    pkg = cache[pkg_name]
+
+    debug_pkg(pkg)
+
+    for version in pkg.version_list:
+        url = None
+
+        if not version.downloadable:
+            error(f"{pkg_name} {version.ver_str} is not downloadable.")
+            exit(1)
+
+        if pkg_name in map(lambda x: x[0], depends_list):
+            continue
+
+        if any(pkg_name == name and version.ver_str == ver for name, ver in exclude_list):
+            break
+
+        if uninstalled and pkg.current_ver == version:
+            break
+
+        for pfile in version.file_list:
+            if pfile[0].filename != '/var/lib/dpkg/status' and record.lookup(pfile):
+                url = urljoin("http://" + pfile[0].site, 'ubuntu/' + record.filename)
+                break
+
+        debug(f"{pkg_name} {version.ver_str} {url}")
+        item = (pkg_name, version.ver_str, url, record.hashes.find("MD5Sum"), record.hashes.find("SHA1"), record.hashes.find("SHA256"))
+        depends_list.append(item)
+
+        if 'Depends' not in version.depends_list_str:
+            continue
+
+        for depends in version.depends_list_str['Depends']:
+            (name, ver, _) = depends[0]
+            get_depends(name, depends_list, recommends=recommends, suggests=suggests, uninstalled=uninstalled)
+
+        if recommends and 'Recommends' in version.depends_list_str:
+            for depends in version.depends_list_str['Recommends']:
+                (name, ver, _) = depends[0]
+                get_depends(name, depends_list, recommends=recommends, suggests=suggests, uninstalled=uninstalled)
+
+        if suggests and 'Suggests' in version.depends_list_str:
+            for depends in version.depends_list_str['Suggests']:
+                (name, ver, _) = depends[0]
+                get_depends(name, depends_list, recommends=recommends, suggests=suggests, uninstalled=uninstalled)
+
+    return depends_list
+
+
+pkg_list = []
+exclude_list = []
+
+if args.exclude:
+    for line in args.exclude.readlines():
+        (name, ver) = line.strip().split(' ')
+        if not any(name == _name and ver == _ver for _name, _ver in exclude_list):
+            exclude_list.append((name, ver))
+
+for pkg in args.pkgs:
+    get_depends(pkg, pkg_list, recommends=args.recommends, suggests=args.suggests, uninstalled=args.uninstalled)
+
+for pkg, ver, url, md5, sha1, sha256 in sorted(pkg_list):
+    if args.verbose:
+        print(pkg, ver, url, md5, sha1, sha256)
+    else:
+        print(pkg, ver)

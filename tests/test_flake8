@@ -2,4 +2,5 @@
 
 flake8 --ignore E501 \
     lp-bug \
-    mir-bug
+    mir-bug \
+    pkg-list

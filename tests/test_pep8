@@ -10,4 +10,5 @@ pep8 --ignore=E501 \
     bug-bind.py \
     lp-bug \
     mir-bug \
-    oem-getiso
+    oem-getiso \
+    pkg-list
