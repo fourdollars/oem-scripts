@@ -1,0 +1,21 @@
+#!/bin/sh
+
+echo "=== ubuntu-desktop --recommends ==="
+pkg-list ubuntu-desktop --recommends | tee ubuntu-desktop.list
+
+echo "=== dkms ==="
+pkg-list dkms --exclude ubuntu-desktop.list | tee dkms.list
+
+cat ubuntu-desktop.list dkms.list > all.list
+
+echo "=== nvidia-settings nvidia-prime nvidia-driver-455 ==="
+pkg-list nvidia-settings nvidia-prime nvidia-driver-455 --exclude all.list
+
+echo "=== linux-generic ==="
+pkg-list linux-generic --exclude all.list
+
+echo "=== linux-generic-hwe-20.04 ==="
+pkg-list linux-generic-hwe-20.04 --exclude all.list
+
+echo "=== linux-oem-20.04 ==="
+pkg-list linux-oem-20.04 --exclude all.list

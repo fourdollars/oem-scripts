@@ -1,3 +1,15 @@
+oem-scripts (0.68) UNRELEASED; urgency=medium
+
+  * debian/tests/control,
+    debian/tests/mir-bug,
+    debian/tests/pkg-list,
+    pkg-list,
+    setup.py,
+    tests/test_flake8,
+    tests/test_pep8: Make pkg-list to generate the package list.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 18 Nov 2020 23:54:31 +0800
+
 oem-scripts (0.67) focal; urgency=medium
 
   * debian/tests/pkg-somerville-meta,
