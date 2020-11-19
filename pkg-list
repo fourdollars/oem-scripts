@@ -47,8 +47,8 @@ parser.add_argument("--recommends",
                     help="include recommends packages", action="store_true")
 parser.add_argument("--suggests",
                     help="include suggests packages", action="store_true")
-parser.add_argument("--uninstalled",
-                    help="only list uninstalled packages", action="store_true")
+parser.add_argument("--non-installed",
+                    help="only list non-installed packages", action="store_true")
 parser.add_argument("--exclude", metavar='pkg.list',
                     help="package names and versions to exclude.",
                     type=argparse.FileType('r', encoding='UTF-8'))
@@ -100,7 +100,7 @@ def debug_pkg(pkg):
                 debug(f"{attr}: {pkg.__getattribute__(attr)}")
 
 
-def get_depends(pkg_name, depends_list=None, recommends=False, suggests=False, uninstalled=False):
+def get_depends(pkg_name, depends_list=None, recommends=False, suggests=False, non_installed=False):
 
     if depends_list is None:
         depends_list = []
@@ -126,7 +126,7 @@ def get_depends(pkg_name, depends_list=None, recommends=False, suggests=False, u
         if any(pkg_name == name and version.ver_str == ver for name, ver in exclude_list):
             break
 
-        if uninstalled and pkg.current_ver == version:
+        if non_installed and pkg.current_ver == version:
             break
 
         for pfile in version.file_list:
@@ -143,17 +143,17 @@ def get_depends(pkg_name, depends_list=None, recommends=False, suggests=False, u
 
         for depends in version.depends_list_str['Depends']:
             (name, ver, _) = depends[0]
-            get_depends(name, depends_list, recommends=recommends, suggests=suggests, uninstalled=uninstalled)
+            get_depends(name, depends_list, recommends=recommends, suggests=suggests, non_installed=non_installed)
 
         if recommends and 'Recommends' in version.depends_list_str:
             for depends in version.depends_list_str['Recommends']:
                 (name, ver, _) = depends[0]
-                get_depends(name, depends_list, recommends=recommends, suggests=suggests, uninstalled=uninstalled)
+                get_depends(name, depends_list, recommends=recommends, suggests=suggests, non_installed=non_installed)
 
         if suggests and 'Suggests' in version.depends_list_str:
             for depends in version.depends_list_str['Suggests']:
                 (name, ver, _) = depends[0]
-                get_depends(name, depends_list, recommends=recommends, suggests=suggests, uninstalled=uninstalled)
+                get_depends(name, depends_list, recommends=recommends, suggests=suggests, non_installed=non_installed)
 
     return depends_list
 
@@ -168,7 +168,7 @@ if args.exclude:
             exclude_list.append((name, ver))
 
 for pkg in args.pkgs:
-    get_depends(pkg, pkg_list, recommends=args.recommends, suggests=args.suggests, uninstalled=args.uninstalled)
+    get_depends(pkg, pkg_list, recommends=args.recommends, suggests=args.suggests, non_installed=args.non_installed)
 
 for pkg, ver, url, md5, sha1, sha256 in sorted(pkg_list):
     if args.verbose:
