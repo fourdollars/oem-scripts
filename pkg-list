@@ -23,7 +23,7 @@ import sys
 import types
 
 from apt import apt_pkg
-from logging import debug, error  # info, warning, critical
+from logging import debug, error, critical  # info, warning
 from urllib.parse import urljoin
 
 
@@ -87,7 +87,7 @@ source = apt_pkg.SourceList()
 source.read_main_list()
 
 
-def debug_pkg(pkg):
+def _debug_pkg(pkg: str) -> None:
 
     if not args.debug:
         return
@@ -100,10 +100,24 @@ def debug_pkg(pkg):
                 debug(f"{attr}: {pkg.__getattribute__(attr)}")
 
 
-def get_depends(pkg_name, depends_list=None, recommends=False, suggests=False, non_installed=False):
+def get_depends(pkg_name: str, depends_list: list, recommends: bool, suggests: bool, non_installed: bool) -> None:
+    """Recursively get all dependencies.
+
+    Args:
+        pkg_name: The name of the Debian binary package.
+        depends_list: The list of all dependencies information. This list will be updated inside and outside the function.
+        recommends: Also check recommended packages.
+        suggests: Also check suggested packages.
+        non_installed: Only get non-installed packages.
+    """
 
     if depends_list is None:
-        depends_list = []
+        critical("depends_list can not be None.")
+        exit(1)
+
+    if not pkg_name:
+        critical("pkg_name can not be empty.")
+        exit(1)
 
     if pkg_name not in cache:
         error(f"It can not find any Debian binary package named '{pkg_name}'.")
@@ -111,7 +125,7 @@ def get_depends(pkg_name, depends_list=None, recommends=False, suggests=False, n
 
     pkg = cache[pkg_name]
 
-    debug_pkg(pkg)
+    _debug_pkg(pkg)
 
     for version in pkg.version_list:
         url = None
@@ -154,8 +168,6 @@ def get_depends(pkg_name, depends_list=None, recommends=False, suggests=False, n
             for depends in version.depends_list_str['Suggests']:
                 (name, ver, _) = depends[0]
                 get_depends(name, depends_list, recommends=recommends, suggests=suggests, non_installed=non_installed)
-
-    return depends_list
 
 
 pkg_list = []
