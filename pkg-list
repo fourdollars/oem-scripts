@@ -48,7 +48,7 @@ parser.add_argument("--recommends",
 parser.add_argument("--suggests",
                     help="include suggests packages", action="store_true")
 parser.add_argument("--non-installed",
-                    help="only list non-installed packages", action="store_true")
+                    help="only get non-installed packages per check current running environments", action="store_true")
 parser.add_argument("--exclude", metavar='pkg.list',
                     help="package names and versions to exclude.",
                     type=argparse.FileType('r', encoding='UTF-8'))
