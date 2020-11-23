@@ -1,4 +1,4 @@
-oem-scripts (0.69) UNRELEASED; urgency=medium
+oem-scripts (0.69) focal; urgency=medium
 
   * debian/tests/control
     debian/tests/setup-apt-dir
@@ -6,6 +6,7 @@ oem-scripts (0.69) UNRELEASED; urgency=medium
   * debian/tests/pkg-list,
     pkg-list: Make pkg-list support specified apt dir.
   * debian/tests/mir-bug: Skip checking the real meta.
+  * oem_scripts/__init__.py: Bump to 0.69.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 23 Nov 2020 10:32:26 +0800
 
