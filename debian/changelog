@@ -3,6 +3,8 @@ oem-scripts (0.69) UNRELEASED; urgency=medium
   * debian/tests/control
     debian/tests/setup-apt-dir
     setup-apt-dir.sh: Make setup-apt-dir.sh to set up apt dir.
+  * debian/tests/pkg-list,
+    pkg-list: Make pkg-list support specified apt dir.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 23 Nov 2020 10:32:26 +0800
 

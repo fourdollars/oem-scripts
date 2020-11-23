@@ -1,21 +1,31 @@
-#!/bin/sh
+#!/bin/bash
+
+setup-apt-dir.sh -c focal -m http://uk.archive.ubuntu.com/ubuntu -p -o aptdir.log
 
 echo "=== ubuntu-desktop --recommends ==="
-pkg-list ubuntu-desktop --recommends | tee ubuntu-desktop.list
+pkg-list --apt-dir "$APTDIR" ubuntu-desktop --recommends | tee ubuntu-desktop.list
 
 echo "=== dkms ==="
-pkg-list dkms --exclude ubuntu-desktop.list | tee dkms.list
+pkg-list --apt-dir "$APTDIR" dkms --exclude ubuntu-desktop.list | tee dkms.list
 
 cat ubuntu-desktop.list dkms.list > all.list
 
 echo "=== nvidia-settings nvidia-prime nvidia-driver-455 ==="
-pkg-list nvidia-settings nvidia-prime nvidia-driver-455 --exclude all.list
+pkg-list --apt-dir "$APTDIR" nvidia-settings nvidia-prime nvidia-driver-455 --exclude all.list
 
 echo "=== linux-generic ==="
-pkg-list linux-generic --exclude all.list
+pkg-list --apt-dir "$APTDIR" linux-generic --exclude all.list
 
 echo "=== linux-generic-hwe-20.04 ==="
-pkg-list linux-generic-hwe-20.04 --exclude all.list
+pkg-list --apt-dir "$APTDIR" linux-generic-hwe-20.04 --exclude all.list
 
 echo "=== linux-oem-20.04 ==="
-pkg-list linux-oem-20.04 --exclude all.list
+pkg-list --apt-dir "$APTDIR" linux-oem-20.04 --exclude all.list
+
+rm -fr aptdir.log "$APTDIR"
+
+echo "=== oem-scripts ==="
+setup-apt-dir.sh -c focal -m http://uk.archive.ubuntu.com/ubuntu -p --ppa ppa:oem-solutions-engineers/pc-enablement-tools -o aptdir.log
+pkg-list --verbose oem-scripts --apt-dir "$APTDIR" --exclude all.list
+
+rm -fr aptdir.log "$APTDIR"

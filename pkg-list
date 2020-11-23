@@ -18,7 +18,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import argparse
+import difflib
 import logging
+import os
 import sys
 import types
 
@@ -40,19 +42,30 @@ examples:
     pkg-list linux-oem-20.04-edge --exclude all.list""")
 
 parser.add_argument("-d", "--debug",
-                    help="print debug messages", action="store_true")
+                    action="store_true",
+                    help="print debug messages")
 parser.add_argument("-v", "--verbose",
-                    help="print verbose list", action="store_true")
+                    action="store_true",
+                    help="print verbose list")
+parser.add_argument("--apt-dir",
+                    type=str,
+                    help="specify the dir for apt")
 parser.add_argument("--recommends",
-                    help="include recommends packages", action="store_true")
+                    action="store_true",
+                    help="include recommends packages")
 parser.add_argument("--suggests",
-                    help="include suggests packages", action="store_true")
+                    action="store_true",
+                    help="include suggests packages")
 parser.add_argument("--non-installed",
-                    help="only get non-installed packages per check current running environments", action="store_true")
-parser.add_argument("--exclude", metavar='pkg.list',
-                    help="package names and versions to exclude.",
-                    type=argparse.FileType('r', encoding='UTF-8'))
-parser.add_argument('pkgs', metavar='PKG_NAME', type=str, nargs='+',
+                    action="store_true",
+                    help="only get non-installed packages per check current running environments")
+parser.add_argument("--exclude",
+                    metavar='pkg.list',
+                    type=argparse.FileType('r', encoding='UTF-8'),
+                    help="package names and versions to exclude.")
+parser.add_argument('pkgs',
+                    metavar='PKG_NAME',
+                    type=str, nargs='+',
                     help='the names of Debian binary packages')
 
 args = parser.parse_args()
@@ -80,11 +93,6 @@ if args.debug:
 else:
     logging.basicConfig(format='<%(levelname)s> %(message)s',
                         handlers=[logging.StreamHandler(sys.stdout)])
-
-cache = apt_pkg.Cache(progress=None)
-record = apt_pkg.PackageRecords(cache)
-source = apt_pkg.SourceList()
-source.read_main_list()
 
 
 def _debug_pkg(pkg: str) -> None:
@@ -169,6 +177,26 @@ def get_depends(pkg_name: str, depends_list: list, recommends: bool, suggests: b
                 (name, ver, _) = depends[0]
                 get_depends(name, depends_list, recommends=recommends, suggests=suggests, non_installed=non_installed)
 
+
+if args.apt_dir:
+    apt_pkg.init_config()
+    if args.debug:
+        old = apt_pkg.config.dump()
+    apt_pkg.config.set("Dir", args.apt_dir)
+    apt_pkg.config.set("Dir::State::status", os.path.join(args.apt_dir, "var/lib/dpkg/status"))
+    if args.debug:
+        new = apt_pkg.config.dump()
+        d = difflib.Differ()
+        diff = d.compare(old.split('\n'), new.split('\n'))
+        for line in diff:
+            debug(line.strip())
+    apt_pkg.init_system()
+
+
+cache = apt_pkg.Cache(progress=None)
+record = apt_pkg.PackageRecords(cache)
+source = apt_pkg.SourceList()
+source.read_main_list()
 
 pkg_list = []
 exclude_list = []
