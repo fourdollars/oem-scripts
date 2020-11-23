@@ -10,11 +10,11 @@ BUG_ID=$(cat bug_id)
 
 mir-bug update --yes --skip --ready "$BUG_ID"
 
-mir-bug check --ready "$BUG_ID"
+mir-bug check --skip --ready "$BUG_ID"
 
 mir-bug update --yes --skip --tz=UTC "$BUG_ID"
 
-mir-bug check --tz=UTC "$BUG_ID"
+mir-bug check --skip --tz=UTC "$BUG_ID"
 
 lp-bug cleanup --yes "$BUG_ID"
 
