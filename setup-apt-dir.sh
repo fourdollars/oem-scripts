@@ -55,7 +55,7 @@ OPTIONS:
       If not specified, it will use http://archive.ubuntu.com/ubuntu by default.
 
  -o | --output
-      Specify the filename to output the apt dir.
+      Specify the filename to output the apt dir. If not specified, it will output in the last line.
 
  -p | --proposed
       Enable -proposed channel.
