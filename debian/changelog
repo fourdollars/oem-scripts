@@ -1,3 +1,13 @@
+oem-scripts (0.70) UNRELEASED; urgency=medium
+
+  * mir-bug,
+    oem_scripts/logging.py,
+    pkg-oem-meta: Print warning messages in pkg-oem-meta when DEBFULLNAME or
+    DEBEMAIL is invalid, and append the public bug into debian/changelog by
+    mir-bug when the public bug is unavailable.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 24 Nov 2020 17:07:39 +0800
+
 oem-scripts (0.69) focal; urgency=medium
 
   * debian/tests/control

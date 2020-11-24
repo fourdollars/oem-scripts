@@ -8,9 +8,13 @@ import subprocess
 import sys
 
 from distro_info import UbuntuDistroInfo
+from logging import warning, error
+from oem_scripts.logging import setup_logging
 from time import localtime, strftime
 
 program_name = os.path.basename(sys.argv[0])
+
+setup_logging()
 
 if program_name == 'pkg-somerville-meta':
     codename = 'somerville'
@@ -40,7 +44,8 @@ elif program_name == 'pkg-sutton-meta':
         epilog=f"Ex. {program_name} -s focal -k oem"
         " -g bachman -p banaing S08")
 else:
-    raise Exception('This program can not be executed.')
+    error('This program can not be executed.')
+    exit(1)
 
 parser.add_argument('-k', '--kernel',
                     choices=['oem', 'default'],
@@ -94,16 +99,19 @@ version = versions[series].split(' ')[0]
 if codename == 'somerville':
     group = ''
     if args.platform.startswith("fossa-"):
-        raise Exception('Please remove fossa- prefix from the platform name.')
+        error('Please remove fossa- prefix from the platform name.')
+        exit(1)
     for bios_id in args.bios_id:
         if not re.match('[0-9a-fA-F]{4}$', bios_id):
-            raise Exception('Invalid BIOS ID: {%s}' % bios_id)
+            error('Invalid BIOS ID: {%s}' % bios_id)
+            exit(1)
     meta = 'oem-' + codename + '-' + platform + '-meta'
 elif codename == 'stella':
     group = args.group.lower()
     for sd_id in args.sd_id:
         if not re.match('[0-9a-fA-F]{4}$', sd_id):
-            raise Exception('Invalid subsystem device ID: {%s}' % sd_id)
+            error('Invalid subsystem device ID: {%s}' % sd_id)
+            exit(1)
     meta = 'oem-' + codename + '.' + group + '-' + platform + '-meta'
     Codename = Codename + ' ' + group.title()
 elif codename == 'sutton':
@@ -111,12 +119,14 @@ elif codename == 'sutton':
     for bios_ver in args.bios_ver:
         if (not re.match('[0-9a-zA-Z]{3}$', bios_ver)) and \
            (not re.match('bvn[0-9a-zA-Z]+:bvr[0-9a-zA-Z]{3}$', bios_ver)):
-            raise Exception('Invalid BIOS version: {%s}' % bios_ver)
+            error('Invalid BIOS version: {%s}' % bios_ver)
+            exit(1)
     meta = 'oem-' + codename + '.' + group + '-' + platform + '-meta'
     Codename = Codename + ' ' + group.title()
 
 if os.path.exists(meta):
-    raise Exception(meta + ' already exists. Please remove or rename it.')
+    error(meta + ' already exists. Please remove or rename it.')
+    exit(1)
 
 os.mkdir(meta)
 os.chdir(meta)
@@ -252,6 +262,10 @@ debian-tag = {branch}_%(version)s
 
     fullname = os.getenv('DEBFULLNAME', 'Commercial Engineering')
     email = os.getenv('DEBEMAIL', 'commercial-engineering@canonical.com')
+    if fullname == 'Commercial Engineering':
+        warning("DEBFULLNAME shall not be 'Commercial Engineering'. Please use your own fullname.")
+    if email == 'commercial-engineering@canonical.com':
+        warning("DEBEMAIL shall not be 'commercial-engineering@canonical.com'. Please use your own email.")
     timestamp = strftime("%a, %d %b %Y %H:%M:%S %z", localtime())
 
     with open('changelog', 'w') as f:
