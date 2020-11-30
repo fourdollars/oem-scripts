@@ -6,6 +6,7 @@ oem-scripts (0.70) UNRELEASED; urgency=medium
     DEBEMAIL is invalid, and append the public bug into debian/changelog by
     mir-bug when the public bug is unavailable.
   * autopkgtest-oem-scripts-auto: Update the PPA for oem-scripts.
+  * debian/tests/mir-bug: Polish the test.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 24 Nov 2020 17:07:39 +0800
 
