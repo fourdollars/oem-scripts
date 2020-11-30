@@ -7,6 +7,7 @@ oem-scripts (0.70) UNRELEASED; urgency=medium
     mir-bug when the public bug is unavailable.
   * autopkgtest-oem-scripts-auto: Update the PPA for oem-scripts.
   * debian/tests/mir-bug: Polish the test.
+  * run-autopkgtest: Add the license header and add the target option.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 24 Nov 2020 17:07:39 +0800
 
