@@ -18,4 +18,4 @@ fi
 
 autopkgtest_collect_credentials="${cur_dir}/autopkgtest-collect-credentials"
 
-${autopkgtest_collect_credentials} --git ppa:oem-solutions-group/ppa ~/.config/oem-scripts/config.ini "$@"
+${autopkgtest_collect_credentials} --git ppa:oem-solutions-engineers/pc-enablement-tools ~/.config/oem-scripts/config.ini "$@"

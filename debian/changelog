@@ -5,6 +5,7 @@ oem-scripts (0.70) UNRELEASED; urgency=medium
     pkg-oem-meta: Print warning messages in pkg-oem-meta when DEBFULLNAME or
     DEBEMAIL is invalid, and append the public bug into debian/changelog by
     mir-bug when the public bug is unavailable.
+  * autopkgtest-oem-scripts-auto: Update the PPA for oem-scripts.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 24 Nov 2020 17:07:39 +0800
 
