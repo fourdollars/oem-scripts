@@ -1,0 +1,41 @@
+#!/bin/bash
+
+cat >/etc/apt/preferences.d/proposed-updates <<EOF
+# Configure apt to allow selective installs of packages from proposed
+Package: *
+Pin: release a=$(lsb_release -cs)-proposed
+Pin-Priority: 400
+EOF
+
+cat >/etc/apt/sources.list.d/ubuntu-"$(lsb_release -cs)"-proposed.list <<EOF
+# Enable Ubuntu proposed archive
+deb http://archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-proposed restricted main multiverse universe
+EOF
+
+apt-get update
+
+pkg-list -v oem-qemu-meta | grep ^oem-qemu-meta | tee "$AUTOPKGTEST_ARTIFACTS"/mir-bug-verification.log
+apt-get install oem-qemu-meta --yes
+apt-get update
+apt-get full-upgrade --yes
+
+apt-get update
+pkg-list -v oem-qemu-meta | grep ^oem-qemu-meta | tee -a "$AUTOPKGTEST_ARTIFACTS"/mir-bug-verification.log
+apt-get autopurge oem-qemu-meta --yes
+apt-get update
+
+mir-bug collect --ubuntu-certified --verification-needed "$AUTOPKGTEST_ARTIFACTS"/verification-needed.json
+
+while read -r bug _ meta; do
+    echo "Checking $meta for $bug ..."
+
+    pkg-list -v "$meta" | grep ^"$meta" | tee -a "$AUTOPKGTEST_ARTIFACTS"/mir-bug-verification.log
+    apt-get install "$meta/$(lsb_release -cs)-proposed" --yes
+    apt-get update
+    apt-get full-upgrade --yes
+    apt-get update
+
+    pkg-list -v "$meta" | grep ^"$meta" | tee -a "$AUTOPKGTEST_ARTIFACTS"/mir-bug-verification.log
+    apt-get autopurge "$meta" --yes
+    apt-get update
+done < <(jq -r '.[] | [.bug, .title] | join(" ")' < "$AUTOPKGTEST_ARTIFACTS"/verification-needed.json)

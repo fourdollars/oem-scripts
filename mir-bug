@@ -96,6 +96,9 @@ collect.add_argument("json",
 collect.add_argument("--ubuntu-certified",
                      action="store_true",
                      help="Only collect those bugs with the 'ubuntu-certified' tag.")
+collect.add_argument("--verification-needed",
+                     action="store_true",
+                     help="Only collect those bugs with the 'verification-needed' tag.")
 
 args = parser.parse_args()
 
@@ -201,6 +204,15 @@ def collect_bugs(lp, output):
         if args.ubuntu_certified and 'ubuntu-certified' not in bug.tags:
             info(f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status}) **NOT CERTIFIED**")
             continue
+
+        if args.verification_needed:
+            verification_needed = False
+            for tag in bug.tags:
+                if tag.startswith('verification-needed'):
+                    verification_needed = True
+            if not verification_needed:
+                info(f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status}) **NOT VERIFICATION NEEDED**")
+                continue
 
         result = pattern.match(bug.title)
         git = None

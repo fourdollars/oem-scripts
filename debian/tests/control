@@ -10,3 +10,7 @@ Depends: @
 Tests: git-url-insteadof-setting
 Depends: @
 Restrictions: allow-stderr
+
+Tests: mir-bug-verification
+Depends: @
+Restrictions: needs-root
