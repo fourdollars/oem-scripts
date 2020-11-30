@@ -14,28 +14,45 @@ EOF
 
 apt-get update
 
-pkg-list -v oem-qemu-meta | grep ^oem-qemu-meta | tee "$AUTOPKGTEST_ARTIFACTS"/mir-bug-verification.log
-apt-get install oem-qemu-meta --yes
-apt-get update
-apt-get full-upgrade --yes
+mir_bug_verify()
+{
+    local meta="$1"
+    local yaml="$2"
+    local old=""
+    local new=""
+    echo "- meta: $meta" >> "$yaml"
 
-apt-get update
-pkg-list -v oem-qemu-meta | grep ^oem-qemu-meta | tee -a "$AUTOPKGTEST_ARTIFACTS"/mir-bug-verification.log
-apt-get autopurge oem-qemu-meta --yes
-apt-get update
-
-LAUNCHPAD_API=anonymous mir-bug collect --ubuntu-certified --verification-needed "$AUTOPKGTEST_ARTIFACTS"/verification-needed.json
-
-while read -r bug _ meta; do
-    echo "Checking $meta for $bug ..."
-
-    pkg-list -v "$meta" | grep ^"$meta" | tee -a "$AUTOPKGTEST_ARTIFACTS"/mir-bug-verification.log
-    apt-get install "$meta/$(lsb_release -cs)-proposed" --yes
+    while read -r _ version url; do
+        { echo "  old:"; echo "    version: $version"; echo "    url: $url"; } >> "$yaml"
+        old="$version"
+    done < <(pkg-list -v "$meta" | grep ^"$meta")
+    apt-get install "$meta" --yes
     apt-get update
     apt-get full-upgrade --yes
     apt-get update
 
-    pkg-list -v "$meta" | grep ^"$meta" | tee -a "$AUTOPKGTEST_ARTIFACTS"/mir-bug-verification.log
+    while read -r _ version url; do
+        { echo "  new:"; echo "    version: $version"; echo "    url: $url"; } >> "$yaml"
+        new="$version"
+    done < <(pkg-list -v "$meta" | grep ^"$meta")
     apt-get autopurge "$meta" --yes
     apt-get update
+    if dpkg --compare-versions "$old" lt "$new"; then
+        echo "  pass: true" >> "$yaml"
+    else
+        echo "  pass: false" >> "$yaml"
+    fi
+}
+
+:> "$AUTOPKGTEST_ARTIFACTS"/qemu.yml
+mir_bug_verify oem-qemu-meta "$AUTOPKGTEST_ARTIFACTS"/qemu.yml
+echo "  bug: null" >> "$AUTOPKGTEST_ARTIFACTS"/qemu.yml
+
+LAUNCHPAD_API=anonymous mir-bug collect --ubuntu-certified --verification-needed "$AUTOPKGTEST_ARTIFACTS"/verification-needed.json
+
+:> "$AUTOPKGTEST_ARTIFACTS"/mir-bug-verification.yml
+while read -r bug _ meta; do
+    echo "Checking $meta for $bug ..."
+    mir_bug_verify "$meta" "$AUTOPKGTEST_ARTIFACTS"/mir-bug-verification.yml
+    echo "  bug: $bug" >> "$AUTOPKGTEST_ARTIFACTS"/mir-bug-verification.yml
 done < <(jq -r '.[] | [.bug, .title] | join(" ")' < "$AUTOPKGTEST_ARTIFACTS"/verification-needed.json)
