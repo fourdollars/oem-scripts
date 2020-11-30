@@ -71,6 +71,9 @@ class LaunchpadLogin():
                                       service_root=service_root,
                                       cache=launchpadlib_dir,
                                       version=version)
+        elif service_root == 'production' and os.environ.get('LAUNCHPAD_API') == 'anonymous':
+            logging.info("Using anonymously login")
+            self.lp = Launchpad.login_anonymously(application_name, service_root)
         else:
             logging.info("Using oem-scripts login")
             self.lp = Launchpad.login_with(application_name=application_name,

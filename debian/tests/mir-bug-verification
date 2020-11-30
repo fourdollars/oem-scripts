@@ -24,7 +24,7 @@ pkg-list -v oem-qemu-meta | grep ^oem-qemu-meta | tee -a "$AUTOPKGTEST_ARTIFACTS
 apt-get autopurge oem-qemu-meta --yes
 apt-get update
 
-mir-bug collect --ubuntu-certified --verification-needed "$AUTOPKGTEST_ARTIFACTS"/verification-needed.json
+LAUNCHPAD_API=anonymous mir-bug collect --ubuntu-certified --verification-needed "$AUTOPKGTEST_ARTIFACTS"/verification-needed.json
 
 while read -r bug _ meta; do
     echo "Checking $meta for $bug ..."
