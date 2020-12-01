@@ -14,6 +14,7 @@ oem-scripts (0.70) UNRELEASED; urgency=medium
   * oem_scripts/LaunchpadLogin.py: Support login anonymously when there is no
     token.
   * debian/tests/mir-bug-verification: Polish the test for mir bugs verification.
+  * mir-bug: Make the JSON output compact and sorted by keys.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 24 Nov 2020 17:07:39 +0800
 

@@ -259,7 +259,8 @@ def collect_bugs(lp, output):
         info(f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status})")
 
     info("total: %d matched" % len(bugs))
-    output.write(json.dumps(bugs))
+    output.write(json.dumps(bugs, sort_keys=True, separators=(',', ':')))
+    output.write("\n")
 
 
 def yes_or_ask(yes: bool, message: str) -> bool:
