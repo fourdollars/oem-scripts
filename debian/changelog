@@ -15,6 +15,13 @@ oem-scripts (0.70) UNRELEASED; urgency=medium
     token.
   * debian/tests/mir-bug-verification: Polish the test for mir bugs verification.
   * mir-bug: Make the JSON output compact and sorted by keys.
+  * debian/tests/jq-lp,
+    debian/tests/launchpad-api,
+    debian/tests/mir-bug-verification,
+    get-private-ppa,
+    launchpad-api,
+    oem_scripts/LaunchpadLogin.py: Refine anonymously login and support
+    LAUNCHPAD_TOKEN.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 24 Nov 2020 17:07:39 +0800
 

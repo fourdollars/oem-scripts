@@ -62,14 +62,21 @@ if ! valid_oem_scripts_config; then
     exit 1
 fi
 
-username=$(${launchpad_api} get devel/people/+me | jq -r .name)
+if ${launchpad_api} get devel/people/+me >/dev/null 2>&1; then
+    username=$(${launchpad_api} get devel/people/+me | jq -r .name)
+else
+    username=
+fi
 
 for PPA in "$@"; do
     if [[ "$PPA" =~ ^ppa: ]]; then
         GROUP=$(echo "${PPA//[:\/]/ }" | awk '{print $2}')
         ARCHIVE=$(echo "${PPA//[:\/]/ }" | awk '{print $3}')
         if [ "$(${launchpad_api} get "devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .private)" = "true" ]; then
-            if ${launchpad_api} post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=${LAUNCHPAD_API}devel/~$GROUP/+archive/ubuntu/$ARCHIVE" >/dev/null 2>&1; then
+            if [ -z "$username" ]; then
+                echo "$PPA is a private PPA. Anonymous users can not access it."
+                exit 1
+            elif ${launchpad_api} post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=${LAUNCHPAD_API}devel/~$GROUP/+archive/ubuntu/$ARCHIVE" >/dev/null 2>&1; then
                 URL=$(${launchpad_api} post "devel/~$username" ws.op=getArchiveSubscriptionURL "archive=${LAUNCHPAD_API}devel/~$GROUP/+archive/ubuntu/$ARCHIVE" | jq -r .)
             else
                 echo "You may not have the subscription of $PPA yet so you can not get the source list."

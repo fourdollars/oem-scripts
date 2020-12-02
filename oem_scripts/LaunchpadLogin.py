@@ -56,9 +56,27 @@ class LaunchpadLogin():
 
         oem_scripts_config_ini = os.path.join(os.environ["HOME"],
                                               ".config/oem-scripts/config.ini")
+        launchpad_token = os.environ.get("LAUNCHPAD_TOKEN")
+
         if bot:
             logging.info("Using oem-taipei-bot credentials")
             self.lp = launchpad_login('/', service_root)
+
+        elif launchpad_token:
+            if launchpad_token == "::":
+                logging.info("Using anonymously login")
+                self.lp = Launchpad.login_anonymously(application_name, service_root)
+            elif ":" in launchpad_token:
+                oauth_token, oauth_token_secret, oauth_consumer_key = launchpad_token.split(":")
+                self.lp = Launchpad.login(oauth_consumer_key,
+                                          oauth_token,
+                                          oauth_token_secret,
+                                          service_root=service_root,
+                                          cache=launchpadlib_dir,
+                                          version=version)
+            else:
+                logging.error(f"invalid LAUNCHPAD_TOKEN '{launchpad_token}'")
+                exit(1)
 
         elif os.environ.get('LAUNCHPAD_API') and os.path.exists(oem_scripts_config_ini):
             logging.info("Using oem-scripts oauth token")
@@ -71,9 +89,6 @@ class LaunchpadLogin():
                                       service_root=service_root,
                                       cache=launchpadlib_dir,
                                       version=version)
-        elif service_root == 'production' and os.environ.get('LAUNCHPAD_API') == 'anonymous':
-            logging.info("Using anonymously login")
-            self.lp = Launchpad.login_anonymously(application_name, service_root)
         else:
             logging.info("Using oem-scripts login")
             self.lp = Launchpad.login_with(application_name=application_name,

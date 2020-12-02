@@ -48,7 +48,7 @@ mir_bug_verify()
 mir_bug_verify oem-qemu-meta "$AUTOPKGTEST_ARTIFACTS"/qemu.yml
 echo "  bug: null" >> "$AUTOPKGTEST_ARTIFACTS"/qemu.yml
 
-LAUNCHPAD_API=anonymous mir-bug collect --ubuntu-certified --verification-needed "$AUTOPKGTEST_ARTIFACTS"/verification-needed.json
+LAUNCHPAD_TOKEN="::" mir-bug collect --ubuntu-certified --verification-needed "$AUTOPKGTEST_ARTIFACTS"/verification-needed.json
 
 :> "$AUTOPKGTEST_ARTIFACTS"/mir-bug-verification.yml
 while read -r bug _ meta; do
