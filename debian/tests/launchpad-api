@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export LAUNCHPAD_TOKEN="::"
+
 export LAUNCHPAD_API="https://api.staging.launchpad.net/"
 if [ "$(launchpad-api get bugs/1 | jq -r .web_link)" != "https://bugs.staging.launchpad.net/bugs/1" ]; then
     exit 1

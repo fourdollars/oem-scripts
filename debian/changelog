@@ -1,3 +1,30 @@
+oem-scripts (0.70) UNRELEASED; urgency=medium
+
+  * mir-bug,
+    oem_scripts/logging.py,
+    pkg-oem-meta: Print warning messages in pkg-oem-meta when DEBFULLNAME or
+    DEBEMAIL is invalid, and append the public bug into debian/changelog by
+    mir-bug when the public bug is unavailable.
+  * autopkgtest-oem-scripts-auto: Update the PPA for oem-scripts.
+  * debian/tests/mir-bug: Polish the test.
+  * run-autopkgtest: Add the license header and add the target option.
+  * debian/tests/control,
+    debian/tests/mir-bug-verification,
+    mir-bug: Add a test to check all verification-needed MIR bugs.
+  * oem_scripts/LaunchpadLogin.py: Support login anonymously when there is no
+    token.
+  * debian/tests/mir-bug-verification: Polish the test for mir bugs verification.
+  * mir-bug: Make the JSON output compact and sorted by keys.
+  * debian/tests/jq-lp,
+    debian/tests/launchpad-api,
+    debian/tests/mir-bug-verification,
+    get-private-ppa,
+    launchpad-api,
+    oem_scripts/LaunchpadLogin.py: Refine anonymously login and support
+    LAUNCHPAD_TOKEN.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 24 Nov 2020 17:07:39 +0800
+
 oem-scripts (0.69) focal; urgency=medium
 
   * debian/tests/control

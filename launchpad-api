@@ -120,7 +120,14 @@ post_api()
 }
 
 
-if valid_oem_scripts_config; then
+if [ -n "$LAUNCHPAD_TOKEN" ]; then
+    read -r oauth_token oauth_token_secret oauth_consumer_key < <(echo "$LAUNCHPAD_TOKEN" | tr ':' ' ')
+    if [ -z "$oauth_consumer_key" ]; then
+        oauth_consumer_key="System-wide: $(lsb_release -is) (oem-scripts $(hostname))"
+    else
+        oauth_consumer_key="${oauth_consumer_key/System-wide /System-wide:}"
+    fi
+elif valid_oem_scripts_config; then
     oauth_token=$(read_oem_scripts_config oauth_token)
     oauth_token_secret=$(read_oem_scripts_config oauth_token_secret)
     oauth_consumer_key=$(read_oem_scripts_config oauth_consumer_key)
