@@ -25,7 +25,7 @@ import sys
 import types
 
 from apt import apt_pkg
-from logging import debug, error, critical  # info, warning
+from logging import debug, error, critical, info  # , warning
 from urllib.parse import urljoin
 
 
@@ -136,6 +136,7 @@ def get_depends(pkg_name: str, depends_list: list, recommends: bool, suggests: b
 
     pkg = cache[pkg_name]
 
+    info(f"check {pkg_name}")
     _debug_pkg(pkg)
 
     if args.fail_unavailable and not pkg.has_versions:
@@ -143,6 +144,10 @@ def get_depends(pkg_name: str, depends_list: list, recommends: bool, suggests: b
         exit(1)
 
     for version in pkg.version_list:
+        if pkg_name in map(lambda x: x[0], depends_list):
+            continue
+        info(f"version {version.ver_str}")
+        _debug_pkg(version)
         url = None
 
         if not version.downloadable:
@@ -167,22 +172,21 @@ def get_depends(pkg_name: str, depends_list: list, recommends: bool, suggests: b
         item = (pkg_name, version.ver_str, url, record.hashes.find("MD5Sum"), record.hashes.find("SHA1"), record.hashes.find("SHA256"))
         depends_list.append(item)
 
-        if 'Depends' not in version.depends_list_str:
-            continue
-
-        for depends in version.depends_list_str['Depends']:
-            (name, ver, _) = depends[0]
-            get_depends(name, depends_list, recommends=recommends, suggests=suggests, non_installed=non_installed)
-
-        if recommends and 'Recommends' in version.depends_list_str:
-            for depends in version.depends_list_str['Recommends']:
-                (name, ver, _) = depends[0]
-                get_depends(name, depends_list, recommends=recommends, suggests=suggests, non_installed=non_installed)
-
-        if suggests and 'Suggests' in version.depends_list_str:
-            for depends in version.depends_list_str['Suggests']:
-                (name, ver, _) = depends[0]
-                get_depends(name, depends_list, recommends=recommends, suggests=suggests, non_installed=non_installed)
+        for target in ('PreDepends', 'Depends', 'Recommends', 'Suggests'):
+            if target == 'Recommends' and not recommends:
+                continue
+            if target == 'Suggests' and not suggests:
+                continue
+            if target not in version.depends_list_str:
+                continue
+            for depends in version.depends_list_str[target]:
+                for depend in depends:
+                    (name, ver, _) = depend
+                    pkg = cache[name]
+                    if name in map(lambda x: x[0], depends_list):
+                        continue
+                    info(f"{pkg_name} {target} {name}")
+                    get_depends(name, depends_list, recommends=recommends, suggests=suggests, non_installed=non_installed)
 
 
 if args.apt_dir:
