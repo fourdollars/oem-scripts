@@ -11,4 +11,5 @@ pep8 --ignore=E501 \
     lp-bug \
     mir-bug \
     oem-getiso \
+    oem-meta-packages \
     pkg-list
