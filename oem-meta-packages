@@ -30,6 +30,11 @@ from oem_scripts.logging import setup_logging
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
                                  epilog="""
+Make all bugs of all oem meta packages be subscribed by oem-solutions-engineers.
+ (search current apt source for package lists)
+
+Check "To all bugs in oem-qemu-meta in Ubuntu:" on https://launchpad.net/ubuntu/+source/oem-qemu-meta/+subscribe for example.
+
 examples:
     oem-meta-packages subscribe""")
 
@@ -120,6 +125,7 @@ if args.subcommand == 'subscribe':
         warning(f"ubuntu/{name} didn't subscribe oem-solutions-engineers yet.")
         if yes_or_ask(args.yes, f"Would you like to subscribe 'oem-solutions-engineers' for ubuntu/{name}?"):
             try:
+                # When a person is subscribed to a source package, one actually subscribe all bugs for it.
                 source.addBugSubscription(subscriber=lp.people['oem-solutions-engineers'])
             except lazr.restfulclient.errors.Unauthorized as e:
                 error(f"{lp.me.name} does not have permission to subscribe oem-solutions-engineers.")
