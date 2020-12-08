@@ -1,4 +1,4 @@
-oem-scripts (0.71) UNRELEASED; urgency=medium
+oem-scripts (0.71) focal; urgency=medium
 
   * pkg-list: Add an option '--fail-unavailable' to return unavailable error.
   * pkg-list: Refine the checking for depends.
@@ -8,6 +8,7 @@ oem-scripts (0.71) UNRELEASED; urgency=medium
     tests/test_flake8,
     tests/test_pep8: Add oem-meta-packages to subscribe the bugs of oem meta
     packages.
+  * oem_scripts/__init__.py: Bump to 0.71.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 04 Dec 2020 14:50:37 +0800
 
