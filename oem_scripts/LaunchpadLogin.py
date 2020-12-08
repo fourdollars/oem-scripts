@@ -67,7 +67,7 @@ class LaunchpadLogin():
                 logging.info("Using anonymously login")
                 self.lp = Launchpad.login_anonymously(application_name, service_root)
             elif ":" in launchpad_token:
-                oauth_token, oauth_token_secret, oauth_consumer_key = launchpad_token.split(":")
+                oauth_token, oauth_token_secret, oauth_consumer_key = launchpad_token.split(":", maxsplit=2)
                 self.lp = Launchpad.login(oauth_consumer_key,
                                           oauth_token,
                                           oauth_token_secret,

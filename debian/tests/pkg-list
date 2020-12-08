@@ -1,9 +1,13 @@
 #!/bin/bash
 
+echo "=== Enable focal proposed channel ==="
 APTDIR=$(setup-apt-dir.sh -c focal -m http://uk.archive.ubuntu.com/ubuntu -p | tail -n1)
 
 echo "=== ubuntu-desktop --recommends ==="
 pkg-list --apt-dir "$APTDIR" ubuntu-desktop --recommends | tee ubuntu-desktop.list
+if ! pkg-list --apt-dir "$APTDIR" ubuntu-desktop --recommends --fail-unavailable; then
+    echo "It is usual to see some Debian package still unavailable in proposed channel."
+fi
 
 echo "=== dkms ==="
 pkg-list --apt-dir "$APTDIR" dkms --exclude ubuntu-desktop.list | tee dkms.list
