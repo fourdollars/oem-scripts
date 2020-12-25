@@ -1,3 +1,11 @@
+oem-scripts (0.73) UNRELEASED; urgency=medium
+
+  * debian/control,
+    oem-meta-packages: Add 'update' subcommand to change the kernel flavour,
+    kernel dependency and grub flavour.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 21 Dec 2020 17:45:26 +0800
+
 oem-scripts (0.72) focal; urgency=medium
 
   * debian/tests/pkg-somerville-meta,

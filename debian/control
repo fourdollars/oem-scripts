@@ -30,6 +30,7 @@ Depends:
  dkms,
  dpkg-dev,
  git,
+ git-buildpackage,
  httpie,
  jq,
  lsb-release,
@@ -40,7 +41,13 @@ Depends:
  wget
 Breaks: lp-fish-tools (<<1.192.40)
 Replaces: lp-fish-tools (<<1.192.40)
-Recommends: qemu-user-static, zsync-curl
+Recommends:
+ qemu-user-static,
+ zsync-curl
+Suggests:
+ autopkgtest,
+ lxc,
+ lxc-templates
 Description: Short OEM related scripts
  Short OEM related scripts can go here. 
  Also there is a meta package oem-dev-tools that installs all scripts
