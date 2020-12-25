@@ -506,6 +506,8 @@ def deal_with_meta_git(pkg_name: str, pkg_info: tuple, bootstrap: bool, check_on
         os.chdir(tmpdir)
         _run_command(git_command)
         git_dir = os.path.join(tmpdir, pkg_name)
+
+        # Deal with different changes
         if deal_with_description(git_dir, pkg_info[0], pkg_info[1]):
             messages.append("market name")
         if deal_with_kernel_flavour(pkg_name, branch, git_dir):
@@ -524,19 +526,58 @@ def deal_with_meta_git(pkg_name: str, pkg_info: tuple, bootstrap: bool, check_on
         if not messages:
             info(f"The {meta_type} meta of {pkg_name}'s {branch} branch looks good.")
             return False
+
+        # Prepare the changelog and commit the changes.
         commit_message = 'Update the ' + ' and'.join(', '.join(messages).rsplit(',', 1)) + '.'
         _run_command(['dch', '--increment', commit_message])
         _run_command(["git", "add", "debian/changelog"])
         _run_command(['git', 'commit', '-a', '-m', f"{commit_message}\n\nUpdated by oem-scripts {oem_scripts.__version__}."])
 
+        # Run autopkgtest
         if args.autopkgtest:
-            _run_command(['run-autopkgtest', 'lxc', 'focal'])
+            with open(f'{pkg_name}.list', 'r') as f:
+                source_list = f.read()
+            with open(f'autopkgtest-{pkg_name}-auto', 'w') as f:
+                f.write(f'''#!/bin/bash
+# Usage:
+#  autopkgtest-oem-scripts-auto --ssh ~/.ssh/id_ecdsa > auto-provision.sh && chmod +x auto-provision.sh
+
+set -euo pipefail
+IFS=$'\n\t'
+
+# shellcheck source=config.sh
+source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
+
+# Get the path of autopkgtest-oem-scripts-auto, it's same path with launchpad-api
+cur_dir=$(cd "$(dirname "$0")" || exit; pwd)
+
+if ! valid_oem_scripts_config; then
+    >&2 echo "Please execute \\`launchpad-api\\` to get the token for Launchpad API first."
+    exit 1
+fi
+
+autopkgtest-collect-credentials ppa:oem-solutions-engineers/oem-projects-meta ppa:fourdollars/experimental "$@"
+
+cat << END
+install_pkgs ubuntu-oem-keyring
+mkdir -p "\\$root"/etc/apt/sources.list.d
+cat > "\\$root"/etc/apt/sources.list.d/custom.list << ENDLINE
+{source_list}
+ENDLINE
+chroot "\\$root" apt-get update
+END
+''')
+            os.chmod(f'autopkgtest-{pkg_name}-auto', 0o755)
+            _run_command(['run-autopkgtest', 'lxc', 'focal', '-C'])
             _run_command(['git', 'reset', '--hard', 'HEAD'])
             _run_command(['git', 'clean', '-x', '-d', '-f'])
 
+        # Don't use UNRELEASED in the real meta.
         if not bootstrap:
-            _run_command(['sed', '-i', "'s/UNRELEASED/focal/'", 'debian/changelog'])
+            _run_command(['sed', '-i', 's/UNRELEASED/focal/', 'debian/changelog'])
+            _run_command(['git', 'commit', '-a', '--amend', '--no-edit'])
 
+        # Tag and find it out.
         out, _, _ = _run_command(['gbp', 'tag'])
         if out != b'':
             info(out)
@@ -545,14 +586,17 @@ def deal_with_meta_git(pkg_name: str, pkg_info: tuple, bootstrap: bool, check_on
             tag = out.strip()
         info(tag)
 
+        # Build Debian binary packages
         _run_command(['gbp', 'buildpackage', '-us', '-uc'])
         _run_command(['git', 'reset', '--hard', 'HEAD'])
         _run_command(['git', 'clean', '-x', '-d', '-f'])
 
+        # Build Debian source packages
         _run_command(['gbp', 'buildpackage', '-S', '-us', '-uc'])
         _run_command(['git', 'reset', '--hard', 'HEAD'])
         _run_command(['git', 'clean', '-x', '-d', '-f'])
 
+        # Show the commit
         out, _, _ = _run_command(['git', 'show', '--color=always'])
         if out != b'':
             warning(f"({pkg_name}:{branch}) $ git show")
