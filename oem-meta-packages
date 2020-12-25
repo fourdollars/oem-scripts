@@ -298,6 +298,72 @@ def deal_with_kernel_depends(pkg_name, branch, git_dir) -> bool:
     return True
 
 
+def deal_with_debian_tests(pkg_name: str, git_dir: str, branch: str, bootstrap: bool) -> bool:
+    os.chdir(git_dir)
+
+    changed = False
+
+    tests_folder = os.path.join(git_dir, 'debian', 'tests')
+    if not os.path.exists(tests_folder):
+        os.mkdir(tests_folder)
+
+    control_content = """Tests: meta
+Depends: @
+Restrictions: needs-root
+"""
+    control = os.path.join(git_dir, 'debian', 'tests', 'control')
+
+    if os.path.exists(control):
+        with open(control, 'r') as f:
+            if f.read() != control_content:
+                with open(control, 'w') as fp:
+                    fp.write(control_content)
+                _run_command(["git", "add", "debian/tests/control"])
+                changed = True
+    else:
+        with open(control, 'w') as fp:
+            fp.write(control_content)
+        _run_command(["git", "add", "debian/tests/control"])
+        changed = True
+
+    meta_content = """#!/bin/bash
+
+exec 2>&1
+set -euo pipefail
+IFS=$'\\n\\t'
+
+apt-get update
+apt-get full-upgrade --yes
+
+apt-get update
+apt-get full-upgrade --yes
+"""
+    if not bootstrap:
+        meta_content += "\ngrep ^GRUB_FLAVOUR_ORDER= /etc/default/grub.d/oem-flavour.cfg\n"
+    meta_content += f"\napt-get autoremove --purge --yes {pkg_name}\n"
+    meta = os.path.join(git_dir, 'debian', 'tests', 'meta')
+    old_meta = os.path.join(git_dir, 'debian', 'tests', pkg_name)
+
+    if os.path.exists(old_meta):
+        _run_command(["git", "rm", "-f", f"debian/tests/{pkg_name}"])
+        changed = True
+
+    if os.path.exists(meta):
+        with open(meta, 'r') as f:
+            if f.read() != meta_content:
+                with open(meta, 'w') as fp:
+                    fp.write(meta_content)
+                _run_command(["git", "add", "debian/tests/meta"])
+                changed = True
+    else:
+        with open(meta, 'w') as fp:
+            fp.write(meta_content)
+        _run_command(["git", "add", "debian/tests/meta"])
+        changed = True
+
+    return changed
+
+
 def deal_with_gbp_conf(git_dir, branch) -> bool:
     os.chdir(git_dir)
     file_path = os.path.join(git_dir, 'debian', 'gbp.conf')
@@ -519,6 +585,8 @@ def deal_with_meta_git(pkg_name: str, pkg_info: tuple, bootstrap: bool, check_on
                 messages.append("grub flavour")
         if deal_with_gbp_conf(git_dir, branch):
             messages.append("debian/gbp.conf")
+        if deal_with_debian_tests(pkg_name, git_dir, branch, bootstrap):
+            messages.append("debian/tests")
         if bootstrap:
             meta_type = "bootstrap"
         else:
@@ -532,6 +600,11 @@ def deal_with_meta_git(pkg_name: str, pkg_info: tuple, bootstrap: bool, check_on
         _run_command(['dch', '--increment', commit_message])
         _run_command(["git", "add", "debian/changelog"])
         _run_command(['git', 'commit', '-a', '-m', f"{commit_message}\n\nUpdated by oem-scripts {oem_scripts.__version__}."])
+
+        out, _, _ = _run_command(['git', 'show', '--color=always'])
+        if out != b'':
+            debug(f"({pkg_name}:{branch}) $ git show")
+            debug(out)
 
         # Run autopkgtest
         if args.autopkgtest:
