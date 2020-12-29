@@ -7,10 +7,11 @@ IFS=$'\n\t'
 export DEBFULLNAME="Commercial Engineering"
 export DEBEMAIL="commercial-engineering@canonical.com"
 
-pkg-somerville-meta --public-bug 1868254 --private-bug 123456 -s focal -k oem -p three-eyed-raven 0962
+echo "== Check linux-oem-20.04 =="
 
-pull-lp-source oem-somerville-three-eyed-raven-meta focal
+pull-lp-source oem-somerville-three-eyed-raven-meta focal # It will be `gbp import-dsc` later.
 
+pkg-somerville-meta --public-bug 1868254 --private-bug 123456 -s focal -k linux-oem-20.04 -p three-eyed-raven 0962
 cd oem-somerville-three-eyed-raven-meta || exit 1
 
 git checkout three-eyed-raven-focal-ubuntu
@@ -81,8 +82,19 @@ grep "^oem-flavour.cfg /usr/share/oem-somerville-three-eyed-raven-meta/$" debian
 cd ..
 rm -fr oem-somerville-three-eyed-raven-meta
 
-pkg-somerville-meta --public-bug 1868254 --private-bug 123456 -s focal -k default -p three-eyed-raven 0962
+echo "== Check linux-oem-20.04b =="
 
+pkg-somerville-meta --public-bug 1868254 --private-bug 123456 -s focal -k linux-oem-20.04b -p three-eyed-raven 0962
+cd oem-somerville-three-eyed-raven-meta || exit 1
+
+grep "linux-oem-20.04b | linux-oem-20.04" debian/control
+
+cd ..
+rm -fr oem-somerville-three-eyed-raven-meta
+
+echo "== Check linux-generic-hwe-20.04 =="
+
+pkg-somerville-meta --public-bug 1868254 --private-bug 123456 -s focal -k linux-generic-hwe-20.04 -p three-eyed-raven 0962
 cd oem-somerville-three-eyed-raven-meta || exit 1
 
 git checkout three-eyed-raven-focal-ubuntu
@@ -97,3 +109,6 @@ if [ ! -f oem-flavour.cfg ]; then
 fi
 grep "^GRUB_FLAVOUR_ORDER=generic$" oem-flavour.cfg
 grep "^oem-flavour.cfg /usr/share/oem-somerville-three-eyed-raven-meta/$" debian/install
+
+cd ..
+rm -fr oem-somerville-three-eyed-raven-meta
