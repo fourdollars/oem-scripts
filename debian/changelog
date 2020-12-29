@@ -1,9 +1,10 @@
-oem-scripts (0.72) UNRELEASED; urgency=medium
+oem-scripts (0.72) focal; urgency=medium
 
   * debian/tests/pkg-somerville-meta,
     debian/tests/pkg-stella-meta,
     debian/tests/pkg-sutton-meta,
     pkg-oem-meta: Support linux-oem-20.04b.
+  * oem_scripts/__init__.py: Bump to 0.72.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 29 Dec 2020 15:32:14 +0800
 
