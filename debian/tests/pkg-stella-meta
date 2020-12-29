@@ -7,7 +7,7 @@ IFS=$'\n\t'
 export DEBFULLNAME="Commercial Engineering"
 export DEBEMAIL="commercial-engineering@canonical.com"
 
-pkg-stella-meta --public-bug 1895517 --private-bug 1892301 -s focal -k oem -g cmit -p ivysaur 8750
+pkg-stella-meta --public-bug 1895517 --private-bug 1892301 -s focal -k linux-oem-20.04 -g cmit -p ivysaur 8750
 
 cd oem-stella.cmit-ivysaur-meta || exit 1
 

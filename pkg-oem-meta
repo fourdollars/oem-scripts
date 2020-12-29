@@ -48,11 +48,9 @@ else:
     exit(1)
 
 parser.add_argument('-k', '--kernel',
-                    choices=['oem', 'default'],
-                    default='oem',
-                    help="Using different kernel flavour. [oem|default]\n"
-                    "'oem' is for linux-oem-20.04.\n"
-                    "'default' is for linux-generic-hwe-20.04.")
+                    choices=['linux-oem-20.04', 'linux-oem-20.04b', 'linux-generic-hwe-20.04'],
+                    default='linux-oem-20.04',
+                    help="Specify the kernel meta. [linux-oem-20.04|linux-oem-20.04b|linux-generic-hwe-20.04]")
 info = UbuntuDistroInfo()
 try:
     # for bionic
@@ -137,13 +135,17 @@ git_repo = PREFIX + '/pc-enablement/+git/oem-' + codename + '-projects-meta'
 
 def generate_debian_package(version, bootstrap=False, real=False):
     extra = ''
-    if args.kernel == 'default':
+    if args.kernel == 'linux-generic-hwe-20.04':
         if real:
             extra = ', linux-generic-hwe-20.04'
         flavour = 'default'
-    elif args.kernel == 'oem':
+    elif args.kernel == 'linux-oem-20.04':
         if real:
             extra = ', linux-oem-20.04'
+        flavour = 'oem'
+    elif args.kernel == 'linux-oem-20.04b':
+        if real:
+            extra = ', linux-oem-20.04b | linux-oem-20.04'
         flavour = 'oem'
 
     if group:
