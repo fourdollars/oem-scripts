@@ -115,7 +115,7 @@ update.add_argument("--yes",
 update.add_argument("--check",
                     help="Just check and don't ask any question.", action="store_true")
 update.add_argument("--autopkgtest",
-                    help="Run autopkgtest by qemu when checking the git repository.", action="store_true")
+                    help="Run autopkgtest when checking the git repository. [Experimental]", action="store_true")
 update.add_argument("json",
                     help="Specify the json file to read the platforms information.",
                     type=argparse.FileType('r', encoding='UTF-8'))
@@ -611,16 +611,30 @@ def deal_with_meta_git(pkg_name: str, pkg_info: tuple, bootstrap: bool, check_on
 
         # Run autopkgtest
         if args.autopkgtest:
+            ppa_names = []
             if project == 'somerville':
+                ppa_names.append(f"{project}")
+                ppa_names.append(f"{project}-fossa-{platform}")
                 ppa = f"ppa:oem-archive/{project} ppa:oem-archive/{project}-fossa-{platform}"
             elif project == 'stella' or project == 'sutton':
+                ppa_names.append(f"{project}-ouagadougou")
+                ppa_names.append(f"{project}-{group}-ouagadougou")
                 ppa = f"ppa:oem-archive/{project}-ouagadougou ppa:oem-archive/{project}-{group}-ouagadougou"
+            oem_archive = lp.people['oem-archive']
+            for ppa_name in ppa_names:
+                source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
+                if f"oem-archive/{ppa_name}/ubuntu" not in source_lists:
+                    archive = oem_archive.getPPAByName(name=ppa_name)
+                    if archive is None:
+                        critical(f"It can not find ppa:oem-archive/{ppa_name}.")
+                        exit(1)
+                    archive.newSubscription(subscriber=lp.me)
+                    archive.lp_save()
+                    info(f"Subscribed ppa:oem-archive/{ppa_name}")
             with open(f'{pkg_name}.list', 'r') as f:
-                source_list = f.read()
+                source_list = f.read().strip()
             with open(f'autopkgtest-{pkg_name}-auto', 'w') as f:
                 f.write(f'''#!/bin/bash
-# Usage:
-#  autopkgtest-oem-scripts-auto --ssh ~/.ssh/id_ecdsa > auto-provision.sh && chmod +x auto-provision.sh
 
 set -euo pipefail
 IFS=$'\n\t'
