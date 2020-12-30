@@ -507,6 +507,10 @@ def update_bug_status(bug, yes: bool) -> None:
                     warning(f"{bug_task.bug_target_name} can not be deleted, so changing the status to Incomplete instead.")
                     debug(e)
                     _change_task_status(bug_task, 'Incomplete', yes)
+                except lazr.restfulclient.errors.Unauthorized as e:
+                    warning(f"{bug_task.bug_target_name} can not be deleted, so changing the status to Incomplete instead.")
+                    debug(e)
+                    _change_task_status(bug_task, 'Incomplete', yes)
             else:
                 _change_task_status(bug_task, 'Incomplete', yes)
         else:
