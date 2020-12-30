@@ -35,27 +35,56 @@ from oem_scripts.logging import setup_logging
 from tempfile import TemporaryDirectory
 
 pattern = re.compile(r'oem-([^-]*)-(.*)-meta')
-parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
-                                 epilog="""
-<LIST>
-    oem-meta-packages list
+parser = argparse.ArgumentParser()
 
-List all OEM meta packages in Ubuntu archive.
+parser.add_argument("-d", "--debug",
+                    help="print debug messages", action="store_true")
+parser.add_argument("-q", "--quiet",
+                    help="Don't print info messages", action="store_true")
+parser.add_argument("-v", "--verbose", action="store_true",
+                    help="print verbose messages")
+parser.add_argument("--apt-dir",
+                    type=str,
+                    help="specify the dir for apt")
 
-<SUBSCRIBE>
-    oem-meta-packages subscribe
+subparsers = parser.add_subparsers(dest="subcommand")
 
+list_pkg = subparsers.add_parser('list', help='[-h]',
+                                 formatter_class=argparse.RawDescriptionHelpFormatter,
+                                 epilog="List all OEM meta packages in Ubuntu archive.")
+
+subscribe = subparsers.add_parser('subscribe', help='[-h] [--yes]',
+                                  formatter_class=argparse.RawDescriptionHelpFormatter,
+                                  epilog="""
 Make all bugs of all oem meta packages be subscribed by oem-solutions-engineers.
  (search current apt source for package lists)
 
 Check "To all bugs in oem-qemu-meta in Ubuntu:" on https://launchpad.net/ubuntu/+source/oem-qemu-meta/+subscribe for example.
+Make all bugs of all oem meta packages be subscribed by oem-solutions-engineers.
+ (search current apt source for package lists)
 
-<UNSUBSCRIBE>
-    oem-meta-packages unsubscribe oem-qemu-meta
+Check "To all bugs in oem-qemu-meta in Ubuntu:" on https://launchpad.net/ubuntu/+source/oem-qemu-meta/+subscribe for example.
+""")
+subscribe.add_argument("--yes",
+                       help="Say yes for all prompts.", action="store_true")
 
+unsubscribe = subparsers.add_parser('unsubscribe', help='[-h] [--yes] pkgName',
+                                    formatter_class=argparse.RawDescriptionHelpFormatter,
+                                    epilog="""
 Unsubscribe oem-solutions-engineers from oem-qemu-meta
 
-<UPDATE>
+For example,
+    oem-meta-packages unsubscribe oem-qemu-meta
+""")
+unsubscribe.add_argument("pkgName", type=str,
+                         help="Specify the package name to unsubscribe.")
+unsubscribe.add_argument("--yes",
+                         help="Say yes for all prompts.", action="store_true")
+
+update = subparsers.add_parser('update', help='[-h] [--yes] [--check] [--autopkgtest] json',
+                               formatter_class=argparse.RawDescriptionHelpFormatter,
+                               epilog="""
+For example,
     oem-meta-packages update --check platforms.json
 
 [
@@ -81,38 +110,12 @@ Unsubscribe oem-solutions-engineers from oem-qemu-meta
 ]
 
 Update the market name and the kernel flavour of the OEM meta package to the default kernel flavour, i.e. linux-generic-hwe-20.04.""")
-
-parser.add_argument("-d", "--debug",
-                    help="print debug messages", action="store_true")
-parser.add_argument("-q", "--quiet",
-                    help="Don't print info messages", action="store_true")
-parser.add_argument("-v", "--verbose", action="store_true",
-                    help="print verbose messages")
-parser.add_argument("--apt-dir",
-                    type=str,
-                    help="specify the dir for apt")
-
-subparsers = parser.add_subparsers(dest="subcommand")
-
-list_pkg = subparsers.add_parser('list', help='[-h]')
-
-subscribe = subparsers.add_parser('subscribe', help='[-h] [--yes]')
-subscribe.add_argument("--yes",
-                       help="Say yes for all prompts.", action="store_true")
-
-unsubscribe = subparsers.add_parser('unsubscribe', help='[-h] [--yes] pkgName')
-unsubscribe.add_argument("pkgName", type=str,
-                         help="Specify the package name to unsubscribe.")
-unsubscribe.add_argument("--yes",
-                         help="Say yes for all prompts.", action="store_true")
-
-update = subparsers.add_parser('update', help='[-h] [--yes] [--check] json')
 update.add_argument("--yes",
                     help="Say yes for all prompts.", action="store_true")
 update.add_argument("--check",
                     help="Just check and don't ask any question.", action="store_true")
 update.add_argument("--autopkgtest",
-                    help="Run autopkgtest when checking the git repository.", action="store_true")
+                    help="Run autopkgtest by qemu when checking the git repository.", action="store_true")
 update.add_argument("json",
                     help="Specify the json file to read the platforms information.",
                     type=argparse.FileType('r', encoding='UTF-8'))
@@ -608,6 +611,10 @@ def deal_with_meta_git(pkg_name: str, pkg_info: tuple, bootstrap: bool, check_on
 
         # Run autopkgtest
         if args.autopkgtest:
+            if project == 'somerville':
+                ppa = f"ppa:oem-archive/{project} ppa:oem-archive/{project}-fossa-{platform}"
+            elif project == 'stella' or project == 'sutton':
+                ppa = f"ppa:oem-archive/{project}-ouagadougou ppa:oem-archive/{project}-{group}-ouagadougou"
             with open(f'{pkg_name}.list', 'r') as f:
                 source_list = f.read()
             with open(f'autopkgtest-{pkg_name}-auto', 'w') as f:
@@ -629,7 +636,7 @@ if ! valid_oem_scripts_config; then
     exit 1
 fi
 
-autopkgtest-collect-credentials ppa:oem-solutions-engineers/oem-projects-meta ppa:fourdollars/experimental "$@"
+autopkgtest-collect-credentials {ppa} "$@"
 
 cat << END
 install_pkgs ubuntu-oem-keyring
