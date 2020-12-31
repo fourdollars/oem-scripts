@@ -50,6 +50,7 @@ class PkgInfo:
     version: str
     old_desc: str
     new_desc: str
+    fingerprint: str
 
 
 pattern = re.compile(r'oem-([^-]*)-(.*)-meta')
@@ -521,15 +522,16 @@ def search_ppa_and_version(project: str, group: str, platform: str, pkg_name: st
             _run_command(["get-private-ppa", f"ppa:oem-archive/{archive.name}"])
             source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
     sources = archive.getPublishedSources()
+    fingerprint = archive.signing_key_fingerprint
     version = ""
     for source in sources:
         if source.source_package_name == pkg_name and \
                 apt_pkg.version_compare(source.source_package_version, version) > 0:
             version = source.source_package_version
     if version:
-        return archive.name, version
+        return archive.name, version, fingerprint
     else:
-        return None, None
+        return None, None, None
 
 
 def process_update_task(check_only: bool, data) -> None:
@@ -581,15 +583,15 @@ def process_update_task(check_only: bool, data) -> None:
         if pkg_name in args.skip:
             info(f"Skip {pkg_name}")
             continue
-        archive, version = search_ppa_and_version("somerville", None, k, pkg_name)
+        archive, version, fingerprint = search_ppa_and_version("somerville", None, k, pkg_name)
         if archive is None:
-            archive, version = search_ppa_and_version("somerville", None, k, pkg_name, "somerville")
+            archive, version, fingerprint = search_ppa_and_version("somerville", None, k, pkg_name, "somerville")
         if archive is None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
         debug(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
-        pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="")
+        pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="", fingerprint=fingerprint)
 
         if pkg_name in pkgNamesInArchive and ''.join(v):
             new_desc = _grouping_market_names(v)
@@ -608,13 +610,13 @@ def process_update_task(check_only: bool, data) -> None:
             continue
         group, codename = k.split('-', 1)
 
-        archive, version = search_ppa_and_version("stella", group, codename, pkg_name)
+        archive, version, fingerprint = search_ppa_and_version("stella", group, codename, pkg_name)
         if archive is None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
         debug(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
-        pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="")
+        pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="", fingerprint=fingerprint)
 
         if pkg_name in pkgNamesInArchive and ''.join(v):
             new_desc = _grouping_market_names(v, maxsplit=2)
@@ -633,13 +635,13 @@ def process_update_task(check_only: bool, data) -> None:
             continue
         group, codename = k.split('-', 1)
 
-        archive, version = search_ppa_and_version("sutton", group, codename, pkg_name)
+        archive, version, fingerprint = search_ppa_and_version("sutton", group, codename, pkg_name)
         if archive is None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
         debug(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
-        pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="")
+        pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="", fingerprint=fingerprint)
 
         if pkg_name in pkgNamesInArchive and ''.join(v):
             new_desc = _grouping_market_names(v)
