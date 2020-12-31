@@ -151,6 +151,7 @@ setup_logging(debug=args.debug, quiet=args.quiet)
 if args.subcommand:
     login = LaunchpadLogin()
     lp = login.lp
+    oem_archive = lp.people['oem-archive']
 
 if args.apt_dir:
     apt_pkg.init_config()
@@ -499,7 +500,7 @@ def remove_prefix_suffix(s, prefix, suffix):
     return remove_suffix(remove_prefix(s, prefix), suffix)
 
 
-def search_ppa_and_version(project: str, group: str, platform: str, pkg_name: str, archive_name=None, oem_archive=lp.people['oem-archive']):
+def search_ppa_and_version(project: str, group: str, platform: str, pkg_name: str, archive_name=None):
     if archive_name:
         archive = oem_archive.getPPAByName(name=archive_name)
     elif project == 'somerville':
@@ -733,7 +734,6 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool, check_
                     ppa_str = f"ppa:oem-archive/{project}-ouagadougou ppa:oem-archive/{pkg_info.archive}"
                 else:
                     ppa_str = f"ppa:oem-archive/{project}-ouagadougou"
-            oem_archive = lp.people['oem-archive']
             for ppa in archives:
                 source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
                 while f"oem-archive/{ppa}/ubuntu" not in source_lists:
