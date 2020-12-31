@@ -99,7 +99,7 @@ unsubscribe.add_argument("pkgName", type=str,
 unsubscribe.add_argument("--yes",
                          help="Say yes for all prompts.", action="store_true")
 
-update = subparsers.add_parser('update', help='[-h] [--yes] [--check] [--since oem-bala-meta] [--skip "somerville,stella,sutton"] [--autopkgtest] json',
+update = subparsers.add_parser('update', help='[-h] [--yes] [--check] [--only oem-bala-meta] [--since oem-bala-meta] [--skip "somerville,stella,sutton"] [--autopkgtest] json',
                                formatter_class=argparse.RawDescriptionHelpFormatter,
                                epilog="""
 For example,
@@ -138,6 +138,8 @@ update.add_argument("--since",
                     help="Begin from the specified meta package. Skip previous meta packages.", type=str)
 update.add_argument("--skip",
                     help="Skip checking some projects.", type=str, default="")
+update.add_argument("--only",
+                    help="Specified the only meta package to update. Skip others.", type=str)
 update.add_argument("json",
                     help="Specify the json file to read the platforms information.",
                     type=argparse.FileType('r', encoding='UTF-8'))
@@ -572,6 +574,9 @@ def process_update_task(check_only: bool, data) -> None:
     info("Finding the corresponding PPAs...")
     for k, v in somerville.items():
         pkg_name = 'oem-somerville-' + k + '-meta'
+        if args.only and pkg_name != args.only:
+            info(f"Skip {pkg_name}")
+            continue
         archive, version = search_ppa_and_version("somerville", None, k, pkg_name)
         if archive is None:
             archive, version = search_ppa_and_version("somerville", None, k, pkg_name, "somerville")
@@ -591,6 +596,9 @@ def process_update_task(check_only: bool, data) -> None:
 
     for k, v in stella.items():
         pkg_name = 'oem-stella.' + k + '-meta'
+        if args.only and pkg_name != args.only:
+            info(f"Skip {pkg_name}")
+            continue
         group, codename = k.split('-', 1)
 
         archive, version = search_ppa_and_version("stella", group, codename, pkg_name)
@@ -610,6 +618,9 @@ def process_update_task(check_only: bool, data) -> None:
 
     for k, v in sutton.items():
         pkg_name = 'oem-sutton.' + k + '-meta'
+        if args.only and pkg_name != args.only:
+            info(f"Skip {pkg_name}")
+            continue
         group, codename = k.split('-', 1)
 
         archive, version = search_ppa_and_version("sutton", group, codename, pkg_name)
