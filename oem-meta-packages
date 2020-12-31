@@ -99,7 +99,7 @@ unsubscribe.add_argument("pkgName", type=str,
 unsubscribe.add_argument("--yes",
                          help="Say yes for all prompts.", action="store_true")
 
-update = subparsers.add_parser('update', help='[-h] [--yes] [--check] [--autopkgtest] json',
+update = subparsers.add_parser('update', help='[-h] [--yes] [--check] [--since oem-bala-meta] [--autopkgtest] json',
                                formatter_class=argparse.RawDescriptionHelpFormatter,
                                epilog="""
 For example,
@@ -134,6 +134,8 @@ update.add_argument("--check",
                     help="Just check and don't ask any question.", action="store_true")
 update.add_argument("--autopkgtest",
                     help="Run autopkgtest when checking the git repository. [Experimental]", action="store_true")
+update.add_argument("--since",
+                    help="Begin from the specified meta package. Skip previous meta packages.", type=str)
 update.add_argument("json",
                     help="Specify the json file to read the platforms information.",
                     type=argparse.FileType('r', encoding='UTF-8'))
@@ -612,6 +614,12 @@ def process_update_task(check_only: bool, data) -> None:
     debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
 
     for pkg_name in sorted(pkgInfo.keys()):
+        if args.since:
+            if pkg_name != args.since:
+                info(f"Skip f{pkg_name}.")
+                continue
+            else:
+                args.since = None
         check_meta_git(pkg_name, pkgInfo[pkg_name], check_only, skip_bootstrap=True)
 
 
