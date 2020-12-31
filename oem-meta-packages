@@ -588,7 +588,7 @@ def process_update_task(check_only: bool, data) -> None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
-        debug(f"{pkg_name} {version} exists in ppa:~oem-archive/{archive}")
+        debug(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
         pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="")
 
         if pkg_name in pkgNamesInArchive and ''.join(v):
@@ -613,7 +613,7 @@ def process_update_task(check_only: bool, data) -> None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
-        debug(f"{pkg_name} {version} exists in ppa:~oem-archive/{archive}")
+        debug(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
         pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="")
 
         if pkg_name in pkgNamesInArchive and ''.join(v):
@@ -638,7 +638,7 @@ def process_update_task(check_only: bool, data) -> None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
-        debug(f"{pkg_name} {version} exists in ppa:~oem-archive/{archive}")
+        debug(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
         pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="")
 
         if pkg_name in pkgNamesInArchive and ''.join(v):
