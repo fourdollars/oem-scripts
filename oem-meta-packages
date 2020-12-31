@@ -99,7 +99,7 @@ unsubscribe.add_argument("pkgName", type=str,
 unsubscribe.add_argument("--yes",
                          help="Say yes for all prompts.", action="store_true")
 
-update = subparsers.add_parser('update', help='[-h] [--yes] [--check] [--since oem-bala-meta] [--autopkgtest] json',
+update = subparsers.add_parser('update', help='[-h] [--yes] [--check] [--since oem-bala-meta] [--skip "somerville,stella,sutton"] [--autopkgtest] json',
                                formatter_class=argparse.RawDescriptionHelpFormatter,
                                epilog="""
 For example,
@@ -133,9 +133,11 @@ update.add_argument("--yes",
 update.add_argument("--check",
                     help="Just check and don't ask any question.", action="store_true")
 update.add_argument("--autopkgtest",
-                    help="Run autopkgtest when checking the git repository. [Experimental]", action="store_true")
+                    help="Run autopkgtest when checking the git repository.", action="store_true")
 update.add_argument("--since",
                     help="Begin from the specified meta package. Skip previous meta packages.", type=str)
+update.add_argument("--skip",
+                    help="Skip checking some projects.", type=str, default="")
 update.add_argument("json",
                     help="Specify the json file to read the platforms information.",
                     type=argparse.FileType('r', encoding='UTF-8'))
@@ -532,15 +534,21 @@ def process_update_task(check_only: bool, data) -> None:
         market_name = item['Market Name']
         lp_tag = item['Platform LP tag'].lower()
         if 'dell' in customer:
+            if 'somerville' in args.skip:
+                continue
             platform = remove_prefix(lp_tag, 'fossa-')
             lst = somerville.get(platform, [])
             lst.append(market_name)
             somerville[platform] = lst
         elif 'hp' in customer:
+            if 'stella' in args.skip:
+                continue
             lst = stella.get(f"{group}-{codename}", [])
             lst.append(market_name)
             stella[f"{group}-{codename}"] = lst
         elif 'lenovo' in customer:
+            if 'sutton' in args.skip:
+                continue
             lst = sutton.get(f"{group}-{codename}", [])
             lst.append(market_name)
             sutton[f"{group}-{codename}"] = lst
@@ -616,7 +624,7 @@ def process_update_task(check_only: bool, data) -> None:
     for pkg_name in sorted(pkgInfo.keys()):
         if args.since:
             if pkg_name != args.since:
-                info(f"Skip f{pkg_name}")
+                info(f"Skip {pkg_name}")
                 continue
             else:
                 args.since = None
