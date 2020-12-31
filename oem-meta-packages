@@ -137,7 +137,7 @@ update.add_argument("--autopkgtest",
 update.add_argument("--since",
                     help="Begin from the specified meta package. Skip previous meta packages.", type=str)
 update.add_argument("--skip",
-                    help="Skip checking some projects.", type=str, default="")
+                    help="Skip some projects or some meta packages.", type=str, default="")
 update.add_argument("--only",
                     help="Specified the only meta package to update. Skip others.", type=str)
 update.add_argument("json",
@@ -578,6 +578,9 @@ def process_update_task(check_only: bool, data) -> None:
         if args.only and pkg_name != args.only:
             info(f"Skip {pkg_name}")
             continue
+        if pkg_name in args.skip:
+            info(f"Skip {pkg_name}")
+            continue
         archive, version = search_ppa_and_version("somerville", None, k, pkg_name)
         if archive is None:
             archive, version = search_ppa_and_version("somerville", None, k, pkg_name, "somerville")
@@ -600,6 +603,9 @@ def process_update_task(check_only: bool, data) -> None:
         if args.only and pkg_name != args.only:
             info(f"Skip {pkg_name}")
             continue
+        if pkg_name in args.skip:
+            info(f"Skip {pkg_name}")
+            continue
         group, codename = k.split('-', 1)
 
         archive, version = search_ppa_and_version("stella", group, codename, pkg_name)
@@ -620,6 +626,9 @@ def process_update_task(check_only: bool, data) -> None:
     for k, v in sutton.items():
         pkg_name = 'oem-sutton.' + k + '-meta'
         if args.only and pkg_name != args.only:
+            info(f"Skip {pkg_name}")
+            continue
+        if pkg_name in args.skip:
             info(f"Skip {pkg_name}")
             continue
         group, codename = k.split('-', 1)
@@ -865,6 +874,8 @@ elif args.subcommand == 'unsubscribe':
                     exit(1)
             exit(0)
 elif args.subcommand == 'update':
+    if args.skip:
+        args.skip = args.skip.split(',')
     process_update_task(args.check, args.json)
 else:
     parser.print_help()
