@@ -509,6 +509,14 @@ def search_ppa_and_version(project: str, group: str, platform: str, pkg_name: st
             archive = oem_archive.getPPAByName(name=f"{project}-{group}-ouagadougou")
         except lazr.restfulclient.errors.NotFound:
             archive = oem_archive.getPPAByName(name=f"{project}-{group}")
+    if args.autopkgtest:
+        source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
+        while f"oem-archive/{archive.name}/ubuntu" not in source_lists:
+            info(f"Subscribing ppa:oem-archive/{archive.name}")
+            archive.newSubscription(subscriber=lp.me)
+            archive.lp_save()
+            _run_command(["get-private-ppa", f"ppa:oem-archive/{archive.name}"])
+            source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
     sources = archive.getPublishedSources()
     version = ""
     for source in sources:
@@ -717,14 +725,16 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool, check_
             oem_archive = lp.people['oem-archive']
             for ppa in archives:
                 source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
-                if f"oem-archive/{ppa}/ubuntu" not in source_lists:
+                while f"oem-archive/{ppa}/ubuntu" not in source_lists:
                     archive = oem_archive.getPPAByName(name=ppa)
                     if archive is None:
                         critical(f"It can not find ppa:oem-archive/{ppa}.")
                         exit(1)
+                    info(f"Subscribing ppa:oem-archive/{ppa}")
                     archive.newSubscription(subscriber=lp.me)
                     archive.lp_save()
-                    info(f"Subscribed ppa:oem-archive/{ppa}")
+                    _run_command(["get-private-ppa", f"ppa:oem-archive/{ppa}"])
+                    source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
             with open(f'{pkg_name}.list', 'r') as f:
                 source_list = f.read().strip()
             with open(f'autopkgtest-{pkg_name}-auto', 'w') as f:
