@@ -19,6 +19,7 @@
 
 import argparse
 import collections
+import dataclasses
 import difflib
 import json
 import lazr
@@ -29,10 +30,27 @@ import subprocess
 import types
 
 from apt import apt_pkg
+from dataclasses import dataclass
 from logging import debug, info, warning, error, critical
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
 from oem_scripts.logging import setup_logging
 from tempfile import TemporaryDirectory
+
+
+class DataJSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if dataclasses.is_dataclass(o):
+            return dataclasses.asdict(o)
+        return super().default(o)
+
+
+@dataclass
+class PkgInfo:
+    archive: str
+    version: str
+    old_desc: str
+    new_desc: str
+
 
 pattern = re.compile(r'oem-([^-]*)-(.*)-meta')
 parser = argparse.ArgumentParser()
@@ -475,6 +493,30 @@ def remove_prefix_suffix(s, prefix, suffix):
     return remove_suffix(remove_prefix(s, prefix), suffix)
 
 
+def search_ppa_and_version(project: str, group: str, platform: str, pkg_name: str, archive_name=None, oem_archive=lp.people['oem-archive']):
+    if archive_name:
+        archive = oem_archive.getPPAByName(name=archive_name)
+    elif project == 'somerville':
+        archive = oem_archive.getPPAByName(name=f"{project}-fossa-{platform}")
+    elif project == 'stella':
+        archive = oem_archive.getPPAByName(name=f"{project}-{group}-ouagadougou")
+    elif project == 'sutton':
+        try:
+            archive = oem_archive.getPPAByName(name=f"{project}-{group}-ouagadougou")
+        except lazr.restfulclient.errors.NotFound:
+            archive = oem_archive.getPPAByName(name=f"{project}-{group}")
+    sources = archive.getPublishedSources()
+    version = ""
+    for source in sources:
+        if source.source_package_name == pkg_name and \
+                apt_pkg.version_compare(source.source_package_version, version) > 0:
+            version = source.source_package_version
+    if version:
+        return archive.name, version
+    else:
+        return None, None
+
+
 def process_update_task(check_only: bool, data) -> None:
     somerville = dict()
     stella = dict()
@@ -509,41 +551,71 @@ def process_update_task(check_only: bool, data) -> None:
 
     pkgInfo = dict()
 
+    info("Finding the corresponding PPAs...")
     for k, v in somerville.items():
         pkg_name = 'oem-somerville-' + k + '-meta'
+        archive, version = search_ppa_and_version("somerville", None, k, pkg_name)
+        if archive is None:
+            archive, version = search_ppa_and_version("somerville", None, k, pkg_name, "somerville")
+        if archive is None:
+            critical(f"It can not find any private PPA that contains {pkg_name}.")
+            exit(1)
+
+        debug(f"{pkg_name} {version} exists in ppa:~oem-archive/{archive}.")
+        pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="")
+
         if pkg_name in pkgNamesInArchive and ''.join(v):
-            new_desc = 'Dell ' + _grouping_market_names(v)
-            pkgInfo[pkg_name] = (f"Somerville {k.title()} platform", new_desc)
-        else:
-            pkgInfo[pkg_name] = ("", "")
+            new_desc = _grouping_market_names(v)
+            if "Dell" not in new_desc:
+                new_desc = "Dell " + new_desc
+            pkgInfo[pkg_name].old_desc = f"Somerville {k.title()} platform"
+            pkgInfo[pkg_name].new_desc = new_desc
 
     for k, v in stella.items():
         pkg_name = 'oem-stella.' + k + '-meta'
         group, codename = k.split('-', 1)
+
+        archive, version = search_ppa_and_version("stella", group, codename, pkg_name)
+        if archive is None:
+            critical(f"It can not find any private PPA that contains {pkg_name}.")
+            exit(1)
+
+        debug(f"{pkg_name} {version} exists in ppa:~oem-archive/{archive}.")
+        pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="")
+
         if pkg_name in pkgNamesInArchive and ''.join(v):
             new_desc = _grouping_market_names(v, maxsplit=2)
-            pkgInfo[pkg_name] = (f"Stella {group.title()} {codename.title()} platform", new_desc)
-        else:
-            pkgInfo[pkg_name] = ("", "")
+            if "HP" not in new_desc:
+                new_desc = "HP " + new_desc
+            pkgInfo[pkg_name].old_desc = f"Stella {group.title()} {codename.title()} platform"
+            pkgInfo[pkg_name].new_desc = new_desc
 
     for k, v in sutton.items():
         pkg_name = 'oem-sutton.' + k + '-meta'
         group, codename = k.split('-', 1)
+
+        archive, version = search_ppa_and_version("sutton", group, codename, pkg_name)
+        if archive is None:
+            critical(f"It can not find any private PPA that contains {pkg_name}.")
+            exit(1)
+
+        debug(f"{pkg_name} {version} exists in ppa:~oem-archive/{archive}.")
+        pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="")
+
         if pkg_name in pkgNamesInArchive and ''.join(v):
             new_desc = _grouping_market_names(v)
             if "Lenovo" not in new_desc:
                 new_desc = "Lenovo " + new_desc
-            pkgInfo[pkg_name] = (f"Sutton {group.title()} {codename.title()} platform", new_desc)
-        else:
-            pkgInfo[pkg_name] = ("", "")
+            pkgInfo[pkg_name].old_desc = f"Sutton {group.title()} {codename.title()} platform"
+            pkgInfo[pkg_name].new_desc = new_desc
 
-    debug(json.dumps(pkgInfo, indent=4, sort_keys=True))
+    debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
 
     for pkg_name in sorted(pkgInfo.keys()):
         check_meta_git(pkg_name, pkgInfo[pkg_name], check_only, skip_bootstrap=True)
 
 
-def deal_with_meta_git(pkg_name: str, pkg_info: tuple, bootstrap: bool, check_only: bool) -> bool:
+def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool, check_only: bool) -> bool:
     result = pattern.match(pkg_name)
 
     if not result:
@@ -577,7 +649,7 @@ def deal_with_meta_git(pkg_name: str, pkg_info: tuple, bootstrap: bool, check_on
         git_dir = os.path.join(tmpdir, pkg_name)
 
         # Deal with different changes
-        if deal_with_description(git_dir, pkg_info[0], pkg_info[1]):
+        if deal_with_description(git_dir, pkg_info.old_desc, pkg_info.new_desc):
             messages.append("market name")
         if deal_with_kernel_flavour(pkg_name, branch, git_dir):
             messages.append("kernel flavour")
@@ -611,26 +683,32 @@ def deal_with_meta_git(pkg_name: str, pkg_info: tuple, bootstrap: bool, check_on
 
         # Run autopkgtest
         if args.autopkgtest:
-            ppa_names = []
+            archives = set()
+            archives.add(pkg_info.archive)
+
             if project == 'somerville':
-                ppa_names.append(f"{project}")
-                ppa_names.append(f"{project}-fossa-{platform}")
-                ppa = f"ppa:oem-archive/{project} ppa:oem-archive/{project}-fossa-{platform}"
+                archives.add(f"{project}")
+                if pkg_info.archive != project:
+                    ppa_str = f"ppa:oem-archive/{project} ppa:oem-archive/{pkg_info.archive}"
+                else:
+                    ppa_str = f"ppa:oem-archive/{project}"
             elif project == 'stella' or project == 'sutton':
-                ppa_names.append(f"{project}-ouagadougou")
-                ppa_names.append(f"{project}-{group}-ouagadougou")
-                ppa = f"ppa:oem-archive/{project}-ouagadougou ppa:oem-archive/{project}-{group}-ouagadougou"
+                archives.add(f"{project}-ouagadougou")
+                if pkg_info.archive != f"{project}-ouagadougou":
+                    ppa_str = f"ppa:oem-archive/{project}-ouagadougou ppa:oem-archive/{pkg_info.archive}"
+                else:
+                    ppa_str = f"ppa:oem-archive/{project}-ouagadougou"
             oem_archive = lp.people['oem-archive']
-            for ppa_name in ppa_names:
+            for ppa in archives:
                 source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
-                if f"oem-archive/{ppa_name}/ubuntu" not in source_lists:
-                    archive = oem_archive.getPPAByName(name=ppa_name)
+                if f"oem-archive/{ppa}/ubuntu" not in source_lists:
+                    archive = oem_archive.getPPAByName(name=ppa)
                     if archive is None:
-                        critical(f"It can not find ppa:oem-archive/{ppa_name}.")
+                        critical(f"It can not find ppa:oem-archive/{ppa}.")
                         exit(1)
                     archive.newSubscription(subscriber=lp.me)
                     archive.lp_save()
-                    info(f"Subscribed ppa:oem-archive/{ppa_name}")
+                    info(f"Subscribed ppa:oem-archive/{ppa}")
             with open(f'{pkg_name}.list', 'r') as f:
                 source_list = f.read().strip()
             with open(f'autopkgtest-{pkg_name}-auto', 'w') as f:
@@ -650,7 +728,7 @@ if ! valid_oem_scripts_config; then
     exit 1
 fi
 
-autopkgtest-collect-credentials {ppa} "$@"
+autopkgtest-collect-credentials {ppa_str} "$@"
 
 cat << END
 install_pkgs ubuntu-oem-keyring
@@ -662,6 +740,7 @@ chroot "\\$root" apt-get update
 END
 ''')
             os.chmod(f'autopkgtest-{pkg_name}-auto', 0o755)
+            info(f"({pkg_name}:{branch}) $ run-autopkgtest lxc focal -C")
             _run_command(['run-autopkgtest', 'lxc', 'focal', '-C'])
             _run_command(['git', 'reset', '--hard', 'HEAD'])
             _run_command(['git', 'clean', '-x', '-d', '-f'])
@@ -699,7 +778,7 @@ END
                 pass
 
 
-def check_meta_git(pkg_name: str, pkg_info: tuple, check_only: bool, skip_bootstrap: False) -> None:
+def check_meta_git(pkg_name: str, pkg_info: PkgInfo, check_only: bool, skip_bootstrap: False) -> None:
     if check_only:
         info(f"Checking {pkg_name} {pkg_info}...")
     else:
