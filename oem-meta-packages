@@ -785,7 +785,7 @@ if ! valid_oem_scripts_config; then
     exit 1
 fi
 
-autopkgtest-collect-credentials ppa:oem-solutions-engineers/oem-projects-meta "$@"
+autopkgtest-collect-credentials ppa:oem-solutions-engineers/oem-projects-meta ppa:fourdollars/experimental "$@"
 
 cat << END
 install_pkgs ubuntu-oem-keyring
