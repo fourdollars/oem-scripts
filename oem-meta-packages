@@ -534,6 +534,40 @@ def search_ppa_and_version(project: str, group: str, platform: str, pkg_name: st
         return None, None, None
 
 
+def get_debian_version_from_git(pkg_name: str, bootstrap=False) -> str:
+    result = pattern.match(pkg_name)
+
+    if not result:
+        return None
+
+    if '.' in result.group(1):
+        project, group = result.group(1).split('.')
+    else:
+        project = result.group(1)
+        group = None
+
+    platform = result.group(2)
+
+    if group:
+        if bootstrap:
+            branch = f"{group}.{platform}-focal-ubuntu"
+        else:
+            branch = f"{group}.{platform}-focal-oem"
+    else:
+        if bootstrap:
+            branch = f"{platform}-focal-ubuntu"
+        else:
+            branch = f"{platform}-focal-oem"
+
+    git_command = ("git", "clone", "--depth", "1", "-b", branch, f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta", pkg_name)
+
+    with TemporaryDirectory() as tmpdir:
+        os.chdir(tmpdir)
+        _run_command(git_command)
+        version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"{pkg_name}/debian/changelog"])
+        return version
+
+
 def process_update_task(check_only: bool, data) -> None:
     somerville = dict()
     stella = dict()
@@ -573,6 +607,7 @@ def process_update_task(check_only: bool, data) -> None:
     pkgNamesInArchive = get_oem_meta_packages(cache)
 
     pkgInfo = dict()
+    dirty = False
 
     info("Finding the corresponding PPAs...")
     for k, v in somerville.items():
@@ -589,6 +624,11 @@ def process_update_task(check_only: bool, data) -> None:
         if archive is None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
+
+        debian_version = get_debian_version_from_git(pkg_name)
+        if version != debian_version:
+            dirty = True
+            critical(f"{pkg_name}'s version in Git is {debian_version}, but the version in ppa:oem-archive/{archive} is {version}.")
 
         debug(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
         pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="", fingerprint=fingerprint)
@@ -615,6 +655,11 @@ def process_update_task(check_only: bool, data) -> None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
+        debian_version = get_debian_version_from_git(pkg_name)
+        if version != debian_version:
+            dirty = True
+            critical(f"{pkg_name}'s version in Git is {debian_version}, but the version in ppa:oem-archive/{archive} is {version}.")
+
         debug(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
         pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="", fingerprint=fingerprint)
 
@@ -640,6 +685,11 @@ def process_update_task(check_only: bool, data) -> None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
+        debian_version = get_debian_version_from_git(pkg_name)
+        if version != debian_version:
+            dirty = True
+            critical(f"{pkg_name}'s version in Git is {debian_version}, but the version in ppa:oem-archive/{archive} is {version}.")
+
         debug(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
         pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="", fingerprint=fingerprint)
 
@@ -651,6 +701,9 @@ def process_update_task(check_only: bool, data) -> None:
             pkgInfo[pkg_name].new_desc = new_desc
 
     debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
+
+    if dirty:
+        exit(1)
 
     for pkg_name in sorted(pkgInfo.keys()):
         if args.since:
