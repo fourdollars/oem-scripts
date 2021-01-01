@@ -730,24 +730,27 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool, check_
 
         # Run autopkgtest
         if args.autopkgtest:
+            with open(f'{pkg_name}.list', 'r') as f:
+                source_list = f.read().strip()
+
             archives = set()
             archives.add(pkg_info.archive)
 
             if project == 'somerville':
+                common_archive = oem_archive.getPPAByName(name=project)
+                fingerprint = common_archive.signing_key_fingerprint
                 archives.add(f"{project}")
-                if pkg_info.archive != project:
-                    ppa_str = f"ppa:oem-archive/{project} ppa:oem-archive/{pkg_info.archive}"
-                else:
-                    ppa_str = f"ppa:oem-archive/{project}"
             elif project == 'stella' or project == 'sutton':
+                common_archive = oem_archive.getPPAByName(name=f"{project}-ouagadougou")
+                fingerprint = common_archive.signing_key_fingerprint
                 archives.add(f"{project}-ouagadougou")
-                if pkg_info.archive != f"{project}-ouagadougou":
-                    ppa_str = f"ppa:oem-archive/{project}-ouagadougou ppa:oem-archive/{pkg_info.archive}"
-                else:
-                    ppa_str = f"ppa:oem-archive/{project}-ouagadougou"
+
+            if fingerprint != pkg_info.fingerprint:
+                fingerprint += " " + pkg_info.fingerprint
+
             for ppa in archives:
-                source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
-                while f"oem-archive/{ppa}/ubuntu" not in source_lists:
+                lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
+                while f"oem-archive/{ppa}/ubuntu" not in lists:
                     archive = oem_archive.getPPAByName(name=ppa)
                     if archive is None:
                         critical(f"It can not find ppa:oem-archive/{ppa}.")
@@ -756,9 +759,11 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool, check_
                     archive.newSubscription(subscriber=lp.me)
                     archive.lp_save()
                     _run_command(["get-private-ppa", f"ppa:oem-archive/{ppa}"])
-                    source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
-            with open(f'{pkg_name}.list', 'r') as f:
-                source_list = f.read().strip()
+                    lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
+                for url in sorted(set(lp.me.getArchiveSubscriptionURLs())):
+                    if f"oem-archive/{ppa}/ubuntu" in url:
+                        source_list += "\ndeb " + url + " focal main"
+
             with open(f'autopkgtest-{pkg_name}-auto', 'w') as f:
                 f.write(f'''#!/bin/bash
 
@@ -776,10 +781,11 @@ if ! valid_oem_scripts_config; then
     exit 1
 fi
 
-autopkgtest-collect-credentials {ppa_str} "$@"
+autopkgtest-collect-credentials ppa:oem-solutions-engineers/oem-projects-meta "$@"
 
 cat << END
 install_pkgs ubuntu-oem-keyring
+chroot "\\$root" apt-key adv --keyserver keyserver.ubuntu.com --recv-key {fingerprint}
 mkdir -p "\\$root"/etc/apt/sources.list.d
 cat > "\\$root"/etc/apt/sources.list.d/custom.list << ENDLINE
 {source_list}
