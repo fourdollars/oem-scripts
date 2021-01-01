@@ -693,6 +693,10 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool, check_
         messages = list()
         os.chdir(tmpdir)
         _run_command(git_command)
+        version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"{pkg_name}/debian/changelog"])
+        if version != pkg_info.version:
+            critical(f"{pkg_name}'s version is {pkg_info.version} in ppa:oem-archive/{pkg_info.archive} but the version in Git repository is {version}.")
+            exit(1)
         git_dir = os.path.join(tmpdir, pkg_name)
 
         # Deal with different changes
@@ -793,6 +797,8 @@ ENDLINE
 chroot "\\$root" apt-get update
 END
 ''')
+            if args.debug:
+                _run_command(['cat', f'autopkgtest-{pkg_name}-auto'])
             os.chmod(f'autopkgtest-{pkg_name}-auto', 0o755)
             info(f"({pkg_name}:{branch}) $ run-autopkgtest lxc focal -C")
             _run_command(['run-autopkgtest', 'lxc', 'focal', '-C'])
