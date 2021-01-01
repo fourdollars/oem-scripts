@@ -795,6 +795,11 @@ cat > "\\$root"/etc/apt/sources.list.d/custom.list << ENDLINE
 {source_list}
 ENDLINE
 chroot "\\$root" apt-get update
+cat > "\\$root/usr/sbin/update-grub" << ENDLINE
+#!/bin/sh
+true
+ENDLINE
+chmod 755 "\\$root/usr/sbin/update-grub"
 END
 ''')
             if args.debug:
