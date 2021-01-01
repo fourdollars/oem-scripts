@@ -578,10 +578,10 @@ def process_update_task(check_only: bool, data) -> None:
     for k, v in somerville.items():
         pkg_name = 'oem-somerville-' + k + '-meta'
         if args.only and pkg_name != args.only:
-            info(f"Skip {pkg_name}")
+            warning(f"Skip {pkg_name}")
             continue
         if pkg_name in args.skip:
-            info(f"Skip {pkg_name}")
+            warning(f"Skip {pkg_name}")
             continue
         archive, version, fingerprint = search_ppa_and_version("somerville", None, k, pkg_name)
         if archive is None:
@@ -603,10 +603,10 @@ def process_update_task(check_only: bool, data) -> None:
     for k, v in stella.items():
         pkg_name = 'oem-stella.' + k + '-meta'
         if args.only and pkg_name != args.only:
-            info(f"Skip {pkg_name}")
+            warning(f"Skip {pkg_name}")
             continue
         if pkg_name in args.skip:
-            info(f"Skip {pkg_name}")
+            warning(f"Skip {pkg_name}")
             continue
         group, codename = k.split('-', 1)
 
@@ -628,10 +628,10 @@ def process_update_task(check_only: bool, data) -> None:
     for k, v in sutton.items():
         pkg_name = 'oem-sutton.' + k + '-meta'
         if args.only and pkg_name != args.only:
-            info(f"Skip {pkg_name}")
+            warning(f"Skip {pkg_name}")
             continue
         if pkg_name in args.skip:
-            info(f"Skip {pkg_name}")
+            warning(f"Skip {pkg_name}")
             continue
         group, codename = k.split('-', 1)
 
@@ -655,7 +655,7 @@ def process_update_task(check_only: bool, data) -> None:
     for pkg_name in sorted(pkgInfo.keys()):
         if args.since:
             if pkg_name != args.since:
-                info(f"Skip {pkg_name}")
+                warning(f"Skip {pkg_name}")
                 continue
             else:
                 args.since = None
