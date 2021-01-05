@@ -266,14 +266,16 @@ def deal_with_description(git_dir, old, new) -> bool:
     file_path = os.path.join(git_dir, 'debian', 'control')
     with open(file_path, 'r') as control:
         lines = control.readlines()
+    changed = False
     for i, line in enumerate(lines):
         if old in line:
+            changed = True
             lines[i] = line.replace(old, new)
     info(f'"{old}" will be replaced by "{new}".')
     with open(file_path, 'w') as control:
         control.writelines(lines)
     _run_command(["git", "add", "debian/control"])
-    return True
+    return changed
 
 
 def deal_with_kernel_flavour(pkg_name, branch, git_dir) -> bool:
