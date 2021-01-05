@@ -507,6 +507,10 @@ def update_bug_status(bug, yes: bool) -> None:
                     warning(f"{bug_task.bug_target_name} can not be deleted, so changing the status to Incomplete instead.")
                     debug(e)
                     _change_task_status(bug_task, 'Incomplete', yes)
+                except lazr.restfulclient.errors.Unauthorized as e:
+                    warning(f"{bug_task.bug_target_name} can not be deleted, so changing the status to Incomplete instead.")
+                    debug(e)
+                    _change_task_status(bug_task, 'Incomplete', yes)
             else:
                 _change_task_status(bug_task, 'Incomplete', yes)
         else:
@@ -697,11 +701,19 @@ def _get_items_from_git(project: str, branch: str, pkg_name: str) -> tuple:
                 else:
                     ids.append(result.group(1))
         kernel_flavour = None
+        kernel_meta = None
         with open(os.path.join(git_dir, 'debian', 'control'), 'r') as control:
             for line in control:
                 if line.startswith('XB-Ubuntu-OEM-Kernel-Flavour:'):
                     kernel_flavour = line[len('XB-Ubuntu-OEM-Kernel-Flavour:'):].strip()
-        return kernel_flavour, ids
+                elif line.startswith('Depends:'):
+                    if 'linux-oem-20.04b' in line:
+                        kernel_meta = 'linux-oem-20.04b'
+                    elif 'linux-oem-20.04' in line:
+                        kernel_meta = 'linux-oem-20.04'
+                    elif 'linux-generic-hwe-20.04' in line:
+                        kernel_meta = 'linux-generic-hwe-20.04'
+        return kernel_flavour, kernel_meta, ids
 
 
 def check_and_update_git_repo(bug, pkg_name: str, yes=False, bootstrap=True, update=False, username=None) -> bool:
@@ -739,7 +751,25 @@ def check_and_update_git_repo(bug, pkg_name: str, yes=False, bootstrap=True, upd
     else:
         branch = f"{platform}-focal-{suffix}"
 
-    kernel_flavour, ids = _get_items_from_git(project, branch, pkg_name)
+    kernel_flavour, kernel_meta, ids = _get_items_from_git(project, branch, pkg_name)
+    if kernel_flavour == 'default':
+        if kernel_meta is None:
+            kernel_meta = 'linux-generic-hwe-20.04'
+        elif kernel_meta == 'linux-generic-hwe-20.04':
+            pass
+        else:
+            critical(f"{pkg_name}'s {branch} branch has unexpected kernel_flavour=${kernel_flavour}, kernel_meta={kernel_meta}.")
+            exit(1)
+    elif kernel_flavour == 'oem':
+        if kernel_meta is None:
+            kernel_meta = 'linux-oem-20.04'
+        elif kernel_meta == 'linux-oem-20.04b':
+            pass
+        elif kernel_meta == 'linux-oem-20.04':
+            pass
+        else:
+            critical(f"{pkg_name}'s {branch} branch has unexpected kernel_flavour=${kernel_flavour}, kernel_meta={kernel_meta}.")
+            exit(1)
 
     if ids == []:
         error("Something wrong in debian/modaliases. Please fix it manually first.")
@@ -749,13 +779,13 @@ def check_and_update_git_repo(bug, pkg_name: str, yes=False, bootstrap=True, upd
         os.chdir(tmpdir)
         # Generated the meta package by pkg-oem-meta
         if project == 'somerville':
-            command = ['pkg-somerville-meta', '-s', 'focal', '-k', kernel_flavour, '-p', platform, '--public-bug', str(bug.id)]
+            command = ['pkg-somerville-meta', '-s', 'focal', '-k', kernel_meta, '-p', platform, '--public-bug', str(bug.id)]
             command.extend(ids)
         elif project == 'stella':
-            command = ['pkg-stella-meta', '-s', 'focal', '-k', kernel_flavour, '-g', group, '-p', platform, '--public-bug', str(bug.id)]
+            command = ['pkg-stella-meta', '-s', 'focal', '-k', kernel_meta, '-g', group, '-p', platform, '--public-bug', str(bug.id)]
             command.extend(ids)
         elif project == 'sutton':
-            command = ['pkg-sutton-meta', '-s', 'focal', '-k', kernel_flavour, '-g', group, '-p', platform, '--public-bug', str(bug.id)]
+            command = ['pkg-sutton-meta', '-s', 'focal', '-k', kernel_meta, '-g', group, '-p', platform, '--public-bug', str(bug.id)]
             for bvn, bvr in ids:
                 command.append(f"bvn{bvn}:bvr{bvr}")
         _run_command(command)

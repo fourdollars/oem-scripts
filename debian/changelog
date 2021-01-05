@@ -1,10 +1,19 @@
-oem-scripts (0.73) UNRELEASED; urgency=medium
+oem-scripts (0.74) UNRELEASED; urgency=medium
 
   * debian/control,
     oem-meta-packages: Add 'update' subcommand to change the kernel flavour,
     kernel dependency and grub flavour.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 21 Dec 2020 17:45:26 +0800
+
+oem-scripts (0.73) focal; urgency=medium
+
+  * mir-bug: Fix the usage of pkg-oem-meta.
+  * mir-bug: Deal with new exception.
+  * debian/tests/mir-bug: Check the latest MIR bug to avoid the test failure.
+  * oem_scripts/__init__.py: Bump to 0.73.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 30 Dec 2020 14:22:58 +0800
 
 oem-scripts (0.72) focal; urgency=medium
 
