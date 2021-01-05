@@ -109,21 +109,29 @@ For example,
 [
   {
     "Customer": "Dell",
+    "Group": "N/A",
+    "Codename": "fossa-beric-icl",
     "Platform": "Bullseye V3 14 ICL-U(SMB0)",
     "Market Name": "Vostro 3401",
     "Platform LP tag": "fossa-beric-icl"
   },
+  ...
   {
     "Customer": "HP",
-    "Platform": "Hagrid 6U",
-    "Market Name": "HP 245 G7 Notebook PC",
-    "Platform LP tag": "stella-hagrid6u-id"
+    "Group": "cmit",
+    "Codename": "butterfree",
+    "Platform": "Bugle-R",
+    "Market Name": "ProDesk 600 G5 SFF",
+    "Platform LP tag": "stella-bugle-r"
   },
+  ...
   {
     "Customer": "Lenovo",
+    "Group": "simon",
+    "Codename": "Addison",
     "Platform": "Simon",
-    "Market Name": "X1 Extreme 3",
-    "Platform LP tag": "Adken"
+    "Market Name": "ThinkPad P17 Gen 1",
+    "Platform LP tag": "Addison"
   },
   ...
 ]
