@@ -237,7 +237,7 @@ def get_oem_meta_packages(cache) -> list:
         if not name.startswith('oem-') or not name.endswith('-meta'):
             continue
         pkg_list.append(name)
-    return pkg_list
+    return sorted(pkg_list)
 
 
 def _grouping_market_names(market_names: list, maxsplit=1) -> str:
