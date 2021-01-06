@@ -114,7 +114,7 @@ if [ "${#PPA[@]}" != "0" ]; then
     done< <(get-private-ppa "${PPA[@]}")
 fi
 
-PUBKEY="3B4FE6ACC0B21F32"
+PUBKEY="790BC7277767219C42C86F933B4FE6ACC0B21F32"
 
 cat > "$APTDIR/etc/apt/sources.list" <<ENDLINE
 deb [signed-by=$APTDIR/$PUBKEY.pub arch=amd64] $MIRROR $CODENAME main restricted universe multiverse

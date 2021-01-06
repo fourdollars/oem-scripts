@@ -5,8 +5,10 @@ oem-scripts (0.74) UNRELEASED; urgency=medium
     kernel dependency and grub flavour.
   * debian/tests/control,
     debian/tests/oem-meta-packages: Add the autopkgtest for oem-meta-packages.
+  * setup-apt-dir.sh: Use the longer fingerprint to avoid the key import
+    issue.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 21 Dec 2020 17:45:26 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 06 Jan 2021 14:53:19 +0800
 
 oem-scripts (0.73) focal; urgency=medium
 
