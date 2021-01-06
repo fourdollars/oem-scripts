@@ -1,0 +1,36 @@
+#!/bin/sh
+
+cat > platforms.json << ENDLINE
+[
+  {
+    "Customer": "Dell",
+    "Group": "N/A",
+    "Codename": "fossa-beric-icl",
+    "Platform": "Bullseye V3 14 ICL-U(SMB0)",
+    "MarketName": "Vostro 3401",
+    "PlatformLPTag": "fossa-beric-icl"
+  },
+  {
+    "Customer": "Dell",
+    "Group": "N/A",
+    "Codename": "fossa-beric-icl",
+    "Platform": "Bullseye V3 15 ICL-U(SMB0)",
+    "MarketName": "Vostro 3501",
+    "PlatformLPTag": "fossa-beric-icl"
+  },
+  {
+    "Customer": "Dell",
+    "Group": "N/A",
+    "Codename": "fossa-beric-icl",
+    "Platform": "Bullseye N3 15 ICL-U(SMB0) ",
+    "MarketName": "Inspiron 3501",
+    "PlatformLPTag": "fossa-beric-icl"
+  }
+]
+ENDLINE
+
+export LAUNCHPAD_API="https://api.launchpad.net/"
+
+oem-meta-packages update --check platforms.json
+
+oem-meta-packages --quiet list
