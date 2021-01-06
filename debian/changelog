@@ -1,4 +1,4 @@
-oem-scripts (0.74) UNRELEASED; urgency=medium
+oem-scripts (0.74) focal; urgency=medium
 
   * debian/control,
     oem-meta-packages: Add 'update' subcommand to change the kernel flavour,
@@ -7,6 +7,7 @@ oem-scripts (0.74) UNRELEASED; urgency=medium
     debian/tests/oem-meta-packages: Add the autopkgtest for oem-meta-packages.
   * setup-apt-dir.sh: Use the longer fingerprint to avoid the key import
     issue.
+  * oem_scripts/__init__.py: Bump to 0.74.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 06 Jan 2021 14:53:19 +0800
 
