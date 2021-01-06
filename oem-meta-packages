@@ -112,8 +112,8 @@ For example,
     "Group": "N/A",
     "Codename": "fossa-beric-icl",
     "Platform": "Bullseye V3 14 ICL-U(SMB0)",
-    "Market Name": "Vostro 3401",
-    "Platform LP tag": "fossa-beric-icl"
+    "MarketName": "Vostro 3401",
+    "PlatformLPTag": "fossa-beric-icl"
   },
   ...
   {
@@ -121,8 +121,8 @@ For example,
     "Group": "cmit",
     "Codename": "butterfree",
     "Platform": "Bugle-R",
-    "Market Name": "ProDesk 600 G5 SFF",
-    "Platform LP tag": "stella-bugle-r"
+    "MarketName": "ProDesk 600 G5 SFF",
+    "PlatformLPTag": "stella-bugle-r"
   },
   ...
   {
@@ -130,8 +130,8 @@ For example,
     "Group": "simon",
     "Codename": "Addison",
     "Platform": "Simon",
-    "Market Name": "ThinkPad P17 Gen 1",
-    "Platform LP tag": "Addison"
+    "MarketName": "ThinkPad P17 Gen 1",
+    "PlatformLPTag": "Addison"
   },
   ...
 ]
@@ -589,8 +589,8 @@ def process_update_task(check_only: bool, data) -> None:
         platform = item['Platform'].lower()
         codename = item['Codename'].lower()
         group = item['Group'].lower()
-        market_name = item['Market Name']
-        lp_tag = item['Platform LP tag'].lower()
+        market_name = item['MarketName']
+        lp_tag = item['PlatformLPTag'].lower()
         if 'dell' in customer:
             if 'somerville' in args.skip:
                 continue

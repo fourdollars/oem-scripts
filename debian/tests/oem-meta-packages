@@ -7,24 +7,24 @@ cat > platforms.json << ENDLINE
     "Group": "N/A",
     "Codename": "fossa-beric-icl",
     "Platform": "Bullseye V3 14 ICL-U(SMB0)",
-    "Market Name": "Vostro 3401",
-    "Platform LP tag": "fossa-beric-icl"
+    "MarketName": "Vostro 3401",
+    "PlatformLPTag": "fossa-beric-icl"
   },
   {
     "Customer": "Dell",
     "Group": "N/A",
     "Codename": "fossa-beric-icl",
     "Platform": "Bullseye V3 15 ICL-U(SMB0)",
-    "Market Name": "Vostro 3501",
-    "Platform LP tag": "fossa-beric-icl"
+    "MarketName": "Vostro 3501",
+    "PlatformLPTag": "fossa-beric-icl"
   },
   {
     "Customer": "Dell",
     "Group": "N/A",
     "Codename": "fossa-beric-icl",
     "Platform": "Bullseye N3 15 ICL-U(SMB0) ",
-    "Market Name": "Inspiron 3501",
-    "Platform LP tag": "fossa-beric-icl"
+    "MarketName": "Inspiron 3501",
+    "PlatformLPTag": "fossa-beric-icl"
   }
 ]
 ENDLINE
