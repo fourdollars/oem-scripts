@@ -1,9 +1,9 @@
-oem-scripts (0.75) UNRELEASED; urgency=medium
+oem-scripts (0.75) focal; urgency=medium
 
   * oem-meta-packages,
     pkg-oem-meta: Refine debian/postinst in OEM metapackages.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 11 Jan 2021 12:46:37 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 11 Jan 2021 08:15:56 +0000
 
 oem-scripts (0.74) focal; urgency=medium
 
