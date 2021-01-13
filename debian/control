@@ -37,6 +37,7 @@ Depends:
  python3-distro-info,
  python3-distutils-extra,
  python3-mechanize,
+ python3-requests,
  ubuntu-dev-tools,
  wget
 Breaks: lp-fish-tools (<<1.192.40)

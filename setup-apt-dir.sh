@@ -22,6 +22,7 @@ export LANG=C
 exec 2>&1
 set -euo pipefail
 
+APTDIR=
 CODENAME=
 DEBUG=
 KEYS=()
@@ -30,7 +31,7 @@ MIRROR=
 OUTPUT=
 PPA=()
 PROPOSED=
-OPTS="$(getopt -o c:dho:pm: --long codename:,debug,help,output:,proposed,ppa:,mirror: -n 'setup-apt-dir.sh' -- "$@")"
+OPTS="$(getopt -o c:dho:pm: --long apt-dir:,codename:,debug,help,output:,proposed,ppa:,mirror:,extra-repo:,extra-key: -n 'setup-apt-dir.sh' -- "$@")"
 eval set -- "${OPTS}"
 while :; do
     case "$1" in
@@ -60,6 +61,16 @@ OPTIONS:
  -p | --proposed
       Enable -proposed channel.
 
+ --apt-dir APT-DIR
+      If not specified, it will generate one.
+
+ --extra-repo
+      Provide an additional line to be appended to sources.list, e.g.:
+         'deb <URL> <distrib> <components>'
+
+ --extra-key
+      Provide an additional GPG fingerprint to be imported and used by --extra-repo.
+
  --ppa ppa:whatever/you-like
       Just make sure you can access it by checking \`get-private-ppa ppa:whatever/you-like\`
 ENDLINE
@@ -82,6 +93,15 @@ ENDLINE
         ('-m'|'--mirror')
             MIRROR="$2"
             shift 2;;
+        ('--apt-dir')
+            APTDIR="$2"
+            shift 2;;
+        ('--extra-key')
+            KEYS+=("$2")
+            shift 2;;
+        ('--extra-repo')
+            LISTS+=("$2")
+            shift 2;;
         ('--') shift; break ;;
         (*) break ;;
     esac
@@ -102,8 +122,10 @@ if [ -n "$OUTPUT" ] && [ -e "$OUTPUT" ]; then
     exit 1
 fi
 
-APTDIR="$(mktemp -d /tmp/apt.XXXXXXXXXX)"
-echo "APTDIR=$APTDIR"
+if [ -z "$APTDIR" ]; then
+    APTDIR="$(mktemp -d /tmp/apt.XXXXXXXXXX)"
+    echo "APTDIR=$APTDIR"
+fi
 mkdir -p "$APTDIR"/var/lib/apt/lists "$APTDIR"/var/lib/dpkg "$APTDIR"/etc/apt/preferences.d "$APTDIR"/var/lib/dpkg
 :> "$APTDIR"/var/lib/dpkg/status
 
