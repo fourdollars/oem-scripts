@@ -265,7 +265,7 @@ update.add_argument("--since",
 update.add_argument("--autopkgtest",
                     help="Run autopkgtest when checking the git repository.", action="store_true")
 update.add_argument("json",
-                    help="Specify the json file to read the platforms information.",
+                    help="Specify the json file to read the meta information.",
                     type=argparse.FileType('r', encoding='UTF-8'))
 
 args = parser.parse_args()
