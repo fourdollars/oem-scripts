@@ -76,7 +76,7 @@ parser.add_argument("--apt-dir",
 
 subparsers = parser.add_subparsers(dest="subcommand")
 
-collect = subparsers.add_parser('collect', help='[-h] [--yes] [--check] [--only oem-bala-meta] [--since oem-bala-meta] [--skip "somerville,stella,sutton"] [--autopkgtest] platforms.json -o|--output meta-info.json',
+collect = subparsers.add_parser('collect', help='[-h] [--yes] [--check] [--only oem-bala-meta] [--skip "somerville,stella,sutton"] platforms.json -o|--output meta-info.json',
                                 formatter_class=argparse.RawDescriptionHelpFormatter,
                                 epilog="""
 For example,
@@ -173,14 +173,10 @@ collect.add_argument("json",
 collect.add_argument("-o", "--output", required=True,
                      help="Specify a filename to write the meta information.",
                      type=argparse.FileType('w', encoding='UTF-8'))
-collect.add_argument("--since",
-                     help="Begin from the specified meta package. Skip previous meta packages.", type=str)
 collect.add_argument("--skip",
                      help="Skip some projects or some meta packages.", type=str, default="")
 collect.add_argument("--only",
                      help="Specified the only meta package to update. Skip others.", type=str)
-collect.add_argument("--autopkgtest",
-                     help="Run autopkgtest when checking the git repository.", action="store_true")
 
 list_pkg = subparsers.add_parser('list', help='[-h]',
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -214,55 +210,60 @@ unsubscribe.add_argument("pkgName", type=str,
 unsubscribe.add_argument("--yes",
                          help="Say yes for all prompts.", action="store_true")
 
-update = subparsers.add_parser('update', help='[-h] [--yes] [--check] [--only oem-bala-meta] [--since oem-bala-meta] [--skip "somerville,stella,sutton"] [--autopkgtest] json',
+update = subparsers.add_parser('update', help='[-h] [--yes] [--check] [--since oem-bala-meta] [--autopkgtest] meta-info.json',
                                formatter_class=argparse.RawDescriptionHelpFormatter,
                                epilog="""
 For example,
-    oem-meta-packages update --check platforms.json
+    oem-meta-packages update --check meta-info.json
 
-[
-  {
-    "Customer": "Dell",
-    "Group": "N/A",
-    "Codename": "fossa-beric-icl",
-    "Platform": "Bullseye V3 14 ICL-U(SMB0)",
-    "MarketName": "Vostro 3401",
-    "PlatformLPTag": "fossa-beric-icl"
-  },
-  ...
-  {
-    "Customer": "HP",
-    "Group": "cmit",
-    "Codename": "butterfree",
-    "Platform": "Bugle-R",
-    "MarketName": "ProDesk 600 G5 SFF",
-    "PlatformLPTag": "stella-bugle-r"
-  },
-  ...
-  {
-    "Customer": "Lenovo",
-    "Group": "simon",
-    "Codename": "Addison",
-    "Platform": "Simon",
-    "MarketName": "ThinkPad P17 Gen 1",
-    "PlatformLPTag": "Addison"
-  },
-  ...
-]
+{
+    "oem-somerville-beric-icl-meta": {
+        "devel_archive": "somerville-fossa-beric-icl-focal-devel",
+        "devel_version": "20.04ubuntu3",
+        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
+        "new_desc": "Dell Inspiron 3501, Vostro 3401/3501",
+        "old_desc": "Somerville Beric-Icl platform",
+        "ppa_archive": "somerville-fossa-beric-icl",
+        "ppa_version": "20.04ubuntu3",
+        "staging_archive": "somerville-fossa-beric-icl-focal-staging",
+        "staging_version": "20.04ubuntu3"
+    },
+    ...
+    "oem-stella.cmit-butterfree-meta": {
+        "devel_archive": "stella-cmit-ouagadougou-focal-devel",
+        "devel_version": "20.04ubuntu2",
+        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
+        "new_desc": "",
+        "old_desc": "",
+        "ppa_archive": "stella-cmit-ouagadougou",
+        "ppa_version": "20.04ubuntu2",
+        "staging_archive": "stella-cmit-ouagadougou-focal-staging",
+        "staging_version": "20.04ubuntu2"
+    },
+    ...
+    "oem-sutton.simon-addison-meta": {
+        "devel_archive": "sutton-simon-focal-devel",
+        "devel_version": "20.04ubuntu10",
+        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
+        "new_desc": "Lenovo ThinkPad P15 Gen 1, P15v Gen 1, P17 Gen 1, T15p Gen 1",
+        "old_desc": "Sutton Simon Addison platform",
+        "ppa_archive": "sutton-simon",
+        "ppa_version": "20.04ubuntu10",
+        "staging_archive": "sutton-simon-focal-staging",
+        "staging_version": "20.04ubuntu9"
+    },
+    ...
+}
 
 Update the market name and the kernel flavour of the OEM meta package to the default kernel flavour, i.e. linux-generic-hwe-20.04.""")
 update.add_argument("--yes",
                     help="Say yes for all prompts.", action="store_true")
 update.add_argument("--check",
                     help="Just check and don't ask any question.", action="store_true")
-update.add_argument("--autopkgtest",
-                    help="Run autopkgtest when checking the git repository.", action="store_true")
 update.add_argument("--since",
                     help="Begin from the specified meta package. Skip previous meta packages.", type=str)
-update.add_argument("--skip",
-                    help="Skip some projects or some meta packages.", type=str, default="")
-update.add_argument("--only",
-                    help="Specified the only meta package to update. Skip others.", type=str)
+update.add_argument("--autopkgtest",
+                    help="Run autopkgtest when checking the git repository.", action="store_true")
 update.add_argument("json",
                     help="Specify the json file to read the platforms information.",
                     type=argparse.FileType('r', encoding='UTF-8'))
@@ -642,14 +643,13 @@ def search_ppa_and_version(project: str, group: str, platform: str, pkg_name: st
             archive = oem_archive.getPPAByName(name=f"{project}-{group}-ouagadougou")
         except lazr.restfulclient.errors.NotFound:
             archive = oem_archive.getPPAByName(name=f"{project}-{group}")
-    if args.autopkgtest:
+    source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
+    while f"oem-archive/{archive.name}/ubuntu" not in source_lists:
+        info(f"Subscribing ppa:oem-archive/{archive.name}")
+        archive.newSubscription(subscriber=lp.me)
+        archive.lp_save()
+        _run_command(["get-private-ppa", f"ppa:oem-archive/{archive.name}"])
         source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
-        while f"oem-archive/{archive.name}/ubuntu" not in source_lists:
-            info(f"Subscribing ppa:oem-archive/{archive.name}")
-            archive.newSubscription(subscriber=lp.me)
-            archive.lp_save()
-            _run_command(["get-private-ppa", f"ppa:oem-archive/{archive.name}"])
-            source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
     sources = archive.getPublishedSources()
     fingerprint = archive.signing_key_fingerprint
     version = ""
@@ -946,7 +946,20 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
 
 
 def process_update_task(check_only: bool, data) -> None:
-    pkgInfo = collect_pkg_info(data)
+    pkgInfo = dict()
+    data = json.load(data)
+    for meta in data.keys():
+        pkgInfo[meta] = PkgInfo(ppa_archive=data[meta]['ppa_archive'],
+                                ppa_version=data[meta]['ppa_version'],
+                                old_desc=data[meta]['old_desc'],
+                                new_desc=data[meta]['new_desc'],
+                                fingerprint=data[meta]['fingerprint'],
+                                staging_archive=data[meta]['staging_archive'],
+                                staging_version=data[meta]['staging_version'],
+                                devel_archive=data[meta]['devel_archive'],
+                                devel_version=data[meta]['devel_version'])
+
+    debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
 
     for pkg_name in sorted(pkgInfo.keys()):
         if args.since:
@@ -1196,8 +1209,6 @@ elif args.subcommand == 'unsubscribe':
                     exit(1)
             exit(0)
 elif args.subcommand == 'update':
-    if args.skip:
-        args.skip = args.skip.split(',')
     process_update_task(args.check, args.json)
 elif args.subcommand == 'collect':
     oem_scripts_config_ini = os.path.join(os.environ["HOME"],
