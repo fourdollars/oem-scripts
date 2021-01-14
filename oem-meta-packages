@@ -36,7 +36,31 @@ from dataclasses import dataclass
 from logging import debug, info, warning, error, critical
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
 from oem_scripts.logging import setup_logging
+from string import Template
 from tempfile import TemporaryDirectory
+
+
+staging_copy_template = Template(f'''Operation: copy_package
+Source: $source
+Destination: $destination
+Package: $packages
+Production: $production
+===== Description =====
+
+This bug is to verify the kernel migrations from 5.6 to 5.8.
+
+Please verify the staging archive,
+"""
+deb https://$username:<password>@cesg.canonical.com/canonical $destination public
+deb-src https://$username:<password>@cesg.canonical.com/canonical $destination public
+"""
+You can find <password> on $url.
+
+And then verify the production archive.
+"""
+deb http://oem.archive.canonical.com $distribution $component
+deb-src http://oem.archive.canonical.com $distribution $component
+"""''')
 
 
 class DataJSONEncoder(json.JSONEncoder):
@@ -162,6 +186,7 @@ You need to manually config the [private] section in ~/.config/oem-scripts/confi
 For example,
 
 [private]
+url = SomewhereToProvideTheInformationForUsernameAndPassword
 username = UserName
 password = PassWord
 archive = https://cesg.canonical.com/canonical
@@ -209,6 +234,61 @@ unsubscribe.add_argument("pkgName", type=str,
                          help="Specify the package name to unsubscribe.")
 unsubscribe.add_argument("--yes",
                          help="Say yes for all prompts.", action="store_true")
+
+staging_copy = subparsers.add_parser('staging-copy', help='[-h] [--yes] meta-info.json',
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     epilog="""
+For example,
+    oem-meta-packages staging-copy --check meta-info.json
+
+{
+    "oem-somerville-beric-icl-meta": {
+        "devel_archive": "somerville-fossa-beric-icl-focal-devel",
+        "devel_version": "20.04ubuntu3",
+        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
+        "new_desc": "Dell Inspiron 3501, Vostro 3401/3501",
+        "old_desc": "Somerville Beric-Icl platform",
+        "ppa_archive": "somerville-fossa-beric-icl",
+        "ppa_version": "20.04ubuntu3",
+        "staging_archive": "somerville-fossa-beric-icl-focal-staging",
+        "staging_version": "20.04ubuntu3"
+    },
+    ...
+    "oem-stella.cmit-butterfree-meta": {
+        "devel_archive": "stella-cmit-ouagadougou-focal-devel",
+        "devel_version": "20.04ubuntu2",
+        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
+        "new_desc": "",
+        "old_desc": "",
+        "ppa_archive": "stella-cmit-ouagadougou",
+        "ppa_version": "20.04ubuntu2",
+        "staging_archive": "stella-cmit-ouagadougou-focal-staging",
+        "staging_version": "20.04ubuntu2"
+    },
+    ...
+    "oem-sutton.simon-addison-meta": {
+        "devel_archive": "sutton-simon-focal-devel",
+        "devel_version": "20.04ubuntu10",
+        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
+        "new_desc": "Lenovo ThinkPad P15 Gen 1, P15v Gen 1, P17 Gen 1, T15p Gen 1",
+        "old_desc": "Sutton Simon Addison platform",
+        "ppa_archive": "sutton-simon",
+        "ppa_version": "20.04ubuntu10",
+        "staging_archive": "sutton-simon-focal-staging",
+        "staging_version": "20.04ubuntu9"
+    },
+    ...
+}
+
+Copy the meta package into the staging archive.""")
+
+staging_copy.add_argument("json",
+                          help="Specify the json file to read the meta information.",
+                          type=argparse.FileType('r', encoding='UTF-8'))
+staging_copy.add_argument("--yes",
+                          help="Say yes for all prompts.", action="store_true")
+staging_copy.add_argument("--dryrun",
+                          help="Just dryrun and don't ask any question.", action="store_true")
 
 update = subparsers.add_parser('update', help='[-h] [--yes] [--check] [--since oem-bala-meta] [--autopkgtest] meta-info.json',
                                formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -945,7 +1025,7 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
     return pkgInfo
 
 
-def process_update_task(check_only: bool, data) -> None:
+def load_pkg_info(data) -> dict:
     pkgInfo = dict()
     data = json.load(data)
     for meta in data.keys():
@@ -960,7 +1040,10 @@ def process_update_task(check_only: bool, data) -> None:
                                 devel_version=data[meta]['devel_version'])
 
     debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
+    return pkgInfo
 
+
+def process_update_task(check_only: bool, pkgInfo) -> None:
     for pkg_name in sorted(pkgInfo.keys()):
         if args.since:
             if pkg_name != args.since:
@@ -1209,7 +1292,8 @@ elif args.subcommand == 'unsubscribe':
                     exit(1)
             exit(0)
 elif args.subcommand == 'update':
-    process_update_task(args.check, args.json)
+    pkgInfo = load_pkg_info(args.json)
+    process_update_task(args.check, pkgInfo)
 elif args.subcommand == 'collect':
     oem_scripts_config_ini = os.path.join(os.environ["HOME"],
                                           ".config/oem-scripts/config.ini")
@@ -1220,5 +1304,89 @@ elif args.subcommand == 'collect':
     pkgInfo = collect_pkg_info(args.json, check_private=True, index=r.text, config=config)
     args.output.write(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
     args.output.write("\n")
+elif args.subcommand == 'staging-copy':
+    oem_scripts_config_ini = os.path.join(os.environ["HOME"],
+                                          ".config/oem-scripts/config.ini")
+    oem_scripts_config = ConfigParser()
+    oem_scripts_config.read(oem_scripts_config_ini)
+    config = oem_scripts_config['private']
+
+    pkgInfo = load_pkg_info(args.json)
+    jobs = dict()
+    dest = set()
+    staging_locked = set()
+    for pkg_name in sorted(pkgInfo.keys()):
+        pkg_info = pkgInfo[pkg_name]
+        debug(f"{pkg_name} ppa: {pkg_info.ppa_version}, devel: {pkg_info.devel_version}, staging: {pkg_info.staging_version}.")
+        if pkg_info.ppa_version != pkg_info.devel_version:
+            warning(f"{pkg_name} versions are not synced between {pkg_info.ppa_archive} and {pkg_info.devel_archive}.")
+        elif pkg_info.staging_version == pkg_info.devel_version:
+            pass
+        elif apt_pkg.version_compare(pkg_info.staging_version, pkg_info.devel_version) > 0:
+            critical(f"This should never happen.")
+            exit(1)
+        else:
+            dest.add(pkg_info.staging_archive)
+            identity = f"{pkg_info.devel_archive}:{pkg_info.staging_archive}"
+            if identity not in jobs:
+                jobs[identity] = list()
+            jobs[identity].append(pkg_name)
+    debug(json.dumps(jobs, indent=4, sort_keys=True))
+    cloudberry = lp.projects['cloudberry']
+    assignee = lp.people['oem-archive']
+    tasks = cloudberry.searchTasks(
+        status=['New', 'Triaged', 'Confirmed', 'In Progress', 'Fix Committed'],
+        search_text='request of')
+    for task in tasks:
+        bug = task.bug
+        for staging in sorted(dest):
+            if staging in bug.description and 'staging-lock' in bug.tags:
+                tags = ",".join(bug.tags)
+                warning(f"https://bugs.launchpad.net/bugs/{bug.id}\n\t({staging})\n\t[{tags}]\n\t{bug.title}")
+                staging_locked.add(staging)
+    for job in jobs:
+        source, dest = job.split(':')
+        if dest in staging_locked:
+            warning(f"The following OEM metapackages will be skipped due to the staging-lock of {dest}.\n" + '\n'.join(jobs[job]))
+        else:
+            title = f"request of copy_package [{source}]"
+            tags = ["archive-request", "via-request-script", f"oem-scripts-{oem_scripts.__version__}"]
+            if args.dryrun:
+                info(f"TITLE: {title}")
+                info("TAGS: " + ','.join(tags))
+            else:
+                debug(f"TITLE: {title}")
+                debug("TAGS: " + ','.join(tags))
+            packages = list()
+            for pkg_name in jobs[job]:
+                pkg_info = pkgInfo[pkg_name]
+                packages.append(f"{pkg_name} (=={pkg_info.devel_version})")
+            packages = ', '.join(packages)
+            distribution = "focal"
+            if dest.startswith('somerville'):
+                component = remove_suffix(dest, f"-{distribution}-staging").replace('-fossa', '')
+            else:
+                debug(dest)
+                project, group, _ = dest.split('-', 2)
+                component = f"{project}.{group}"
+            production = distribution + '-' + component
+            description = staging_copy_template.substitute(
+                source=source,
+                destination=dest,
+                packages=packages,
+                production=production,
+                username=config['username'],
+                url=config['url'],
+                distribution=distribution,
+                component=component)
+            print(description)
+            if not args.dryrun and yes_or_ask(args.yes, f"Would you like to create a cloudberry bug to copy the {packages} from {source} to {dest}?"):
+                bug = lp.bugs.createBug(description=description, target=cloudberry, title=title, tags=tags)
+                for task in bug.bug_tasks:
+                    task.importance = 'High'
+                    task.assignee = assignee
+                    task.lp_save()
+                bug.lp_save()
+                print(f"The cloudberry staging copy bug has been created on {bug.web_link}.\n")
 else:
     parser.print_help()

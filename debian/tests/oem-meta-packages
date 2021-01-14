@@ -36,3 +36,7 @@ oem-meta-packages --quiet list
 oem-meta-packages collect platforms.json -o meta-info.json
 
 oem-meta-packages update --check meta-info.json
+
+sed 's/"staging_version":.*/"staging_version": "20.04ubuntu2"/' meta-info.json # lower the staging version to simulate
+
+oem-meta-packages staging-copy --dryrun meta-info.json
