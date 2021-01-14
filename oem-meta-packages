@@ -76,11 +76,13 @@ parser.add_argument("--apt-dir",
 
 subparsers = parser.add_subparsers(dest="subcommand")
 
-staging_copy = subparsers.add_parser('staging-copy', help='[-h|--help] [-y|--yes] json',
-                                     formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     epilog="""
+collect = subparsers.add_parser('collect', help='[-h] [--yes] [--check] [--only oem-bala-meta] [--since oem-bala-meta] [--skip "somerville,stella,sutton"] [--autopkgtest] platforms.json -o|--output meta-info.json',
+                                formatter_class=argparse.RawDescriptionHelpFormatter,
+                                epilog="""
 For example,
-    oem-meta-packages staging-copy platforms.json
+    oem-meta-packages collect platforms.json --output meta-info.json
+
+platforms.json:
 
 [
   {
@@ -112,18 +114,73 @@ For example,
   ...
 ]
 
-Compare with OEM metapackages in PPAs and staging archives and copy them into the corresponding staging archives.""")
-staging_copy.add_argument("json",
-                          help="Specify the json file to read the platforms information.",
-                          type=argparse.FileType('r', encoding='UTF-8'))
-staging_copy.add_argument("--since",
-                          help="Begin from the specified meta package. Skip previous meta packages.", type=str)
-staging_copy.add_argument("--skip",
-                          help="Skip some projects or some meta packages.", type=str, default="")
-staging_copy.add_argument("--only",
-                          help="Specified the only meta package to update. Skip others.", type=str)
-staging_copy.add_argument("--autopkgtest",
-                          help="Run autopkgtest when checking the git repository.", action="store_true")
+meta-info.json:
+
+{
+    "oem-somerville-beric-icl-meta": {
+        "devel_archive": "somerville-fossa-beric-icl-focal-devel",
+        "devel_version": "20.04ubuntu3",
+        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
+        "new_desc": "Dell Inspiron 3501, Vostro 3401/3501",
+        "old_desc": "Somerville Beric-Icl platform",
+        "ppa_archive": "somerville-fossa-beric-icl",
+        "ppa_version": "20.04ubuntu3",
+        "staging_archive": "somerville-fossa-beric-icl-focal-staging",
+        "staging_version": "20.04ubuntu3"
+    },
+    ...
+    "oem-stella.cmit-butterfree-meta": {
+        "devel_archive": "stella-cmit-ouagadougou-focal-devel",
+        "devel_version": "20.04ubuntu2",
+        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
+        "new_desc": "",
+        "old_desc": "",
+        "ppa_archive": "stella-cmit-ouagadougou",
+        "ppa_version": "20.04ubuntu2",
+        "staging_archive": "stella-cmit-ouagadougou-focal-staging",
+        "staging_version": "20.04ubuntu2"
+    },
+    ...
+    "oem-sutton.simon-addison-meta": {
+        "devel_archive": "sutton-simon-focal-devel",
+        "devel_version": "20.04ubuntu10",
+        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
+        "new_desc": "Lenovo ThinkPad P15 Gen 1, P15v Gen 1, P17 Gen 1, T15p Gen 1",
+        "old_desc": "Sutton Simon Addison platform",
+        "ppa_archive": "sutton-simon",
+        "ppa_version": "20.04ubuntu10",
+        "staging_archive": "sutton-simon-focal-staging",
+        "staging_version": "20.04ubuntu9"
+    },
+    ...
+}
+
+Collect the information of OEM metapackages in PPAs and devel/staging archives.
+
+You need to manually config the [private] section in ~/.config/oem-scripts/config.ini to use the private archives.
+
+For example,
+
+[private]
+username = UserName
+password = PassWord
+archive = https://cesg.canonical.com/canonical
+fingerprint = 54F1860295829CE3""")
+
+collect.add_argument("json",
+                     help="Specify the json file to read the platforms information.",
+                     type=argparse.FileType('r', encoding='UTF-8'))
+collect.add_argument("-o", "--output", required=True,
+                     help="Specify a filename to write the meta information.",
+                     type=argparse.FileType('w', encoding='UTF-8'))
+collect.add_argument("--since",
+                     help="Begin from the specified meta package. Skip previous meta packages.", type=str)
+collect.add_argument("--skip",
+                     help="Skip some projects or some meta packages.", type=str, default="")
+collect.add_argument("--only",
+                     help="Specified the only meta package to update. Skip others.", type=str)
+collect.add_argument("--autopkgtest",
+                     help="Run autopkgtest when checking the git repository.", action="store_true")
 
 list_pkg = subparsers.add_parser('list', help='[-h]',
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1142,7 +1199,7 @@ elif args.subcommand == 'update':
     if args.skip:
         args.skip = args.skip.split(',')
     process_update_task(args.check, args.json)
-elif args.subcommand == 'staging-copy':
+elif args.subcommand == 'collect':
     oem_scripts_config_ini = os.path.join(os.environ["HOME"],
                                           ".config/oem-scripts/config.ini")
     oem_scripts_config = ConfigParser()
@@ -1150,5 +1207,7 @@ elif args.subcommand == 'staging-copy':
     config = oem_scripts_config['private']
     r = requests.get(config['archive'] + "/dists/", auth=(config['username'], config['password']))
     pkgInfo = collect_pkg_info(args.json, check_private=True, index=r.text, config=config)
+    args.output.write(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
+    args.output.write("\n")
 else:
     parser.print_help()

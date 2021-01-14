@@ -34,3 +34,6 @@ export LAUNCHPAD_API="https://api.launchpad.net/"
 oem-meta-packages update --check platforms.json
 
 oem-meta-packages --quiet list
+
+oem-meta-packages collect /home/sylee/projects/python-samples/sheets/quickstart/platforms.json -o meta-info.json
+cat meta-info.json
