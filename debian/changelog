@@ -1,3 +1,11 @@
+oem-scripts (0.76) UNRELEASED; urgency=medium
+
+  * oem-meta-packages: Add 'collect' subcommand to generate metapackages info.
+  * oem-meta-packages: Refactor 'update' subcommand to process metapackages info.
+  * setup-apt-dir.sh: Add '--apt-dir', '--extra-repo' and '--extra-key' options.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 14 Jan 2021 14:04:41 +0800
+
 oem-scripts (0.75) focal; urgency=medium
 
   * oem-meta-packages,
