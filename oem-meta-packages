@@ -26,10 +26,12 @@ import lazr
 import oem_scripts
 import os
 import re
+import requests
 import subprocess
 import types
 
 from apt import apt_pkg
+from configparser import ConfigParser
 from dataclasses import dataclass
 from logging import debug, info, warning, error, critical
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
@@ -46,14 +48,19 @@ class DataJSONEncoder(json.JSONEncoder):
 
 @dataclass
 class PkgInfo:
-    archive: str
-    version: str
+    ppa_archive: str
+    ppa_version: str
     old_desc: str
     new_desc: str
     fingerprint: str
+    staging_archive: str
+    staging_version: str
+    devel_archive: str
+    devel_version: str
 
 
 pattern = re.compile(r'oem-([^-]*)-(.*)-meta')
+staging_pattern = re.compile(r'.*>(.*)/</a>')
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-d", "--debug",
@@ -66,7 +73,110 @@ parser.add_argument("--apt-dir",
                     type=str,
                     help="specify the dir for apt")
 
+
 subparsers = parser.add_subparsers(dest="subcommand")
+
+collect = subparsers.add_parser('collect', help='[-h] [--yes] [--check] [--only oem-bala-meta] [--skip "somerville,stella,sutton"] platforms.json -o|--output meta-info.json',
+                                formatter_class=argparse.RawDescriptionHelpFormatter,
+                                epilog="""
+For example,
+    oem-meta-packages collect platforms.json --output meta-info.json
+
+platforms.json:
+
+[
+  {
+    "Customer": "Dell",
+    "Group": "N/A",
+    "Codename": "fossa-beric-icl",
+    "Platform": "Bullseye V3 14 ICL-U(SMB0)",
+    "MarketName": "Vostro 3401",
+    "PlatformLPTag": "fossa-beric-icl"
+  },
+  ...
+  {
+    "Customer": "HP",
+    "Group": "cmit",
+    "Codename": "butterfree",
+    "Platform": "Bugle-R",
+    "MarketName": "ProDesk 600 G5 SFF",
+    "PlatformLPTag": "stella-bugle-r"
+  },
+  ...
+  {
+    "Customer": "Lenovo",
+    "Group": "simon",
+    "Codename": "Addison",
+    "Platform": "Simon",
+    "MarketName": "ThinkPad P17 Gen 1",
+    "PlatformLPTag": "Addison"
+  },
+  ...
+]
+
+meta-info.json:
+
+{
+    "oem-somerville-beric-icl-meta": {
+        "devel_archive": "somerville-fossa-beric-icl-focal-devel",
+        "devel_version": "20.04ubuntu3",
+        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
+        "new_desc": "Dell Inspiron 3501, Vostro 3401/3501",
+        "old_desc": "Somerville Beric-Icl platform",
+        "ppa_archive": "somerville-fossa-beric-icl",
+        "ppa_version": "20.04ubuntu3",
+        "staging_archive": "somerville-fossa-beric-icl-focal-staging",
+        "staging_version": "20.04ubuntu3"
+    },
+    ...
+    "oem-stella.cmit-butterfree-meta": {
+        "devel_archive": "stella-cmit-ouagadougou-focal-devel",
+        "devel_version": "20.04ubuntu2",
+        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
+        "new_desc": "",
+        "old_desc": "",
+        "ppa_archive": "stella-cmit-ouagadougou",
+        "ppa_version": "20.04ubuntu2",
+        "staging_archive": "stella-cmit-ouagadougou-focal-staging",
+        "staging_version": "20.04ubuntu2"
+    },
+    ...
+    "oem-sutton.simon-addison-meta": {
+        "devel_archive": "sutton-simon-focal-devel",
+        "devel_version": "20.04ubuntu10",
+        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
+        "new_desc": "Lenovo ThinkPad P15 Gen 1, P15v Gen 1, P17 Gen 1, T15p Gen 1",
+        "old_desc": "Sutton Simon Addison platform",
+        "ppa_archive": "sutton-simon",
+        "ppa_version": "20.04ubuntu10",
+        "staging_archive": "sutton-simon-focal-staging",
+        "staging_version": "20.04ubuntu9"
+    },
+    ...
+}
+
+Collect the information of OEM metapackages in PPAs and devel/staging archives.
+
+You need to manually config the [private] section in ~/.config/oem-scripts/config.ini to use the private archives.
+
+For example,
+
+[private]
+username = UserName
+password = PassWord
+archive = https://cesg.canonical.com/canonical
+fingerprint = 54F1860295829CE3""")
+
+collect.add_argument("json",
+                     help="Specify the json file to read the platforms information.",
+                     type=argparse.FileType('r', encoding='UTF-8'))
+collect.add_argument("-o", "--output", required=True,
+                     help="Specify a filename to write the meta information.",
+                     type=argparse.FileType('w', encoding='UTF-8'))
+collect.add_argument("--skip",
+                     help="Skip some projects or some meta packages.", type=str, default="")
+collect.add_argument("--only",
+                     help="Specified the only meta package to update. Skip others.", type=str)
 
 list_pkg = subparsers.add_parser('list', help='[-h]',
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -100,57 +210,62 @@ unsubscribe.add_argument("pkgName", type=str,
 unsubscribe.add_argument("--yes",
                          help="Say yes for all prompts.", action="store_true")
 
-update = subparsers.add_parser('update', help='[-h] [--yes] [--check] [--only oem-bala-meta] [--since oem-bala-meta] [--skip "somerville,stella,sutton"] [--autopkgtest] json',
+update = subparsers.add_parser('update', help='[-h] [--yes] [--check] [--since oem-bala-meta] [--autopkgtest] meta-info.json',
                                formatter_class=argparse.RawDescriptionHelpFormatter,
                                epilog="""
 For example,
-    oem-meta-packages update --check platforms.json
+    oem-meta-packages update --check meta-info.json
 
-[
-  {
-    "Customer": "Dell",
-    "Group": "N/A",
-    "Codename": "fossa-beric-icl",
-    "Platform": "Bullseye V3 14 ICL-U(SMB0)",
-    "MarketName": "Vostro 3401",
-    "PlatformLPTag": "fossa-beric-icl"
-  },
-  ...
-  {
-    "Customer": "HP",
-    "Group": "cmit",
-    "Codename": "butterfree",
-    "Platform": "Bugle-R",
-    "MarketName": "ProDesk 600 G5 SFF",
-    "PlatformLPTag": "stella-bugle-r"
-  },
-  ...
-  {
-    "Customer": "Lenovo",
-    "Group": "simon",
-    "Codename": "Addison",
-    "Platform": "Simon",
-    "MarketName": "ThinkPad P17 Gen 1",
-    "PlatformLPTag": "Addison"
-  },
-  ...
-]
+{
+    "oem-somerville-beric-icl-meta": {
+        "devel_archive": "somerville-fossa-beric-icl-focal-devel",
+        "devel_version": "20.04ubuntu3",
+        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
+        "new_desc": "Dell Inspiron 3501, Vostro 3401/3501",
+        "old_desc": "Somerville Beric-Icl platform",
+        "ppa_archive": "somerville-fossa-beric-icl",
+        "ppa_version": "20.04ubuntu3",
+        "staging_archive": "somerville-fossa-beric-icl-focal-staging",
+        "staging_version": "20.04ubuntu3"
+    },
+    ...
+    "oem-stella.cmit-butterfree-meta": {
+        "devel_archive": "stella-cmit-ouagadougou-focal-devel",
+        "devel_version": "20.04ubuntu2",
+        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
+        "new_desc": "",
+        "old_desc": "",
+        "ppa_archive": "stella-cmit-ouagadougou",
+        "ppa_version": "20.04ubuntu2",
+        "staging_archive": "stella-cmit-ouagadougou-focal-staging",
+        "staging_version": "20.04ubuntu2"
+    },
+    ...
+    "oem-sutton.simon-addison-meta": {
+        "devel_archive": "sutton-simon-focal-devel",
+        "devel_version": "20.04ubuntu10",
+        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
+        "new_desc": "Lenovo ThinkPad P15 Gen 1, P15v Gen 1, P17 Gen 1, T15p Gen 1",
+        "old_desc": "Sutton Simon Addison platform",
+        "ppa_archive": "sutton-simon",
+        "ppa_version": "20.04ubuntu10",
+        "staging_archive": "sutton-simon-focal-staging",
+        "staging_version": "20.04ubuntu9"
+    },
+    ...
+}
 
 Update the market name and the kernel flavour of the OEM meta package to the default kernel flavour, i.e. linux-generic-hwe-20.04.""")
 update.add_argument("--yes",
                     help="Say yes for all prompts.", action="store_true")
 update.add_argument("--check",
                     help="Just check and don't ask any question.", action="store_true")
-update.add_argument("--autopkgtest",
-                    help="Run autopkgtest when checking the git repository.", action="store_true")
 update.add_argument("--since",
                     help="Begin from the specified meta package. Skip previous meta packages.", type=str)
-update.add_argument("--skip",
-                    help="Skip some projects or some meta packages.", type=str, default="")
-update.add_argument("--only",
-                    help="Specified the only meta package to update. Skip others.", type=str)
+update.add_argument("--autopkgtest",
+                    help="Run autopkgtest when checking the git repository.", action="store_true")
 update.add_argument("json",
-                    help="Specify the json file to read the platforms information.",
+                    help="Specify the json file to read the meta information.",
                     type=argparse.FileType('r', encoding='UTF-8'))
 
 args = parser.parse_args()
@@ -204,8 +319,9 @@ def _debug_obj(pkg) -> None:
                 debug(f"{attr}: {pkg.__getattribute__(attr)}")
 
 
-def _run_command(command: list or tuple, returncode=(0,), env=None) -> (str, str, int):
-    debug("$ " + " ".join(command))
+def _run_command(command: list or tuple, returncode=(0,), env=None, silent=False) -> (str, str, int):
+    if not silent:
+        debug("$ " + " ".join(command))
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     out, err = proc.communicate()
 
@@ -222,10 +338,11 @@ def _run_command(command: list or tuple, returncode=(0,), env=None) -> (str, str
             critical(err)
         exit(1)
 
-    if out:
-        debug(out)
-    if err:
-        debug(err)
+    if not silent:
+        if out:
+            debug(out)
+        if err:
+            debug(err)
 
     return (out, err, proc.returncode)
 
@@ -526,14 +643,13 @@ def search_ppa_and_version(project: str, group: str, platform: str, pkg_name: st
             archive = oem_archive.getPPAByName(name=f"{project}-{group}-ouagadougou")
         except lazr.restfulclient.errors.NotFound:
             archive = oem_archive.getPPAByName(name=f"{project}-{group}")
-    if args.autopkgtest:
+    source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
+    while f"oem-archive/{archive.name}/ubuntu" not in source_lists:
+        info(f"Subscribing ppa:oem-archive/{archive.name}")
+        archive.newSubscription(subscriber=lp.me)
+        archive.lp_save()
+        _run_command(["get-private-ppa", f"ppa:oem-archive/{archive.name}"])
         source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
-        while f"oem-archive/{archive.name}/ubuntu" not in source_lists:
-            info(f"Subscribing ppa:oem-archive/{archive.name}")
-            archive.newSubscription(subscriber=lp.me)
-            archive.lp_save()
-            _run_command(["get-private-ppa", f"ppa:oem-archive/{archive.name}"])
-            source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
     sources = archive.getPublishedSources()
     fingerprint = archive.signing_key_fingerprint
     version = ""
@@ -572,16 +688,60 @@ def get_debian_version_from_git(pkg_name: str, bootstrap=False) -> str:
         else:
             branch = f"{platform}-focal-oem"
 
-    git_command = ("git", "clone", "--depth", "1", "-b", branch, f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta", pkg_name)
+    wget_changelog_command = ("wget", '-q', "-O", "changelog",
+                              f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta/plain/debian/changelog?h={branch}")
 
     with TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
-        _run_command(git_command)
-        version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"{pkg_name}/debian/changelog"])
+        _run_command(wget_changelog_command)
+        version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"changelog"])
         return version
 
 
-def process_update_task(check_only: bool, data) -> None:
+def search_archive(pkg_name: str, project: str, platform: str, index: str, config: str, branch: str) -> tuple:
+    domain = config['archive'].split("://")[1].split("/")[0]
+    archive = None
+    version = None
+    for line in index.split('\n'):
+        if project in line and platform in line and f'focal-{branch}' in line:
+            result = staging_pattern.match(line)
+            if result:
+                archive = result.group(1)
+    with TemporaryDirectory() as tmpdir:
+        os.chdir(tmpdir)
+        source_line = config['archive'].replace("https://", f"https://{config['username']}:{config['password']}@")
+        _run_command(['setup-apt-dir.sh',
+                      '-c', 'focal',
+                      '--apt-dir', tmpdir,
+                      '--extra-key', config['fingerprint'],
+                      '--extra-repo', f"deb [signed-by={tmpdir}/{config['fingerprint']}.pub arch=amd64] {source_line} {archive} public"],
+                     silent=True)
+        output, _, _ = _run_command(['pkg-list', '-v', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
+        for line in output.split('\n'):
+            if pkg_name in line and domain in line:
+                version = line.split(' ')[1]
+                break
+    if version is None and project == "somerville":
+        archive = f"somerville-focal-{branch}"
+        with TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
+            source_line = config['archive'].replace("https://", f"https://{config['username']}:{config['password']}@")
+            _run_command(['setup-apt-dir.sh',
+                          '-c', 'focal',
+                          '--apt-dir', tmpdir,
+                          '--extra-key', config['fingerprint'],
+                          '--extra-repo', f"deb [signed-by={tmpdir}/{config['fingerprint']}.pub arch=amd64] {source_line} {archive} public"],
+                         silent=True)
+            output, _, _ = _run_command(['pkg-list', '-v', '--apt-dir', tmpdir, pkg_name], silent=True)
+            for line in output.split('\n'):
+                if pkg_name in line and domain in line:
+                    version = line.split(' ')[1]
+                    break
+
+    return (archive, version)
+
+
+def collect_pkg_info(data, check_private: bool = False, index=None, config=None) -> dict:
     somerville = dict()
     stella = dict()
     sutton = dict()
@@ -622,18 +782,22 @@ def process_update_task(check_only: bool, data) -> None:
     pkgInfo = dict()
     dirty = False
 
-    info("Finding the corresponding PPAs...")
-    for k, v in somerville.items():
-        pkg_name = 'oem-somerville-' + k + '-meta'
+    if check_private:
+        info("Finding the corresponding PPAs and private archives...")
+    else:
+        info("Finding the corresponding PPAs...")
+
+    for codename, v in somerville.items():
+        pkg_name = 'oem-somerville-' + codename + '-meta'
         if args.only and pkg_name != args.only:
             warning(f"Skip {pkg_name}")
             continue
         if pkg_name in args.skip:
             warning(f"Skip {pkg_name}")
             continue
-        archive, version, fingerprint = search_ppa_and_version("somerville", None, k, pkg_name)
+        archive, version, fingerprint = search_ppa_and_version("somerville", None, codename, pkg_name)
         if archive is None:
-            archive, version, fingerprint = search_ppa_and_version("somerville", None, k, pkg_name, "somerville")
+            archive, version, fingerprint = search_ppa_and_version("somerville", None, codename, pkg_name, "somerville")
         if archive is None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
@@ -642,15 +806,35 @@ def process_update_task(check_only: bool, data) -> None:
         if version != debian_version:
             dirty = True
             critical(f"{pkg_name}'s version in Git is {debian_version}, but the version in ppa:oem-archive/{archive} is {version}.")
+        info(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
 
-        debug(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
-        pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="", fingerprint=fingerprint)
+        pkgInfo[pkg_name] = PkgInfo(ppa_archive=archive, ppa_version=version,
+                                    old_desc="", new_desc="", fingerprint=fingerprint,
+                                    staging_archive="", staging_version="",
+                                    devel_archive="", devel_version="")
+
+        if check_private:
+            staging_archive, staging_version = search_archive(pkg_name, "somerville", codename, index, config, branch="staging")
+            if staging_version:
+                info(f"{pkg_name} {staging_version} exists in {staging_archive}.")
+                pkgInfo[pkg_name].staging_archive = staging_archive
+                pkgInfo[pkg_name].staging_version = staging_version
+            else:
+                debug(f"{pkg_name} doesn't exist in {staging_archive} yet.")
+
+            devel_archive, devel_version = search_archive(pkg_name, "somerville", codename, index, config, branch="devel")
+            if devel_version:
+                info(f"{pkg_name} {devel_version} exists in {devel_archive}.")
+                pkgInfo[pkg_name].devel_archive = devel_archive
+                pkgInfo[pkg_name].devel_version = devel_version
+            else:
+                debug(f"{pkg_name} doesn't exist in {devel_archive} yet.")
 
         if pkg_name in pkgNamesInArchive and ''.join(v):
             new_desc = _grouping_market_names(v)
             if "Dell" not in new_desc:
                 new_desc = "Dell " + new_desc
-            pkgInfo[pkg_name].old_desc = f"Somerville {k.title()} platform"
+            pkgInfo[pkg_name].old_desc = f"Somerville {codename.title()} platform"
             pkgInfo[pkg_name].new_desc = new_desc
 
     for k, v in stella.items():
@@ -672,9 +856,29 @@ def process_update_task(check_only: bool, data) -> None:
         if version != debian_version:
             dirty = True
             critical(f"{pkg_name}'s version in Git is {debian_version}, but the version in ppa:oem-archive/{archive} is {version}.")
+        info(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
 
-        debug(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
-        pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="", fingerprint=fingerprint)
+        pkgInfo[pkg_name] = PkgInfo(ppa_archive=archive, ppa_version=version,
+                                    old_desc="", new_desc="", fingerprint=fingerprint,
+                                    staging_archive="", staging_version="",
+                                    devel_archive="", devel_version="")
+
+        if check_private:
+            staging_archive, staging_version = search_archive(pkg_name, "stella", group, index, config, branch="staging")
+            if staging_version:
+                info(f"{pkg_name} {staging_version} exists in {staging_archive}.")
+                pkgInfo[pkg_name].staging_archive = staging_archive
+                pkgInfo[pkg_name].staging_version = staging_version
+            else:
+                debug(f"{pkg_name} doesn't exist in {staging_archive} yet.")
+
+            devel_archive, devel_version = search_archive(pkg_name, "stella", group, index, config, branch="devel")
+            if devel_version:
+                info(f"{pkg_name} {devel_version} exists in {devel_archive}.")
+                pkgInfo[pkg_name].devel_archive = devel_archive
+                pkgInfo[pkg_name].devel_version = devel_version
+            else:
+                debug(f"{pkg_name} doesn't exist in {devel_archive} yet.")
 
         if pkg_name in pkgNamesInArchive and ''.join(v):
             new_desc = _grouping_market_names(v, maxsplit=2)
@@ -702,9 +906,29 @@ def process_update_task(check_only: bool, data) -> None:
         if version != debian_version:
             dirty = True
             critical(f"{pkg_name}'s version in Git is {debian_version}, but the version in ppa:oem-archive/{archive} is {version}.")
+        info(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
 
-        debug(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
-        pkgInfo[pkg_name] = PkgInfo(archive=archive, version=version, old_desc="", new_desc="", fingerprint=fingerprint)
+        pkgInfo[pkg_name] = PkgInfo(ppa_archive=archive, ppa_version=version,
+                                    old_desc="", new_desc="", fingerprint=fingerprint,
+                                    staging_archive="", staging_version="",
+                                    devel_archive="", devel_version="")
+
+        if check_private:
+            staging_archive, staging_version = search_archive(pkg_name, "sutton", group, index, config, branch="staging")
+            if staging_version:
+                info(f"{pkg_name} {staging_version} exists in {staging_archive}.")
+                pkgInfo[pkg_name].staging_archive = staging_archive
+                pkgInfo[pkg_name].staging_version = staging_version
+            else:
+                debug(f"{pkg_name} doesn't exist in {staging_archive} yet.")
+
+            devel_archive, devel_version = search_archive(pkg_name, "sutton", group, index, config, branch="devel")
+            if devel_version:
+                info(f"{pkg_name} {devel_version} exists in {devel_archive}.")
+                pkgInfo[pkg_name].devel_archive = devel_archive
+                pkgInfo[pkg_name].devel_version = devel_version
+            else:
+                debug(f"{pkg_name} doesn't exist in {devel_archive} yet.")
 
         if pkg_name in pkgNamesInArchive and ''.join(v):
             new_desc = _grouping_market_names(v)
@@ -717,6 +941,25 @@ def process_update_task(check_only: bool, data) -> None:
 
     if dirty:
         exit(1)
+
+    return pkgInfo
+
+
+def process_update_task(check_only: bool, data) -> None:
+    pkgInfo = dict()
+    data = json.load(data)
+    for meta in data.keys():
+        pkgInfo[meta] = PkgInfo(ppa_archive=data[meta]['ppa_archive'],
+                                ppa_version=data[meta]['ppa_version'],
+                                old_desc=data[meta]['old_desc'],
+                                new_desc=data[meta]['new_desc'],
+                                fingerprint=data[meta]['fingerprint'],
+                                staging_archive=data[meta]['staging_archive'],
+                                staging_version=data[meta]['staging_version'],
+                                devel_archive=data[meta]['devel_archive'],
+                                devel_version=data[meta]['devel_version'])
+
+    debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
 
     for pkg_name in sorted(pkgInfo.keys()):
         if args.since:
@@ -759,9 +1002,9 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool, check_
         messages = list()
         os.chdir(tmpdir)
         _run_command(git_command)
-        version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"{pkg_name}/debian/changelog"])
-        if version != pkg_info.version:
-            critical(f"{pkg_name}'s version is {pkg_info.version} in ppa:oem-archive/{pkg_info.archive} but the version in Git repository is {version}.")
+        git_version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"{pkg_name}/debian/changelog"])
+        if git_version != pkg_info.ppa_version:
+            critical(f"{pkg_name}'s version is {pkg_info.ppa_version} in ppa:oem-archive/{pkg_info.ppa_archive} but the version in Git repository is {git_version}.")
             exit(1)
         git_dir = os.path.join(tmpdir, pkg_name)
 
@@ -804,7 +1047,7 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool, check_
                 source_list = f.read().strip()
 
             archives = set()
-            archives.add(pkg_info.archive)
+            archives.add(pkg_info.ppa_archive)
 
             if project == 'somerville':
                 common_archive = oem_archive.getPPAByName(name=project)
@@ -906,10 +1149,10 @@ END
             warning(f"({pkg_name}:{branch}) $ git show")
             print(out)
             version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"debian/changelog"])
-            if not check_only and yes_or_ask(args.yes, f"Would you like to commit and push the changes of {version} into {pkg_name}'s {branch} branch, and dput Debian source package into ppa:oem-archive/{pkg_info.archive}?"):
+            if not check_only and yes_or_ask(args.yes, f"Would you like to commit and push the changes of {version} into {pkg_name}'s {branch} branch, and dput Debian source package into ppa:oem-archive/{pkg_info.ppa_archive}?"):
                 os.chdir(os.path.join(git_dir, '..'))
                 _run_command(['debsign', f'{pkg_name}_{version}_source.changes'])
-                _run_command(['dput', f'ppa:oem-archive/{pkg_info.archive}', f'{pkg_name}_{version}_source.changes'])
+                _run_command(['dput', f'ppa:oem-archive/{pkg_info.ppa_archive}', f'{pkg_name}_{version}_source.changes'])
                 os.chdir(git_dir)
                 _run_command(['git', 'remote', 'add', 'oem-solutions-engineers', f"git+ssh://{lp.me.name}@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta"])
                 _run_command(['git', 'push', 'oem-solutions-engineers'])
@@ -966,8 +1209,16 @@ elif args.subcommand == 'unsubscribe':
                     exit(1)
             exit(0)
 elif args.subcommand == 'update':
-    if args.skip:
-        args.skip = args.skip.split(',')
     process_update_task(args.check, args.json)
+elif args.subcommand == 'collect':
+    oem_scripts_config_ini = os.path.join(os.environ["HOME"],
+                                          ".config/oem-scripts/config.ini")
+    oem_scripts_config = ConfigParser()
+    oem_scripts_config.read(oem_scripts_config_ini)
+    config = oem_scripts_config['private']
+    r = requests.get(config['archive'] + "/dists/", auth=(config['username'], config['password']))
+    pkgInfo = collect_pkg_info(args.json, check_private=True, index=r.text, config=config)
+    args.output.write(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
+    args.output.write("\n")
 else:
     parser.print_help()

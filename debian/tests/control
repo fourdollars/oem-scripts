@@ -13,4 +13,4 @@ Restrictions: allow-stderr
 
 Tests: mir-bug-verification
 Depends: @
-Restrictions: needs-root, isolation-machine
+Restrictions: needs-root
