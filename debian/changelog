@@ -1,3 +1,9 @@
+oem-scripts (0.77) UNRELEASED; urgency=medium
+
+  * oem-meta-packages: Add 'staging-copy' subcommand.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 15 Jan 2021 17:48:06 +0800
+
 oem-scripts (0.76) focal; urgency=medium
 
   * oem-meta-packages: Add 'collect' subcommand to generate metapackages info.
