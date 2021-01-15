@@ -64,11 +64,11 @@ OPTIONS:
  --apt-dir APT-DIR
       If not specified, it will generate one.
 
- --extra-repo
-      Provide an additional line to be appended to sources.list, e.g.:
+ --extra-repo REPO_SPEC
+      Provide an additional line (REPO_SPEC) to be appended to sources.list, e.g.:
          'deb <URL> <distrib> <components>'
 
- --extra-key
+ --extra-key APT_GPG_KEY
       Provide an additional GPG fingerprint to be imported and used by --extra-repo.
 
  --ppa ppa:whatever/you-like
