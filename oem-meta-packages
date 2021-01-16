@@ -235,7 +235,7 @@ unsubscribe.add_argument("pkgName", type=str,
 unsubscribe.add_argument("--yes",
                          help="Say yes for all prompts.", action="store_true")
 
-staging_copy = subparsers.add_parser('staging-copy', help='[-h] [--yes] meta-info.json',
+staging_copy = subparsers.add_parser('staging-copy', help='[-h] [--yes] [--dryrun] [--ignore] meta-info.json',
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog="""
 For example,
@@ -289,6 +289,8 @@ staging_copy.add_argument("--yes",
                           help="Say yes for all prompts.", action="store_true")
 staging_copy.add_argument("--dryrun",
                           help="Just dryrun and don't ask any question.", action="store_true")
+staging_copy.add_argument("--ignore",
+                          help="Ignore staging-lock bugs.", action="store_true")
 
 update = subparsers.add_parser('update', help='[-h] [--yes] [--check] [--since oem-bala-meta] [--autopkgtest] meta-info.json',
                                formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1346,7 +1348,7 @@ elif args.subcommand == 'staging-copy':
                 staging_locked.add(staging)
     for job in jobs:
         source, dest = job.split(':')
-        if dest in staging_locked:
+        if dest in staging_locked and not args.ignore:
             warning(f"The following OEM metapackages will be skipped due to the staging-lock of {dest}.\n" + '\n'.join(jobs[job]))
         else:
             title = f"request of copy_package [{source}]"
