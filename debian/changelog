@@ -1,4 +1,4 @@
-oem-scripts (0.77) UNRELEASED; urgency=medium
+oem-scripts (0.77) focal; urgency=medium
 
   * oem-meta-packages: Add 'staging-copy' subcommand.
   * debian/tests/setup-apt-dir,
@@ -7,7 +7,7 @@ oem-scripts (0.77) UNRELEASED; urgency=medium
   * config.sh,
     debian/tests/setup-apt-dir: Use login anonymously to test.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 15 Jan 2021 17:48:06 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 19 Jan 2021 09:48:57 +0000
 
 oem-scripts (0.76) focal; urgency=medium
 
