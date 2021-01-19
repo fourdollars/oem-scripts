@@ -280,7 +280,7 @@ For example,
     ...
 }
 
-Copy the meta package into the staging archive.""")
+Copy the meta package from the devel archive into the staging archive.""")
 
 staging_copy.add_argument("json",
                           help="Specify the json file to read the meta information.",
