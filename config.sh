@@ -6,6 +6,8 @@ valid_oem_scripts_config ()
 {
     if [ -f "$CONFIG" ] && grep "^oauth_consumer_key = " "$CONFIG" >/dev/null 2>&1; then
         true
+    elif [ -n "$LAUNCHPAD_TOKEN" ]; then
+        true
     else
         false
     fi
