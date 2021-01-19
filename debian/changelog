@@ -4,6 +4,8 @@ oem-scripts (0.77) UNRELEASED; urgency=medium
   * debian/tests/setup-apt-dir,
     setup-apt-dir.sh: Add --disable-updates and --disable-backports to disable
     updates and backports channels.
+  * config.sh,
+    debian/tests/setup-apt-dir: Use login anonymously to test.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 15 Jan 2021 17:48:06 +0800
 

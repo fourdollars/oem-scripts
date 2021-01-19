@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export LAUNCHPAD_TOKEN="::"
+
 setup-apt-dir.sh -c focal -m http://archive.ubuntu.com/ubuntu --disable-updates --disable-backports -o aptdir.log
 if [ ! -e aptdir.log ]; then
     echo "aptdir.log doesn't exist."
@@ -12,7 +14,7 @@ if [ "$(apt-cache -o "Dir=$APTDIR" -o "Dir::State::status=$APTDIR/var/lib/dpkg/s
     exit 1
 fi
 
-if apt-cache -o "Dir=$APTDIR" -o "Dir::State::status=$APTDIR/var/lib/dpkg/status" show ibus-typing-booster; then
+if apt-cache -o "Dir=$APTDIR" -o "Dir::State::status=$APTDIR/var/lib/dpkg/status" show ibus-typing-booster >/dev/null 2>&1; then
     echo "ibus-typing-booster only exists in focal-backports. It should not be found."
     exit 1
 fi
