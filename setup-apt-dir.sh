@@ -28,10 +28,12 @@ DEBUG=
 KEYS=()
 LISTS=()
 MIRROR=
+NO_UPDATES=
+NO_BACKPORTS=
 OUTPUT=
 PPA=()
 PROPOSED=
-OPTS="$(getopt -o c:dho:pm: --long apt-dir:,codename:,debug,help,output:,proposed,ppa:,mirror:,extra-repo:,extra-key: -n 'setup-apt-dir.sh' -- "$@")"
+OPTS="$(getopt -o c:dho:pm: --long apt-dir:,codename:,disable-updates,disable-backports,debug,help,output:,proposed,ppa:,mirror:,extra-repo:,extra-key: -n 'setup-apt-dir.sh' -- "$@")"
 eval set -- "${OPTS}"
 while :; do
     case "$1" in
@@ -51,6 +53,12 @@ OPTIONS:
 
  -c | --codename focal
       If not specified, it will use the output of \`lsb_release -c -s\`.
+
+ --disable-updates
+      Disable -updates channel.
+
+ --disable-backports
+      Disable -backports channel.
 
  -m | --mirror mirror://mirrors.ubuntu.com/mirrors.txt
       If not specified, it will use http://archive.ubuntu.com/ubuntu by default.
@@ -81,6 +89,12 @@ ENDLINE
         ('-c'|'--codename')
             CODENAME="$2"
             shift 2;;
+        ('--disable-updates')
+            NO_UPDATES=1
+            shift;;
+        ('--disable-backports')
+            NO_BACKPORTS=1
+            shift;;
         ('-o'|'--output')
             OUTPUT="$2"
             shift 2;;
@@ -140,9 +154,17 @@ PUBKEY="790BC7277767219C42C86F933B4FE6ACC0B21F32"
 
 cat > "$APTDIR/etc/apt/sources.list" <<ENDLINE
 deb [signed-by=$APTDIR/$PUBKEY.pub arch=amd64] $MIRROR $CODENAME main restricted universe multiverse
+ENDLINE
+if [ -z "$NO_UPDATES" ]; then
+    cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
 deb [signed-by=$APTDIR/$PUBKEY.pub arch=amd64] $MIRROR $CODENAME-updates main restricted universe multiverse
+ENDLINE
+fi
+if [ -z "$NO_BACKPORTS" ]; then
+    cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
 deb [signed-by=$APTDIR/$PUBKEY.pub arch=amd64] $MIRROR $CODENAME-backports main restricted universe multiverse
 ENDLINE
+fi
 if [ -n "$PROPOSED" ]; then
     echo "deb [signed-by=$APTDIR/$PUBKEY.pub arch=amd64] $MIRROR $CODENAME-proposed main restricted universe multiverse" >> "$APTDIR/etc/apt/sources.list"
 fi
