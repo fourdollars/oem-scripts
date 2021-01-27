@@ -2,8 +2,10 @@ oem-scripts (0.78) UNRELEASED; urgency=medium
 
   * oem-meta-packages,
     pkg-oem-meta: Improve to deal with the maintainer scripts and linux-oem-20.04b.
+  * debian/tests/oem-meta-packages,
+    oem-meta-packages: Refine for the usage of a single meta package.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 26 Jan 2021 20:39:22 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 27 Jan 2021 22:13:24 +0800
 
 oem-scripts (0.77) focal; urgency=medium
 

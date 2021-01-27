@@ -93,6 +93,16 @@ parser.add_argument("-q", "--quiet",
                     help="Don't print info messages", action="store_true")
 parser.add_argument("-v", "--verbose", action="store_true",
                     help="print verbose messages")
+parser.add_argument("--dry-run",
+                    help="Dry run the process.", action="store_true")
+parser.add_argument("--yes",
+                    help="Say yes for all prompts.", action="store_true")
+parser.add_argument("--skip",
+                    help="Skip some projects or some meta packages.", type=str, default="")
+parser.add_argument("--only",
+                    help="Specified the meta package. Skip others.", type=str)
+parser.add_argument("--since",
+                    help="Begin from the specified meta package. Skip previous meta packages.", type=str)
 parser.add_argument("--apt-dir",
                     type=str,
                     help="specify the dir for apt")
@@ -100,7 +110,7 @@ parser.add_argument("--apt-dir",
 
 subparsers = parser.add_subparsers(dest="subcommand")
 
-collect = subparsers.add_parser('collect', help='[-h] [--yes] [--check] [--only oem-bala-meta] [--skip "somerville,stella,sutton"] platforms.json -o|--output meta-info.json',
+collect = subparsers.add_parser('collect', help='[-h] platforms.json -o|--output meta-info.json',
                                 formatter_class=argparse.RawDescriptionHelpFormatter,
                                 epilog="""
 For example,
@@ -198,16 +208,12 @@ collect.add_argument("json",
 collect.add_argument("-o", "--output", required=True,
                      help="Specify a filename to write the meta information.",
                      type=argparse.FileType('w', encoding='UTF-8'))
-collect.add_argument("--skip",
-                     help="Skip some projects or some meta packages.", type=str, default="")
-collect.add_argument("--only",
-                     help="Specified the only meta package to update. Skip others.", type=str)
 
 list_pkg = subparsers.add_parser('list', help='[-h]',
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
                                  epilog="List all OEM meta packages in Ubuntu archive.")
 
-subscribe = subparsers.add_parser('subscribe', help='[-h] [--yes]',
+subscribe = subparsers.add_parser('subscribe', help='[-h]',
                                   formatter_class=argparse.RawDescriptionHelpFormatter,
                                   epilog="""
 Make all bugs of all oem meta packages be subscribed by oem-solutions-engineers.
@@ -219,10 +225,8 @@ Make all bugs of all oem meta packages be subscribed by oem-solutions-engineers.
 
 Check "To all bugs in oem-qemu-meta in Ubuntu:" on https://launchpad.net/ubuntu/+source/oem-qemu-meta/+subscribe for example.
 """)
-subscribe.add_argument("--yes",
-                       help="Say yes for all prompts.", action="store_true")
 
-unsubscribe = subparsers.add_parser('unsubscribe', help='[-h] [--yes] pkgName',
+unsubscribe = subparsers.add_parser('unsubscribe', help='[-h] pkgName',
                                     formatter_class=argparse.RawDescriptionHelpFormatter,
                                     epilog="""
 Unsubscribe oem-solutions-engineers from oem-qemu-meta
@@ -232,14 +236,14 @@ For example,
 """)
 unsubscribe.add_argument("pkgName", type=str,
                          help="Specify the package name to unsubscribe.")
-unsubscribe.add_argument("--yes",
-                         help="Say yes for all prompts.", action="store_true")
 
-staging_copy = subparsers.add_parser('staging-copy', help='[-h] [--yes] [--dryrun] [--ignore] meta-info.json',
+staging_copy = subparsers.add_parser('staging-copy', help='[-h] [--ignore-staging-lock] --json meta-info.json | --meta oem-qemu-meta',
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog="""
 For example,
-    oem-meta-packages staging-copy --check meta-info.json
+    oem-meta-packages --dry-run staging-copy --meta oem-qemu-meta
+    or
+    oem-meta-packages --dry-run staging-copy --json meta-info.json
 
 {
     "oem-somerville-beric-icl-meta": {
@@ -282,21 +286,21 @@ For example,
 
 Copy the meta package from the devel archive into the staging archive.""")
 
-staging_copy.add_argument("json",
+staging_copy.add_argument("--json",
                           help="Specify the json file to read the meta information.",
                           type=argparse.FileType('r', encoding='UTF-8'))
-staging_copy.add_argument("--yes",
-                          help="Say yes for all prompts.", action="store_true")
-staging_copy.add_argument("--dryrun",
-                          help="Just dryrun and don't ask any question.", action="store_true")
-staging_copy.add_argument("--ignore",
-                          help="Ignore staging-lock bugs.", action="store_true")
+staging_copy.add_argument("--meta",
+                          help="Specify the meta package to copy.")
+staging_copy.add_argument("--ignore-staging-lock",
+                          help="Ignore the staging-lock tag.", action="store_true")
 
-update = subparsers.add_parser('update', help='[-h] [--yes] [--check] [--since oem-bala-meta] [--autopkgtest] meta-info.json',
+update = subparsers.add_parser('update', help='[-h] [--autopkgtest] --json meta-info.json | --meta oem-qemu-meta',
                                formatter_class=argparse.RawDescriptionHelpFormatter,
                                epilog="""
 For example,
-    oem-meta-packages update --check meta-info.json
+    oem-meta-packages --dry-run update --meta oem-qemu-meta --kernel linux-oem-20.04
+    or
+    oem-meta-packages --dry-run update --json meta-info.json
 
 {
     "oem-somerville-beric-icl-meta": {
@@ -338,17 +342,14 @@ For example,
 }
 
 Update the market name and the kernel flavour of the OEM meta package to the default kernel flavour, i.e. linux-generic-hwe-20.04.""")
-update.add_argument("--yes",
-                    help="Say yes for all prompts.", action="store_true")
-update.add_argument("--check",
-                    help="Just check and don't ask any question.", action="store_true")
-update.add_argument("--since",
-                    help="Begin from the specified meta package. Skip previous meta packages.", type=str)
-update.add_argument("--autopkgtest",
-                    help="Run autopkgtest when checking the git repository.", action="store_true")
-update.add_argument("json",
-                    help="Specify the json file to read the meta information.",
-                    type=argparse.FileType('r', encoding='UTF-8'))
+update.add_argument("--autopkgtest", action="store_true",
+                    help="Run autopkgtest when checking the git repository.")
+update.add_argument("--json", type=argparse.FileType('r', encoding='UTF-8'),
+                    help="Specify the json file to read the meta information.")
+update.add_argument("--meta", type=str,
+                    help="Specify the meta package to update.")
+update.add_argument("--kernel", type=str, default="linux-generic-hwe-20.04",
+                    help="Specify the kernel meta to update.")
 
 args = parser.parse_args()
 
@@ -504,10 +505,23 @@ def deal_with_kernel_flavour(pkg_name, branch, git_dir) -> bool:
 
     debug(f"XB-Ubuntu-OEM-Kernel-Flavour: {kernel_flavour}")
 
-    if kernel_flavour == 'default':
-        return False
+    if args.kernel == 'linux-generic-hwe-20.04':
+        if kernel_flavour == 'default':
+            return False
+        kernel_flavour = 'default'
+    elif args.kernel == 'linux-oem-20.04':
+        if kernel_flavour == 'oem':
+            return False
+        kernel_flavour = 'oem'
+    elif args.kernel == 'linux-oem-20.04b':
+        if kernel_flavour == 'oem':
+            return False
+        kernel_flavour = 'oem'
+    else:
+        print(f"{args.kernel} is not supported.")
+        exit(1)
 
-    lines[idx] = "XB-Ubuntu-OEM-Kernel-Flavour: default\n"
+    lines[idx] = f"XB-Ubuntu-OEM-Kernel-Flavour: {kernel_flavour}\n"
     with open(file_path, 'w') as control:
         control.writelines(lines)
     _run_command(["git", "add", "debian/control"])
@@ -524,13 +538,28 @@ def deal_with_kernel_depends(pkg_name, branch, git_dir) -> bool:
         if line.startswith('Depends:'):
             idx = i
             break
+
+    if idx == -1:
+        critical("It can not find 'Depends' in debian/control.")
+        exit(1)
+
     debug(lines[idx].strip())
 
-    if idx == -1 or 'linux-oem-20.04' not in lines[idx]:
+    if args.kernel in lines[idx]:
         return False
 
-    lines[idx] = lines[idx].replace(', linux-oem-20.04,', ', linux-generic-hwe-20.04,')
-    lines[idx] = lines[idx].replace(', linux-oem-20.04b | linux-oem-20.04,', ', linux-generic-hwe-20.04,')
+    if args.kernel == 'linux-generic-hwe-20.04':
+        lines[idx] = lines[idx].replace(', linux-oem-20.04,', ', linux-generic-hwe-20.04,')
+        lines[idx] = lines[idx].replace(', linux-oem-20.04b | linux-oem-20.04,', ', linux-generic-hwe-20.04,')
+    elif args.kernel == 'linux-oem-20.04':
+        lines[idx] = lines[idx].replace(', linux-generic-hwe-20.04,', ', linux-oem-20.04,')
+        lines[idx] = lines[idx].replace(', linux-oem-20.04b | linux-oem-20.04,', ', linux-oem-20.04,')
+    elif args.kernel == 'linux-oem-20.04b':
+        lines[idx] = lines[idx].replace(', linux-generic-hwe-20.04,', ', linux-oem-20.04b | linux-oem-20.04,')
+        lines[idx] = lines[idx].replace(', linux-oem-20.04,', ', linux-oem-20.04b | linux-oem-20.04,')
+    else:
+        print(f"{args.kernel} is not supported.")
+        exit(1)
 
     with open(file_path, 'w') as control:
         control.writelines(lines)
@@ -579,8 +608,12 @@ apt-get update
 apt-get full-upgrade --yes
 """
     if not bootstrap:
-        meta_content += "\ngrep ^GRUB_FLAVOUR_ORDER=generic$ /etc/default/grub.d/oem-flavour.cfg\n"
-        meta_content += '\ndpkg-query -W -f=\'${Status}\' linux-generic-hwe-20.04 | grep "install ok installed"\n'
+        if 'oem' in args.kernel:
+            grub_flavour = 'oem'
+        else:
+            grub_flavour = 'generic'
+        meta_content += '\ngrep ^GRUB_FLAVOUR_ORDER=' + grub_flavour + '$ /etc/default/grub.d/oem-flavour.cfg\n'
+        meta_content += '\ndpkg-query -W -f=\'${Status}\' ' + args.kernel + ' | grep "install ok installed"\n'
     meta_content += f"\napt-get autoremove --purge --yes {pkg_name}\n"
     meta = os.path.join(git_dir, 'debian', 'tests', 'meta')
     old_meta = os.path.join(git_dir, 'debian', 'tests', pkg_name)
@@ -687,7 +720,6 @@ esac
 
 
 def deal_with_grub_flavour(pkg_name, branch, git_dir) -> bool:
-    modified = False
     os.chdir(git_dir)
     grub_flavour = None
     file_path = os.path.join(git_dir, 'oem-flavour.cfg')
@@ -698,21 +730,34 @@ def deal_with_grub_flavour(pkg_name, branch, git_dir) -> bool:
                     grub_flavour = line[len('GRUB_FLAVOUR_ORDER='):].strip()
                     break
 
-    if not grub_flavour or grub_flavour != 'generic':
+    if args.kernel == 'linux-generic-hwe-20.04':
+        if grub_flavour == 'generic':
+            return False
+        grub_flavour = 'generic'
+    elif args.kernel == 'linux-oem-20.04':
+        if grub_flavour == 'oem':
+            return False
+        grub_flavour = 'oem'
+    elif args.kernel == 'linux-oem-20.04b':
+        if grub_flavour == 'oem':
+            return False
+        grub_flavour = 'oem'
+    else:
+        print(f"{args.kernel} is not supported.")
+        exit(1)
+
+    if not os.path.exists(file_path):
         with open(os.path.join(git_dir, 'debian', 'install'), 'a') as f:
             f.write(f"oem-flavour.cfg /usr/share/{pkg_name}/\n")
         _run_command(["git", "add", "debian/install"])
-        modified = True
 
-    if grub_flavour != 'generic':
-        with open(file_path, 'w') as f:
-            f.write(f"""# This file is automatically generated by {pkg_name}, and changes will be overriden
-GRUB_FLAVOUR_ORDER=generic
+    with open(file_path, 'w') as f:
+        f.write(f"""# This file is automatically generated by {pkg_name}, and changes will be overriden
+GRUB_FLAVOUR_ORDER={grub_flavour}
 """)
-        _run_command(["git", "add", "oem-flavour.cfg"])
-        modified = True
+    _run_command(["git", "add", "oem-flavour.cfg"])
 
-    return modified
+    return True
 
 
 # Python 3.9 supports this.
@@ -733,7 +778,10 @@ def search_ppa_and_version(project: str, group: str, platform: str, pkg_name: st
     if archive_name:
         archive = oem_archive.getPPAByName(name=archive_name)
     elif project == 'somerville':
-        archive = oem_archive.getPPAByName(name=f"{project}-fossa-{platform}")
+        try:
+            archive = oem_archive.getPPAByName(name=f"{project}-fossa-{platform}")
+        except lazr.restfulclient.errors.NotFound:
+            archive = oem_archive.getPPAByName(name=f"{project}-{platform}")
     elif project == 'stella':
         archive = oem_archive.getPPAByName(name=f"{project}-{group}-ouagadougou")
     elif project == 'sutton':
@@ -810,6 +858,8 @@ def search_archive(pkg_name: str, project: str, platform: str, index: str, confi
         source_line = config['archive'].replace("https://", f"https://{config['username']}:{config['password']}@")
         _run_command(['setup-apt-dir.sh',
                       '-c', 'focal',
+                      '--disable-updates',
+                      '--disable-backports',
                       '--apt-dir', tmpdir,
                       '--extra-key', config['fingerprint'],
                       '--extra-repo', f"deb [signed-by={tmpdir}/{config['fingerprint']}.pub arch=amd64] {source_line} {archive} public"],
@@ -826,6 +876,8 @@ def search_archive(pkg_name: str, project: str, platform: str, index: str, confi
             source_line = config['archive'].replace("https://", f"https://{config['username']}:{config['password']}@")
             _run_command(['setup-apt-dir.sh',
                           '-c', 'focal',
+                          '--disable-updates',
+                          '--disable-backports',
                           '--apt-dir', tmpdir,
                           '--extra-key', config['fingerprint'],
                           '--extra-repo', f"deb [signed-by={tmpdir}/{config['fingerprint']}.pub arch=amd64] {source_line} {archive} public"],
@@ -840,11 +892,52 @@ def search_archive(pkg_name: str, project: str, platform: str, index: str, confi
 
 
 def collect_pkg_info(data, check_private: bool = False, index=None, config=None) -> dict:
+    if type(data) is str:
+        result = pattern.match(data)
+
+        if not result:
+            print(f"{data} is not supported.")
+            exit(1)
+
+        if '.' in result.group(1):
+            project, group = result.group(1).split('.')
+        else:
+            project = result.group(1)
+            group = "N/A"
+
+        codename = result.group(2)
+        debug(f"Project {project}, Group {group}, Codename {codename}.")
+
+        if project == "somerville":
+            customer = "Dell"
+            tag = "fossa-" + codename
+            codename = tag
+        elif project == "stella":
+            customer = "HP"
+            tag = ""
+        elif project == "sutton":
+            customer = "Lenovo"
+            tag = ""
+        else:
+            print(f"{data} is not supported.")
+            exit(1)
+
+        json_data = json.loads(f"""[{{
+"Customer": "{customer}",
+"Group": "{group}",
+"Codename": "{codename}",
+"Platform": "",
+"MarketName": "",
+"PlatformLPTag": "{tag}"
+}}]""")
+    else:
+        json_data = json.load(data)
+
     somerville = dict()
     stella = dict()
     sutton = dict()
 
-    for item in json.load(data):
+    for item in json_data:
         customer = item['Customer'].lower()
         platform = item['Platform'].lower()
         codename = item['Codename'].lower()
@@ -904,7 +997,7 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
         if version != debian_version:
             dirty = True
             critical(f"{pkg_name}'s version in Git is {debian_version}, but the version in ppa:oem-archive/{archive} is {version}.")
-        info(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
+        info(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}.")
 
         pkgInfo[pkg_name] = PkgInfo(ppa_archive=archive, ppa_version=version,
                                     old_desc="", new_desc="", fingerprint=fingerprint,
@@ -1061,7 +1154,7 @@ def load_pkg_info(data) -> dict:
     return pkgInfo
 
 
-def process_update_task(check_only: bool, pkgInfo) -> None:
+def process_update_task(pkgInfo) -> None:
     for pkg_name in sorted(pkgInfo.keys()):
         if args.since:
             if pkg_name != args.since:
@@ -1069,10 +1162,10 @@ def process_update_task(check_only: bool, pkgInfo) -> None:
                 continue
             else:
                 args.since = None
-        check_meta_git(pkg_name, pkgInfo[pkg_name], check_only, skip_bootstrap=True)
+        check_meta_git(pkg_name, pkgInfo[pkg_name], skip_bootstrap=True)
 
 
-def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool, check_only: bool) -> bool:
+def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> bool:
     result = pattern.match(pkg_name)
 
     if not result:
@@ -1134,7 +1227,7 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool, check_
             return False
 
         # Prepare the changelog and commit the changes.
-        commit_message = 'Update the ' + ' and'.join(', '.join(messages).rsplit(',', 1)) + '.'
+        commit_message = 'Update the ' + ' and'.join(', '.join(messages).rsplit(',', 1)) + f' for {args.kernel}.'
         _run_command(['dch', '--increment', commit_message])
         _run_command(["git", "add", "debian/changelog"])
         _run_command(['git', 'commit', '-a', '-m', f"{commit_message}\n\nUpdated by oem-scripts {oem_scripts.__version__}."])
@@ -1252,7 +1345,7 @@ END
             warning(f"({pkg_name}:{branch}) $ git show")
             print(out)
             version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"debian/changelog"])
-            if not check_only and yes_or_ask(args.yes, f"Would you like to commit and push the changes of {version} into {pkg_name}'s {branch} branch, and dput Debian source package into ppa:oem-archive/{pkg_info.ppa_archive}?"):
+            if not args.dry_run and yes_or_ask(args.yes, f"Would you like to commit and push the changes of {version} into {pkg_name}'s {branch} branch, and dput Debian source package into ppa:oem-archive/{pkg_info.ppa_archive}?"):
                 os.chdir(os.path.join(git_dir, '..'))
                 _run_command(['debsign', f'{pkg_name}_{version}_source.changes'])
                 _run_command(['dput', f'ppa:oem-archive/{pkg_info.ppa_archive}', f'{pkg_name}_{version}_source.changes'])
@@ -1262,16 +1355,16 @@ END
                 _run_command(['git', 'push', 'oem-solutions-engineers', tag])
 
 
-def check_meta_git(pkg_name: str, pkg_info: PkgInfo, check_only: bool, skip_bootstrap: False) -> None:
-    if check_only:
+def check_meta_git(pkg_name: str, pkg_info: PkgInfo, skip_bootstrap: False) -> None:
+    if args.dry_run:
         info(f"Checking {pkg_name} {pkg_info}...")
     else:
         info(f"Updating {pkg_name} {pkg_info}...")
 
     if not skip_bootstrap:
-        deal_with_meta_git(pkg_name, pkg_info, bootstrap=True, check_only=check_only)
+        deal_with_meta_git(pkg_name, pkg_info, bootstrap=True)
 
-    deal_with_meta_git(pkg_name, pkg_info, bootstrap=False, check_only=check_only)
+    deal_with_meta_git(pkg_name, pkg_info, bootstrap=False)
 
 
 cache = apt_pkg.Cache(progress=None)
@@ -1312,8 +1405,20 @@ elif args.subcommand == 'unsubscribe':
                     exit(1)
             exit(0)
 elif args.subcommand == 'update':
-    pkgInfo = load_pkg_info(args.json)
-    process_update_task(args.check, pkgInfo)
+    oem_scripts_config_ini = os.path.join(os.environ["HOME"],
+                                          ".config/oem-scripts/config.ini")
+    oem_scripts_config = ConfigParser()
+    oem_scripts_config.read(oem_scripts_config_ini)
+    config = oem_scripts_config['private']
+    if args.json:
+        pkgInfo = load_pkg_info(args.json)
+    elif args.meta:
+        r = requests.get(config['archive'] + "/dists/", auth=(config['username'], config['password']))
+        pkgInfo = collect_pkg_info(args.meta, check_private=True, index=r.text, config=config)
+    else:
+        print("You needto use --json or --meta.")
+        exit(1)
+    process_update_task(pkgInfo)
 elif args.subcommand == 'collect':
     oem_scripts_config_ini = os.path.join(os.environ["HOME"],
                                           ".config/oem-scripts/config.ini")
@@ -1331,7 +1436,15 @@ elif args.subcommand == 'staging-copy':
     oem_scripts_config.read(oem_scripts_config_ini)
     config = oem_scripts_config['private']
 
-    pkgInfo = load_pkg_info(args.json)
+    if args.json:
+        pkgInfo = load_pkg_info(args.json)
+    elif args.meta:
+        r = requests.get(config['archive'] + "/dists/", auth=(config['username'], config['password']))
+        pkgInfo = collect_pkg_info(args.meta, check_private=True, index=r.text, config=config)
+    else:
+        print("You need to use --json or --meta.")
+        exit(1)
+
     jobs = dict()
     dest = set()
     staging_locked = set()
@@ -1341,7 +1454,7 @@ elif args.subcommand == 'staging-copy':
         if pkg_info.ppa_version != pkg_info.devel_version:
             warning(f"{pkg_name} versions are not synced between {pkg_info.ppa_archive} and {pkg_info.devel_archive}.")
         elif pkg_info.staging_version == pkg_info.devel_version:
-            pass
+            info(f"{pkg_name} {pkg_info.devel_version} (devel) == {pkg_info.staging_version} (staging) so it doesn't need to copy.")
         elif apt_pkg.version_compare(pkg_info.staging_version, pkg_info.devel_version) > 0:
             critical(f"This should never happen.")
             exit(1)
@@ -1366,12 +1479,12 @@ elif args.subcommand == 'staging-copy':
                 staging_locked.add(staging)
     for job in jobs:
         source, dest = job.split(':')
-        if dest in staging_locked and not args.ignore:
+        if dest in staging_locked and not args.ignore_staging_lock:
             warning(f"The following OEM metapackages will be skipped due to the staging-lock of {dest}.\n" + '\n'.join(jobs[job]))
         else:
             title = f"request of copy_package [{source}]"
             tags = ["archive-request", "via-request-script", f"oem-scripts-{oem_scripts.__version__}"]
-            if args.dryrun:
+            if args.dry_run:
                 info(f"TITLE: {title}")
                 info("TAGS: " + ','.join(tags))
             else:
@@ -1400,7 +1513,7 @@ elif args.subcommand == 'staging-copy':
                 distribution=distribution,
                 component=component)
             print(description)
-            if not args.dryrun and yes_or_ask(args.yes, f"Would you like to create a cloudberry bug to copy the {packages} from {source} to {dest}?"):
+            if not args.dry_run and yes_or_ask(args.yes, f"Would you like to create a cloudberry bug to copy the {packages} from {source} to {dest}?"):
                 bug = lp.bugs.createBug(description=description, target=cloudberry, title=title, tags=tags)
                 for task in bug.bug_tasks:
                     task.importance = 'High'
