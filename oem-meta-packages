@@ -74,6 +74,7 @@ class DataJSONEncoder(json.JSONEncoder):
 class PkgInfo:
     ppa_archive: str
     ppa_version: str
+    git_version: str
     old_desc: str
     new_desc: str
     fingerprint: str
@@ -933,6 +934,8 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
     else:
         json_data = json.load(data)
 
+    debug(json.dumps(json_data, indent=4, sort_keys=True))
+
     somerville = dict()
     stella = dict()
     sutton = dict()
@@ -964,14 +967,13 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             lst.append(market_name)
             sutton[f"{group}-{codename}"] = lst
 
-    debug(somerville)
-    debug(stella)
-    debug(sutton)
+    debug(f"Somerville market names {somerville}")
+    debug(f"Stella market names {stella}")
+    debug(f"Sutton market names {sutton}")
 
     pkgNamesInArchive = get_oem_meta_packages(cache)
 
     pkgInfo = dict()
-    dirty = False
 
     if check_private:
         info("Finding the corresponding PPAs and private archives...")
@@ -986,20 +988,19 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
         if pkg_name in args.skip:
             warning(f"Skip {pkg_name}")
             continue
-        archive, version, fingerprint = search_ppa_and_version("somerville", None, codename, pkg_name)
-        if archive is None:
-            archive, version, fingerprint = search_ppa_and_version("somerville", None, codename, pkg_name, "somerville")
-        if archive is None:
+        ppa_archive, ppa_version, fingerprint = search_ppa_and_version("somerville", None, codename, pkg_name)
+        if ppa_archive is None:
+            ppa_archive, ppa_version, fingerprint = search_ppa_and_version("somerville", None, codename, pkg_name, "somerville")
+        if ppa_archive is None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
-        debian_version = get_debian_version_from_git(pkg_name)
-        if version != debian_version:
-            dirty = True
-            critical(f"{pkg_name}'s version in Git is {debian_version}, but the version in ppa:oem-archive/{archive} is {version}.")
-        info(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}.")
+        git_version = get_debian_version_from_git(pkg_name)
+        if ppa_version != git_version:
+            warning(f"{pkg_name}'s version in Git is {git_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}.")
+        info(f"{pkg_name} {ppa_version} exists in ppa:oem-archive/{ppa_archive}.")
 
-        pkgInfo[pkg_name] = PkgInfo(ppa_archive=archive, ppa_version=version,
+        pkgInfo[pkg_name] = PkgInfo(ppa_archive=ppa_archive, ppa_version=ppa_version, git_version=git_version,
                                     old_desc="", new_desc="", fingerprint=fingerprint,
                                     staging_archive="", staging_version="",
                                     devel_archive="", devel_version="")
@@ -1038,18 +1039,17 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             continue
         group, codename = k.split('-', 1)
 
-        archive, version, fingerprint = search_ppa_and_version("stella", group, codename, pkg_name)
-        if archive is None:
+        ppa_archive, ppa_version, fingerprint = search_ppa_and_version("stella", group, codename, pkg_name)
+        if ppa_archive is None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
-        debian_version = get_debian_version_from_git(pkg_name)
-        if version != debian_version:
-            dirty = True
-            critical(f"{pkg_name}'s version in Git is {debian_version}, but the version in ppa:oem-archive/{archive} is {version}.")
-        info(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
+        git_version = get_debian_version_from_git(pkg_name)
+        if ppa_version != git_version:
+            warning(f"{pkg_name}'s version in Git is {git_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}.")
+        info(f"{pkg_name} {ppa_version} exists in ppa:oem-archive/{ppa_archive}")
 
-        pkgInfo[pkg_name] = PkgInfo(ppa_archive=archive, ppa_version=version,
+        pkgInfo[pkg_name] = PkgInfo(ppa_archive=ppa_archive, ppa_version=ppa_version, git_version=git_version,
                                     old_desc="", new_desc="", fingerprint=fingerprint,
                                     staging_archive="", staging_version="",
                                     devel_archive="", devel_version="")
@@ -1088,18 +1088,17 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             continue
         group, codename = k.split('-', 1)
 
-        archive, version, fingerprint = search_ppa_and_version("sutton", group, codename, pkg_name)
-        if archive is None:
+        ppa_archive, ppa_version, fingerprint = search_ppa_and_version("sutton", group, codename, pkg_name)
+        if ppa_archive is None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
-        debian_version = get_debian_version_from_git(pkg_name)
-        if version != debian_version:
-            dirty = True
-            critical(f"{pkg_name}'s version in Git is {debian_version}, but the version in ppa:oem-archive/{archive} is {version}.")
-        info(f"{pkg_name} {version} exists in ppa:oem-archive/{archive}")
+        git_version = get_debian_version_from_git(pkg_name)
+        if ppa_version != git_version:
+            warning(f"{pkg_name}'s version in Git is {git_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}.")
+        info(f"{pkg_name} {ppa_version} exists in ppa:oem-archive/{ppa_archive}")
 
-        pkgInfo[pkg_name] = PkgInfo(ppa_archive=archive, ppa_version=version,
+        pkgInfo[pkg_name] = PkgInfo(ppa_archive=ppa_archive, ppa_version=ppa_version, git_version=git_version,
                                     old_desc="", new_desc="", fingerprint=fingerprint,
                                     staging_archive="", staging_version="",
                                     devel_archive="", devel_version="")
@@ -1130,9 +1129,6 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
 
     debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
 
-    if dirty:
-        exit(1)
-
     return pkgInfo
 
 
@@ -1142,6 +1138,7 @@ def load_pkg_info(data) -> dict:
     for meta in data.keys():
         pkgInfo[meta] = PkgInfo(ppa_archive=data[meta]['ppa_archive'],
                                 ppa_version=data[meta]['ppa_version'],
+                                git_version=data[meta]['git_version'],
                                 old_desc=data[meta]['old_desc'],
                                 new_desc=data[meta]['new_desc'],
                                 fingerprint=data[meta]['fingerprint'],
@@ -1155,6 +1152,7 @@ def load_pkg_info(data) -> dict:
 
 
 def process_update_task(pkgInfo) -> None:
+    debug(pkgInfo.keys())
     for pkg_name in sorted(pkgInfo.keys()):
         if args.since:
             if pkg_name != args.since:

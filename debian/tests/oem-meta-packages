@@ -44,3 +44,8 @@ sed -i 's/"staging_version":.*/"staging_version": "20.04ubuntu2"/' meta-info.jso
 oem-meta-packages --dry-run staging-copy --json meta-info.json
 
 oem-meta-packages --dry-run staging-copy --ignore-staging-lock --json meta-info.json
+
+for project in somerville stella sutton; do
+    meta="$(apt-cache search oem-"$project" | awk '{print $1}' | shuf | head -n 1)"
+    oem-meta-packages --dry-run update --meta "$meta"
+done
