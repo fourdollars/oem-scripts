@@ -47,7 +47,7 @@ Package: $packages
 Production: $production
 ===== Description =====
 
-This bug is to verify the kernel migrations from 5.6 to 5.8.
+OEM metapackage.
 
 Please verify the staging archive,
 """
@@ -1006,17 +1006,17 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
 
         if check_private:
             staging_archive, staging_version = search_archive(pkg_name, "somerville", codename, index, config, branch="staging")
+            pkgInfo[pkg_name].staging_archive = staging_archive
             if staging_version:
                 info(f"{pkg_name} {staging_version} exists in {staging_archive}.")
-                pkgInfo[pkg_name].staging_archive = staging_archive
                 pkgInfo[pkg_name].staging_version = staging_version
             else:
                 debug(f"{pkg_name} doesn't exist in {staging_archive} yet.")
 
             devel_archive, devel_version = search_archive(pkg_name, "somerville", codename, index, config, branch="devel")
+            pkgInfo[pkg_name].devel_archive = devel_archive
             if devel_version:
                 info(f"{pkg_name} {devel_version} exists in {devel_archive}.")
-                pkgInfo[pkg_name].devel_archive = devel_archive
                 pkgInfo[pkg_name].devel_version = devel_version
             else:
                 debug(f"{pkg_name} doesn't exist in {devel_archive} yet.")
@@ -1056,17 +1056,17 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
 
         if check_private:
             staging_archive, staging_version = search_archive(pkg_name, "stella", group, index, config, branch="staging")
+            pkgInfo[pkg_name].staging_archive = staging_archive
             if staging_version:
                 info(f"{pkg_name} {staging_version} exists in {staging_archive}.")
-                pkgInfo[pkg_name].staging_archive = staging_archive
                 pkgInfo[pkg_name].staging_version = staging_version
             else:
                 debug(f"{pkg_name} doesn't exist in {staging_archive} yet.")
 
             devel_archive, devel_version = search_archive(pkg_name, "stella", group, index, config, branch="devel")
+            pkgInfo[pkg_name].devel_archive = devel_archive
             if devel_version:
                 info(f"{pkg_name} {devel_version} exists in {devel_archive}.")
-                pkgInfo[pkg_name].devel_archive = devel_archive
                 pkgInfo[pkg_name].devel_version = devel_version
             else:
                 debug(f"{pkg_name} doesn't exist in {devel_archive} yet.")
@@ -1106,17 +1106,17 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
 
         if check_private:
             staging_archive, staging_version = search_archive(pkg_name, "sutton", group, index, config, branch="staging")
+            pkgInfo[pkg_name].staging_archive = staging_archive
             if staging_version:
                 info(f"{pkg_name} {staging_version} exists in {staging_archive}.")
-                pkgInfo[pkg_name].staging_archive = staging_archive
                 pkgInfo[pkg_name].staging_version = staging_version
             else:
                 debug(f"{pkg_name} doesn't exist in {staging_archive} yet.")
 
             devel_archive, devel_version = search_archive(pkg_name, "sutton", group, index, config, branch="devel")
+            pkgInfo[pkg_name].devel_archive = devel_archive
             if devel_version:
                 info(f"{pkg_name} {devel_version} exists in {devel_archive}.")
-                pkgInfo[pkg_name].devel_archive = devel_archive
                 pkgInfo[pkg_name].devel_version = devel_version
             else:
                 debug(f"{pkg_name} doesn't exist in {devel_archive} yet.")
@@ -1479,11 +1479,11 @@ elif args.subcommand == 'staging-copy':
                 staging_locked.add(staging)
     for job in jobs:
         source, dest = job.split(':')
-        if dest in staging_locked and not args.ignore_staging_lock:
+        if dest and dest in staging_locked and not args.ignore_staging_lock:
             warning(f"The following OEM metapackages will be skipped due to the staging-lock of {dest}.\n" + '\n'.join(jobs[job]))
         else:
             title = f"request of copy_package [{source}]"
-            tags = ["archive-request", "via-request-script", f"oem-scripts-{oem_scripts.__version__}"]
+            tags = ["archive-request", "via-request-script", f"oem-scripts-{oem_scripts.__version__}", "oem-metapackages"]
             if args.dry_run:
                 info(f"TITLE: {title}")
                 info("TAGS: " + ','.join(tags))
