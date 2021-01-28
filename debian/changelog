@@ -1,4 +1,4 @@
-oem-scripts (0.78) UNRELEASED; urgency=medium
+oem-scripts (0.78) focal; urgency=medium
 
   * oem-meta-packages,
     pkg-oem-meta: Improve to deal with the maintainer scripts and linux-oem-20.04b.
@@ -8,7 +8,7 @@ oem-scripts (0.78) UNRELEASED; urgency=medium
   * oem-meta-packages: Use warning instead of critical when the version in Git
     is not published to PPA.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 28 Jan 2021 11:28:58 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 28 Jan 2021 08:17:33 +0000
 
 oem-scripts (0.77) focal; urgency=medium
 
