@@ -249,7 +249,9 @@ set -e
 case "$1" in
     remove|purge)
         rm -f /etc/default/grub.d/oem-flavour.cfg
-        update-grub || true
+        if command -v update-grub; then
+            update-grub
+        fi
     ;;
 esac
 

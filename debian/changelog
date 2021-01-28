@@ -1,3 +1,15 @@
+oem-scripts (0.78) UNRELEASED; urgency=medium
+
+  * oem-meta-packages,
+    pkg-oem-meta: Improve to deal with the maintainer scripts and linux-oem-20.04b.
+  * debian/tests/oem-meta-packages,
+    oem-meta-packages: Refine for the usage of a single meta package.
+  * oem-meta-packages: Deal with the case when no version in staging archive.
+  * oem-meta-packages: Use warning instead of critical when the version in Git
+    is not published to PPA.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 28 Jan 2021 11:28:58 +0800
+
 oem-scripts (0.77) focal; urgency=medium
 
   * oem-meta-packages: Add 'staging-copy' subcommand.
