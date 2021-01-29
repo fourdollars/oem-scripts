@@ -1,3 +1,9 @@
+oem-scripts (0.79) UNRELEASED; urgency=medium
+
+  * oem-meta-packages: Fix the problem when it falls back to linux-oem-20.04.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 29 Jan 2021 17:58:48 +0800
+
 oem-scripts (0.78) focal; urgency=medium
 
   * oem-meta-packages,
