@@ -708,7 +708,7 @@ esac
 
 #DEBHELPER#
 ''')
-        _run_command(["git", "add", "debian/postrm"])
+    _run_command(["git", "add", "debian/postrm"])
     output, _, _ = _run_command(["git", "status", "--porcelain", "debian/postrm"])
     if output:
         modified = True
