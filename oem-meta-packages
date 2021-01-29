@@ -1467,9 +1467,13 @@ elif args.subcommand == 'staging-copy':
     for task in tasks:
         bug = task.bug
         for staging in sorted(dest):
-            if staging in bug.description and 'staging-lock' in bug.tags:
+            if staging in bug.description and 'staging-lock' in bug.tags and 'cqa-verified-staging' not in bug.tags:
+                debug(bug.description)
                 tags = ",".join(bug.tags)
-                warning(f"https://bugs.launchpad.net/bugs/{bug.id}\n\t({staging})\n\t[{tags}]\n\t{bug.title}")
+                for line in bug.description.split('\n'):
+                    if line.startswith('Package: '):
+                        package = line
+                warning(f"https://bugs.launchpad.net/bugs/{bug.id}\n\t({staging})\n\t[{tags}]\n\t{bug.title}\n\t{package}")
                 staging_locked.add(staging)
     for job in jobs:
         source, dest = job.split(':')
