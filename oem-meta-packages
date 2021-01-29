@@ -664,12 +664,7 @@ debian-tag = {branch}_%(version)s
 def deal_with_maintainer_scripts(pkg_name, branch, git_dir) -> bool:
     postinst_path = os.path.join(git_dir, 'debian', 'postinst')
     postrm_path = os.path.join(git_dir, 'debian', 'postrm')
-    pkg_postinst_path = os.path.join(git_dir, 'debian', f'{pkg_name}.postinst')
-    pkg_postrm_path = os.path.join(git_dir, 'debian', f'{pkg_name}.postrm')
     modified = False
-
-    if os.path.exists(postinst_path) or os.path.exists(pkg_postinst_path):
-        warning(f"debian/postinst or debian/{pkg_name}.postinst already exists. You may need to manually deal with the oem-flavour.cfg.")
 
     with open(postinst_path, 'w') as f:
         f.write(f'''#!/bin/sh
@@ -694,9 +689,6 @@ esac
     output, _, _ = _run_command(["git", "status", "--porcelain", "debian/postinst"])
     if output:
         modified = True
-
-    if os.path.exists(postrm_path) or os.path.exists(pkg_postrm_path):
-        warning(f"debian/postrm or debian/{pkg_name}.postrm already exists. You may need to manually deal with the oem-flavour.cfg.")
 
     with open(postrm_path, 'w') as f:
         f.write('''#!/bin/sh
