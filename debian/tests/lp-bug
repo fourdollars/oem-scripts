@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -euo pipefail
+IFS=$'\n\t'
+
+export LAUNCHPAD_API="https://api.staging.launchpad.net/"
+
+# Search for the latest bug to test.
+launchpad-api get cloudberry ws.op==searchTasks status=="Fix Committed" | jq -r '.entries | .[] | .bug_link' | sort -r | while read -r bug; do
+    if launchpad-api get "$bug" | jq -r '.tags | .[]' | grep cqa-verified-staging >/dev/null; then
+        lp-bug cqa-verify --dry-run "$(launchpad-api get "$bug" | jq -r '.id')"
+        break
+    fi
+done

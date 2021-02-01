@@ -1,3 +1,13 @@
+oem-scripts (0.80) UNRELEASED; urgency=medium
+
+  * debian/control,
+    debian/tests/control,
+    debian/tests/lp-bug,
+    lp-bug: Add the 'cqa-verify' subcommand to verify those bugs with the
+    'cqa-verified-staging' tag.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 01 Feb 2021 20:51:28 +0800
+
 oem-scripts (0.79) focal; urgency=medium
 
   * oem-meta-packages: Fix the problem when it falls back to linux-oem-20.04.
