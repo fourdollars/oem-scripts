@@ -1,3 +1,12 @@
+oem-scripts (0.79) UNRELEASED; urgency=medium
+
+  * oem-meta-packages: Fix the problem when it falls back to linux-oem-20.04.
+  * oem-meta-packages: Ignore the warnings for the maintainer scripts.
+  * oem-meta-packages: Fix the modified detection problem of debian/postrm.
+  * oem-meta-packages: Skip the staging-lock bugs with cqa-verified-staging. 
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 29 Jan 2021 21:50:41 +0800
+
 oem-scripts (0.78) focal; urgency=medium
 
   * oem-meta-packages,
