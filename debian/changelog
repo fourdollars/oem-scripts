@@ -8,6 +8,7 @@ oem-scripts (0.80) UNRELEASED; urgency=medium
   * oem-meta-packages: Refine the help manual.
   * lp-bug: Update the manual of 'cqa-verify' subcommand, put more comments in
     the source code, and refine some code.
+  * lp-bug: Fix the list copy.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 01 Feb 2021 20:51:28 +0800
 

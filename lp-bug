@@ -310,7 +310,7 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> None:
             # Tag "cqa-verified" if no failure.
             if not failed:
                 if not args.dry_run and _yes_or_ask(yes, f'Would you like to tag "cqa-verified" for LP: #{bug.id} "{bug.title}"?'):
-                    tags = copy(bug.tags)
+                    tags = bug.tags.copy()
                     tags.append('cqa-verified')
                     if f"oem-scripts-{oem_scripts.__version__}" not in tags:
                         tags.append(f"oem-scripts-{oem_scripts.__version__}")
