@@ -86,7 +86,29 @@ class PkgInfo:
 
 pattern = re.compile(r'oem-([^-]*)-(.*)-meta')
 staging_pattern = re.compile(r'.*>(.*)/</a>')
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+                                 epilog="""
+You need to have the [oem-scripts] section in ~/.config/oem-scripts/config.ini.
+Executing `launchpad-api get people/+me` will generate it.
+
+For example,
+
+[oem-scripts]
+oauth_token = 8fbDontUseThis183c8f
+oauth_token_secret = 6f8174257ThisWontWork9advfQLcngxT7TNgdfs7cbe709ce13458787ae547418faf57a8c9ca162h
+oauth_consumer_key = System-wide: Ubuntu (oem-scripts machine)
+
+Then you need to manually config the [private] section in ~/.config/oem-scripts/config.ini after the [oem-scripts] section to use the private archives.
+
+For example,
+
+[private]
+url = SomewhereToProvideTheInformationForUsernameAndPassword
+username = UserName
+password = PassWord
+archive = https://cesg.canonical.com/canonical
+fingerprint = 54F1860295829CE3""")
+
 
 parser.add_argument("-d", "--debug",
                     help="print debug messages", action="store_true")
@@ -149,59 +171,7 @@ platforms.json:
   ...
 ]
 
-meta-info.json:
-
-{
-    "oem-somerville-beric-icl-meta": {
-        "devel_archive": "somerville-fossa-beric-icl-focal-devel",
-        "devel_version": "20.04ubuntu3",
-        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
-        "new_desc": "Dell Inspiron 3501, Vostro 3401/3501",
-        "old_desc": "Somerville Beric-Icl platform",
-        "ppa_archive": "somerville-fossa-beric-icl",
-        "ppa_version": "20.04ubuntu3",
-        "staging_archive": "somerville-fossa-beric-icl-focal-staging",
-        "staging_version": "20.04ubuntu3"
-    },
-    ...
-    "oem-stella.cmit-butterfree-meta": {
-        "devel_archive": "stella-cmit-ouagadougou-focal-devel",
-        "devel_version": "20.04ubuntu2",
-        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
-        "new_desc": "",
-        "old_desc": "",
-        "ppa_archive": "stella-cmit-ouagadougou",
-        "ppa_version": "20.04ubuntu2",
-        "staging_archive": "stella-cmit-ouagadougou-focal-staging",
-        "staging_version": "20.04ubuntu2"
-    },
-    ...
-    "oem-sutton.simon-addison-meta": {
-        "devel_archive": "sutton-simon-focal-devel",
-        "devel_version": "20.04ubuntu10",
-        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
-        "new_desc": "Lenovo ThinkPad P15 Gen 1, P15v Gen 1, P17 Gen 1, T15p Gen 1",
-        "old_desc": "Sutton Simon Addison platform",
-        "ppa_archive": "sutton-simon",
-        "ppa_version": "20.04ubuntu10",
-        "staging_archive": "sutton-simon-focal-staging",
-        "staging_version": "20.04ubuntu9"
-    },
-    ...
-}
-
-Collect the information of OEM metapackages in PPAs and devel/staging archives.
-
-You need to manually config the [private] section in ~/.config/oem-scripts/config.ini to use the private archives.
-
-For example,
-
-[private]
-url = SomewhereToProvideTheInformationForUsernameAndPassword
-username = UserName
-password = PassWord
-archive = https://cesg.canonical.com/canonical
-fingerprint = 54F1860295829CE3""")
+Collect the information of OEM metapackages in PPAs and devel/staging archives.""")
 
 collect.add_argument("json",
                      help="Specify the json file to read the platforms information.",
@@ -244,46 +214,7 @@ staging_copy = subparsers.add_parser('staging-copy', help='[-h] [--ignore-stagin
 For example,
     oem-meta-packages --dry-run staging-copy --meta oem-qemu-meta
     or
-    oem-meta-packages --dry-run staging-copy --json meta-info.json
-
-{
-    "oem-somerville-beric-icl-meta": {
-        "devel_archive": "somerville-fossa-beric-icl-focal-devel",
-        "devel_version": "20.04ubuntu3",
-        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
-        "new_desc": "Dell Inspiron 3501, Vostro 3401/3501",
-        "old_desc": "Somerville Beric-Icl platform",
-        "ppa_archive": "somerville-fossa-beric-icl",
-        "ppa_version": "20.04ubuntu3",
-        "staging_archive": "somerville-fossa-beric-icl-focal-staging",
-        "staging_version": "20.04ubuntu3"
-    },
-    ...
-    "oem-stella.cmit-butterfree-meta": {
-        "devel_archive": "stella-cmit-ouagadougou-focal-devel",
-        "devel_version": "20.04ubuntu2",
-        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
-        "new_desc": "",
-        "old_desc": "",
-        "ppa_archive": "stella-cmit-ouagadougou",
-        "ppa_version": "20.04ubuntu2",
-        "staging_archive": "stella-cmit-ouagadougou-focal-staging",
-        "staging_version": "20.04ubuntu2"
-    },
-    ...
-    "oem-sutton.simon-addison-meta": {
-        "devel_archive": "sutton-simon-focal-devel",
-        "devel_version": "20.04ubuntu10",
-        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
-        "new_desc": "Lenovo ThinkPad P15 Gen 1, P15v Gen 1, P17 Gen 1, T15p Gen 1",
-        "old_desc": "Sutton Simon Addison platform",
-        "ppa_archive": "sutton-simon",
-        "ppa_version": "20.04ubuntu10",
-        "staging_archive": "sutton-simon-focal-staging",
-        "staging_version": "20.04ubuntu9"
-    },
-    ...
-}
+    oem-meta-packages --dry-run staging-copy --json meta-info.json (generated by the 'collect' subcommand.)
 
 Copy the meta package from the devel archive into the staging archive.""")
 
@@ -301,46 +232,7 @@ update = subparsers.add_parser('update', help='[-h] [--autopkgtest] --json meta-
 For example,
     oem-meta-packages --dry-run update --meta oem-qemu-meta --kernel linux-oem-20.04
     or
-    oem-meta-packages --dry-run update --json meta-info.json
-
-{
-    "oem-somerville-beric-icl-meta": {
-        "devel_archive": "somerville-fossa-beric-icl-focal-devel",
-        "devel_version": "20.04ubuntu3",
-        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
-        "new_desc": "Dell Inspiron 3501, Vostro 3401/3501",
-        "old_desc": "Somerville Beric-Icl platform",
-        "ppa_archive": "somerville-fossa-beric-icl",
-        "ppa_version": "20.04ubuntu3",
-        "staging_archive": "somerville-fossa-beric-icl-focal-staging",
-        "staging_version": "20.04ubuntu3"
-    },
-    ...
-    "oem-stella.cmit-butterfree-meta": {
-        "devel_archive": "stella-cmit-ouagadougou-focal-devel",
-        "devel_version": "20.04ubuntu2",
-        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
-        "new_desc": "",
-        "old_desc": "",
-        "ppa_archive": "stella-cmit-ouagadougou",
-        "ppa_version": "20.04ubuntu2",
-        "staging_archive": "stella-cmit-ouagadougou-focal-staging",
-        "staging_version": "20.04ubuntu2"
-    },
-    ...
-    "oem-sutton.simon-addison-meta": {
-        "devel_archive": "sutton-simon-focal-devel",
-        "devel_version": "20.04ubuntu10",
-        "fingerprint": "B02DB471D6E2ADFF98B0CBA5D4EFDDE038AD84EA",
-        "new_desc": "Lenovo ThinkPad P15 Gen 1, P15v Gen 1, P17 Gen 1, T15p Gen 1",
-        "old_desc": "Sutton Simon Addison platform",
-        "ppa_archive": "sutton-simon",
-        "ppa_version": "20.04ubuntu10",
-        "staging_archive": "sutton-simon-focal-staging",
-        "staging_version": "20.04ubuntu9"
-    },
-    ...
-}
+    oem-meta-packages --dry-run update --json meta-info.json (generated by the 'collect' subcommand.)
 
 Update the market name and the kernel flavour of the OEM meta package to the default kernel flavour, i.e. linux-generic-hwe-20.04.""")
 update.add_argument("--autopkgtest", action="store_true",
@@ -350,7 +242,7 @@ update.add_argument("--json", type=argparse.FileType('r', encoding='UTF-8'),
 update.add_argument("--meta", type=str,
                     help="Specify the meta package to update.")
 update.add_argument("--kernel", type=str, default="linux-generic-hwe-20.04",
-                    help="Specify the kernel meta to update.")
+                    help="Specify the kernel meta to update. linux-generic-hwe-20.04|linux-oem-20.04b|linux-oem-20.04")
 
 args = parser.parse_args()
 
