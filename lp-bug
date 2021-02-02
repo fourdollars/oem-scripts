@@ -62,7 +62,10 @@ cleanup.add_argument("bugID",
 cleanup.add_argument("--yes",
                      help="Say yes for all prompts.", action="store_true")
 
-cqa_verify = subparsers.add_parser('cqa-verify', help='[-h] [--yes] [--dry-run] [bugID]')
+cqa_verify = subparsers.add_parser('cqa-verify', help='[-h] [--yes] [--dry-run] [bugID]',
+                                   formatter_class=argparse.RawDescriptionHelpFormatter,
+                                   epilog="""
+The 'cqa-verify' subcommand will check the versions in the production archive automatically.""")
 cqa_verify.add_argument("--yes",
                         help="Say yes for all prompts.", action="store_true")
 cqa_verify.add_argument("--dry-run",
@@ -218,11 +221,14 @@ pattern = re.compile(r'(.*) \(==(.*)\)')
 
 def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> None:
     cloudberry = lp.projects['cloudberry']
+    # Only deal with those bugs with 'Fix Committed' and 'request of publish_package' in the title.
     tasks = cloudberry.searchTasks(status=['Fix Committed'], search_text='request of publish_package')
     for task in tasks:
         bug = task.bug
+        # Only deal with one bug id when it is provided.
         if bugID and bug.id != bugID:
             continue
+        # Only deal with those bugs with this tag.
         if 'cqa-verified-staging' not in bug.tags:
             continue
         info(f'LP: #{bug.id} "{bug.title}"\n{bug.description}')
@@ -231,6 +237,7 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> None:
         packages = []
         prod_archive_line = ""
         lines = bug.description.split('\n')
+        # Parse the package list and the production archive in the bug description.
         for idx, line in enumerate(lines):
             if line.startswith('Package: '):
                 debug(line)
@@ -248,10 +255,12 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> None:
                     packages.append(line.strip()[:-1])
             elif 'production archive' in line:
                 prod_archive_line = lines[idx + 2]
+        # Skip the bug when it found no production archive.
         if not prod_archive_line:
             warning("It can not find the production archive.")
             continue
         debug(prod_archive_line)
+        # Parse the package versions.
         for idx, line in enumerate(packages):
             result = pattern.match(line)
             if not result:
@@ -260,18 +269,20 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> None:
             packages[idx] = (result.group(1), result.group(2))
         debug(packages)
         info(f'Checking "{prod_archive_line}" ...')
+        # Check if the production archive provided the packages and versions.
         with TemporaryDirectory() as tmpdir:
             failed = False
             fingerprint = 'F9FDA6BED73CDC22'
-            if 'focal' in prod_archive_line:
-                codename = 'focal'
-            elif 'bionic' in prod_archive_line:
-                codename = 'bionic'
-            elif 'xenial' in prod_archive_line:
-                codename = 'xenial'
-            else:
+            series = ['focal', 'bionic', 'xenial']
+            codename = ''
+            for item in series:
+                if item in prod_archive_line:
+                    codename = item
+                    break
+            if not codename:
                 warning(f"'{prod_archive_line}' is not supported.")
                 continue
+            # Setup the temporary apt dir to include the production archive.
             output, _, returncode = _run_command(
                 ['setup-apt-dir.sh',
                  '-c', codename,
@@ -281,9 +292,11 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> None:
                  '--extra-key', fingerprint,
                  '--extra-repo', prod_archive_line.replace("deb ", f"deb [signed-by={tmpdir}/{fingerprint}.pub] ")
                  ], returncode=(0, 100))
+            # Skip the bug when it found some error in the production archive.
             if returncode == 100:
                 warning(output)
                 continue
+            # Use the temporary apt dir to compare the package versions.
             for pkg, ver in packages:
                 output, _, _ = _run_command(['pkg-list', '--apt-dir', tmpdir, pkg])
                 for line in output.split('\n'):
@@ -294,6 +307,7 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> None:
                         else:
                             warning(f"{line} < {ver}")
                             failed = True
+            # Tag "cqa-verified" if no failure.
             if not failed:
                 if not args.dry_run and _yes_or_ask(yes, f'Would you like to tag "cqa-verified" for LP: #{bug.id} "{bug.title}"?'):
                     tags = copy(bug.tags)
