@@ -1,16 +1,33 @@
-Tests: autopkgtest-collect-credentials, autopkgtest-oem-scripts-auto
+Tests:
+ autopkgtest-collect-credentials,
+ autopkgtest-oem-scripts-auto
 Depends: @, shellcheck
 
-Tests: pkg-somerville-meta, pkg-sutton-meta, pkg-stella-meta
+Tests:
+ pkg-somerville-meta,
+ pkg-stella-meta,
+ pkg-sutton-meta
 Depends: @, ubuntu-dev-tools, git-buildpackage
 
-Tests: launchpad-api, get-private-ppa, jq-lp, mir-bug, run-autopkgtest, bug-bind, pkg-list, setup-apt-dir, oem-meta-packages
+Tests:
+ bug-bind,
+ get-private-ppa,
+ jq-lp,
+ launchpad-api,
+ lp-bug,
+ mir-bug,
+ oem-meta-packages,
+ pkg-list,
+ run-autopkgtest,
+ setup-apt-dir
 Depends: @
 
-Tests: git-url-insteadof-setting
+Tests:
+ git-url-insteadof-setting
 Depends: @
 Restrictions: allow-stderr
 
-Tests: mir-bug-verification
+Tests:
+ mir-bug-verification
 Depends: @
 Restrictions: needs-root
