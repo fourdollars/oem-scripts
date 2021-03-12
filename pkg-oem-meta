@@ -343,7 +343,7 @@ License: GPL-3
     with open('modaliases', 'w') as f:
         if 'bios_id' in vars(args).keys():
             for bios_id in args.bios_id:
-                f.write("alias pci:*sv00001028sd0000{0}* meta {1}\n"
+                f.write("alias pci:*sv00001028sd0000{0}bc0Csc05* meta {1}\n"
                         .format(bios_id.upper(), meta))
         elif 'sd_id' in vars(args).keys():
             for sd_id in args.sd_id:

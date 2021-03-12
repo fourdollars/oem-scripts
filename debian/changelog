@@ -1,3 +1,11 @@
+oem-scripts (0.81) UNRELEASED; urgency=medium
+
+  * debian/tests/pkg-somerville-meta,
+    pkg-oem-meta: Make the modalias pattern to match the subsystem ID of the
+    i2c device.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 15 Mar 2021 18:02:38 +0800
+
 oem-scripts (0.80) focal; urgency=medium
 
   [ Shih-Yuan Lee (FourDollars) ]
