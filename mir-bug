@@ -37,7 +37,7 @@ from string import Template
 from tempfile import TemporaryDirectory
 
 SUBSCRIBER_LIST = ('oem-solutions-engineers', 'ubuntu-sponsors', 'ubuntu-desktop')
-TAG_LIST = ('oem-meta-packages', 'oem-priority', f'oem-scripts-{oem_scripts.__version__}')
+TAG_LIST = ('oem-meta-packages', 'oem-priority', f'oem-scripts-{oem_scripts.__version__:.2f}')
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
                                  epilog="""
@@ -317,7 +317,7 @@ def update_bug(lp, bug_number: int, yes: bool) -> None:
                 tags.append(tag)
         for tag in bug.tags:
             if tag.startswith('oem-scripts-'):
-                if tag[len("oem-scripts-"):] != str(oem_scripts.__version__):
+                if tag[len("oem-scripts-"):] != f'{oem_scripts.__version__:.2f}':
                     if yes_or_ask(yes, f"Do you want to remove '{tag}' tag?"):
                         tags.remove(tag)
         if tags != bug.tags:
@@ -669,7 +669,7 @@ def check_and_update_bug_attachments(bug, pkg_name: str, update=False, yes=False
         error(f"There is no {debdiff}.")
     info(content)
     if update and yes_or_ask(yes, f"Do you want to attach {debdiff}?"):
-        bug.addAttachment(filename=debdiff, data=content.encode("utf-8"), comment=f"Attach {debdiff} by oem-scripts {oem_scripts.__version__}.", is_patch=True)
+        bug.addAttachment(filename=debdiff, data=content.encode("utf-8"), comment=f"Attach {debdiff} by oem-scripts {oem_scripts.__version__:.2f}.", is_patch=True)
         return True
     else:
         return False
@@ -849,7 +849,7 @@ def check_and_update_git_repo(bug, pkg_name: str, yes=False, bootstrap=True, upd
                     warning(f"The update of the '{branch}' branch of {pkg_name}'s Git repository is skipped on demand.")
                     return False
                 elif yes_or_ask(yes, f"Do you want to commit and push the changes above into the '{branch}' branch of {pkg_name}'s Git repository?"):
-                    _run_command(['git', 'commit', '-a', '-m', f"Updated by oem-scripts {oem_scripts.__version__}."])
+                    _run_command(['git', 'commit', '-a', '-m', f"Updated by oem-scripts {oem_scripts.__version__:.2f}."])
                     _run_command(['git', 'push'])
                     return True
             else:
