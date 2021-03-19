@@ -4,8 +4,9 @@ oem-scripts (0.81) UNRELEASED; urgency=medium
     pkg-oem-meta: Make the modalias pattern to match the subsystem ID of the
     i2c device.
   * mir-bug: Fix the version string.
+  * mir-bug: Print the data link of the attachment.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 19 Mar 2021 11:04:50 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 19 Mar 2021 11:20:23 +0800
 
 oem-scripts (0.80) focal; urgency=medium
 

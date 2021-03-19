@@ -660,7 +660,7 @@ def check_and_update_bug_attachments(bug, pkg_name: str, update=False, yes=False
                         except lazr.restfulclient.errors.NotFound as e:
                             debug(e)
                 elif returncode == 0:
-                    info(f"{attachment.title} - {attachment.web_link} looks OK.")
+                    info(f"{attachment.title} - {attachment.data_link} looks OK.")
                     return True
 
     if found:
