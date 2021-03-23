@@ -1,9 +1,8 @@
 #!/bin/bash
 set -ex
 
-jenkins_job_for_iso="dell-bto-focal-fossa-edge-alloem"
+jenkins_job_for_iso=""
 jenkins_job_build_no="lastSuccessfulBuild"
-jenkins_url="10.101.46.50"
 script_on_target_machine="inject_recovery_from_iso.sh"
 user_on_target="ubuntu"
 SSH="ssh -o StrictHostKeyChecking=no"
@@ -17,12 +16,12 @@ clear_all() {
 }
 trap clear_all EXIT
 # shellcheck disable=SC2046
-eval set -- $(getopt -o "hj:t:b:" -l "help,target-ip:,jenkins-job:,local-iso:" -- "$@")
+eval set -- $(getopt -o "hj:t:b:u:" -l "help,target-ip:,jenkins-job:,local-iso:,url:" -- "$@")
 
 usage() {
 cat << EOF
 usage:
-$(basename "$0") -j <jenkins-job-name> -b <jenkins-job-build-no> -t <target-ip> [-h|--help] [--dry-run]
+$(basename "$0") -u <jenkins url> -j <jenkins-job-name> -b <jenkins-job-build-no> -t <target-ip> [-h|--help] [--dry-run]
 $(basename "$0") --local-iso <path to local iso file> -t <target-ip> [-h|--help] [--dry-run]
 
 Limition:
@@ -34,16 +33,18 @@ The assumption of using this tool:
  - Host executing this tool can access target machine without password over ssh.
 
 OPTIONS:
+    -u|--url                    The url of jenkins server.
     -j|--jenkins-job            Get iso from jenkins-job. The default is "dell-bto-focal-fossa-edge-alloem".
     -b|--jenkins-job-build-no   The build number of the Jenkins job assigned by -j|--jenkins-job.
     -t|--target-ip  The IP address of target machine. It will be used for ssh accessing.
                     Please put your ssh key on target machine. This tool no yet support keyphase for ssh.
     -h|--help Print this message
 
-    Usage:
-    $(basename "$0") -j  dell-bto-focal-fossa-edge-alloem -b 3 -t 192.168.101.68
+Usage:
 
-    $(basename "$0") --local-iso ./dell-bto-focal-fossa-edge-alloem-X73-20210302-3.iso
+    $(basename "$0")  -u 10.101.46.50 -j  dell-bto-focal-fossa-edge-alloem -b 3 -t 192.168.101.68
+
+    $(basename "$0") --local-iso ./dell-bto-focal-fossa-edge-alloem-X73-20210302-3.iso -t 192.168.101.68
 
 EOF
 exit 1
@@ -100,7 +101,7 @@ sudo mount -o loop $img_name /mnt && \
 sudo mount /dev/\$(lsblk -l | grep efi | cut -d ' ' -f 1 | sed 's/.$/2'/) /cdrom && \
 df | grep "cdrom\|mnt" | awk '{print \$2" "\$6}' | sort | tail -n1 | grep -q cdrom && \
 sudo mkdir -p /var/tmp/rsync && \
-sudo rsync -alv /mnt/* /cdrom/. --exclude=factory/grub.cfg* --exclude=efi/boot --exclude=.disk/casper-uuid --exclude=.disk/info --delete --exclude=casper/filesystem.squashfs --temp-dir=/var/tmp/rsync && \
+sudo rsync -alv /mnt/ /cdrom/ --exclude=factory/grub.cfg* --exclude=efi/boot --exclude=.disk/casper-uuid --exclude=.disk/info --exclude=.disk/info.recovery --exclude=efi.factory --delete --exclude=casper/filesystem.squashfs --temp-dir=/var/tmp/rsync && \
 sudo cp /mnt/.disk/ubuntu_dist_channel /cdrom/.disk/ && \
 touch /tmp/SUCCSS_inject_recovery_iso
 EOF
@@ -148,6 +149,10 @@ main() {
             --local-iso)
                 shift
                 local_iso="$1"
+                ;;
+            -u | --url)
+                shift
+                jenkins_url="$1"
                 ;;
             -j | --jenkins-job)
                 shift
