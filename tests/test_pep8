@@ -12,4 +12,5 @@ pep8 --ignore=E501 \
     mir-bug \
     oem-getiso \
     oem-meta-packages \
-    pkg-list
+    pkg-list \
+    review-merge-proposal
