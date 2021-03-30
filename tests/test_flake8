@@ -4,4 +4,5 @@ flake8 --ignore E501 \
     lp-bug \
     mir-bug \
     oem-meta-packages \
-    pkg-list
+    pkg-list \
+    review-merge-proposal

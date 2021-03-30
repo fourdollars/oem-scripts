@@ -1,3 +1,19 @@
+oem-scripts (0.81) UNRELEASED; urgency=medium
+
+  * debian/tests/pkg-somerville-meta,
+    pkg-oem-meta: Make the modalias pattern to match the subsystem ID of the
+    i2c device.
+  * mir-bug: Fix the version string.
+  * mir-bug: Print the data link of the attachment.
+  * review-merge-proposal,
+    tests/test_flake8,
+    tests/test_pep8: Create review-merge-proposal to check the merge proposal.
+  * debian/tests/oem-meta-packages,
+    oem-meta-packages: Add an option to the 'update' subcommand to also
+    add/update the kernel meta into the depends of the factory meta.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 19 Mar 2021 11:20:23 +0800
+
 oem-scripts (0.80) focal; urgency=medium
 
   [ Shih-Yuan Lee (FourDollars) ]
