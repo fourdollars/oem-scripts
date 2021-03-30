@@ -1,4 +1,4 @@
-oem-scripts (0.81) UNRELEASED; urgency=medium
+oem-scripts (0.81) focal; urgency=medium
 
   * debian/tests/pkg-somerville-meta,
     pkg-oem-meta: Make the modalias pattern to match the subsystem ID of the
@@ -12,7 +12,7 @@ oem-scripts (0.81) UNRELEASED; urgency=medium
     oem-meta-packages: Add an option to the 'update' subcommand to also
     add/update the kernel meta into the depends of the factory meta.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 19 Mar 2021 11:20:23 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 30 Mar 2021 08:30:07 +0000
 
 oem-scripts (0.80) focal; urgency=medium
 
