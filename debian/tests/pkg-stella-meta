@@ -32,7 +32,7 @@ grep "^apt-get autoremove --purge --yes oem-stella.cmit-ivysaur-meta$" debian/te
 
 grep "Upstream-Name: oem-stella.cmit-ivysaur-meta" debian/copyright
 
-grep "alias pci:\*sv0000103Csd00008750\* meta oem-stella.cmit-ivysaur-meta" debian/modaliases
+grep "alias pci:\*sv0000103Csd00008750bc0Csc05\* meta oem-stella.cmit-ivysaur-meta" debian/modaliases
 
 git checkout cmit.ivysaur-focal-oem
 
@@ -55,4 +55,4 @@ grep "^apt-get autoremove --purge --yes oem-stella.cmit-ivysaur-meta$" debian/te
 
 grep "Upstream-Name: oem-stella.cmit-ivysaur-meta" debian/copyright
 
-grep "alias pci:\*sv0000103Csd00008750\* meta oem-stella.cmit-ivysaur-meta" debian/modaliases
+grep "alias pci:\*sv0000103Csd00008750bc0Csc05\* meta oem-stella.cmit-ivysaur-meta" debian/modaliases

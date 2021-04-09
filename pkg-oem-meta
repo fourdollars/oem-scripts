@@ -347,7 +347,7 @@ License: GPL-3
                         .format(bios_id.upper(), meta))
         elif 'sd_id' in vars(args).keys():
             for sd_id in args.sd_id:
-                f.write("alias pci:*sv0000103Csd0000{0}* meta {1}\n"
+                f.write("alias pci:*sv0000103Csd0000{0}bc0Csc05* meta {1}\n"
                         .format(sd_id.upper(), meta))
         elif 'bios_ver' in vars(args).keys():
             for bios_ver in args.bios_ver:
