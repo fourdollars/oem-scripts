@@ -6,6 +6,9 @@ oem-scripts (0.82) UNRELEASED; urgency=medium
   * debian/tests/pkg-stella-meta,
     pkg-oem-meta: Make the modalias pattern to match the subsystem ID of the
     i2c device.
+  * debian/tests/control,
+    debian/tests/recovery-from-iso.sh,
+    setup.py: Add the test and fix the installation for recovery-from-iso.sh.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 09 Apr 2021 14:12:57 +0800
 

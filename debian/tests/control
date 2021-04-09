@@ -24,7 +24,8 @@ Tests:
 Depends: @
 
 Tests:
- git-url-insteadof-setting
+ git-url-insteadof-setting,
+ recovery-from-iso.sh
 Depends: @
 Restrictions: allow-stderr
 
