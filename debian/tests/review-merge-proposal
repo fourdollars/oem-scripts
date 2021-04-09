@@ -1,0 +1,3 @@
+#!/bin/sh
+
+review-merge-proposal --help

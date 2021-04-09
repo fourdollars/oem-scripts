@@ -1,3 +1,11 @@
+oem-scripts (0.82) UNRELEASED; urgency=medium
+
+  * debian/tests/control,
+    debian/tests/review-merge-proposal,
+    setup.py: Add the test and fix the installation for review-merge-proposal.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 09 Apr 2021 14:12:57 +0800
+
 oem-scripts (0.81) focal; urgency=medium
 
   * debian/tests/pkg-somerville-meta,

@@ -18,6 +18,7 @@ Tests:
  mir-bug,
  oem-meta-packages,
  pkg-list,
+ review-merge-proposal,
  run-autopkgtest,
  setup-apt-dir
 Depends: @
