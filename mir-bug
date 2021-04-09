@@ -683,9 +683,9 @@ def _get_items_from_git(project: str, branch: str, pkg_name: str) -> tuple:
         git_dir = os.path.join(tmpdir, pkg_name)
 
         if project == 'somerville':
-            prog = re.compile(r"alias pci:\*sv00001028sd0000(\w+)\* meta (.*)")
+            prog = re.compile(r"alias pci:\*sv00001028sd0000([0-9A-F]{4})[^ ]* meta (.*)")
         elif project == 'stella':
-            prog = re.compile(r"alias pci:\*sv0000103Csd0000(\w+)\* meta (.*)")
+            prog = re.compile(r"alias pci:\*sv0000103Csd0000([0-9A-F]{4})[^ ]* meta (.*)")
         else:
             prog = re.compile(r"alias dmi:\*bvn([0-9a-zA-Z]+):bvr([0-9a-zA-Z]{3})\* meta (.*)")
 
