@@ -592,7 +592,7 @@ case "$1" in
     configure)
         mkdir -p /etc/default/grub.d/
         ln -sf /usr/share/{pkg_name}/oem-flavour.cfg /etc/default/grub.d/oem-flavour.cfg
-        if command -v update-grub; then
+        if [ -e /boot/grub/grub.cfg ] && command -v update-grub; then
             update-grub
         fi
     ;;
@@ -615,7 +615,7 @@ set -e
 case "$1" in
     remove|purge)
         rm -f /etc/default/grub.d/oem-flavour.cfg
-        if command -v update-grub; then
+        if [ -e /boot/grub/grub.cfg ] && command -v update-grub; then
             update-grub
         fi
     ;;

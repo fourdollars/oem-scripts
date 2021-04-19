@@ -1,3 +1,10 @@
+oem-scripts (0.83) UNRELEASED; urgency=medium
+
+  * oem-meta-packages,
+    pkg-oem-meta: Avoid the installation issue in Ubuntu live system.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 19 Apr 2021 13:12:39 +0800
+
 oem-scripts (0.82) focal; urgency=medium
 
   * debian/tests/control,
