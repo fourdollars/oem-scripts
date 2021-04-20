@@ -63,6 +63,29 @@ def link_bugs(public_bugnum, privates, ihv):
     add_bug_task(pub_bug, hwe_next)
 
 
+def link_priv_bugs(main_bugnum, privates, ihv):
+    assert(main_bugnum.isdigit())
+    login = LaunchpadLogin()
+    lp = login.lp
+    main_bug = lp.bugs[main_bugnum]
+
+    tag = "X-SWE-Bug: Bug #" + main_bugnum
+
+    # Add X-HWE-Bug: tag to description.
+    for priv in privates:
+        assert(priv.isdigit())
+        bug = lp.bugs[priv]
+
+        if re.search(tag, bug.description) is None:
+            # Add the referenced main bug to the private bug, if it's not in already.
+            bug.description += "\n\n{}\n".format(tag)
+            bug.lp_save()
+        else:
+            log.warning("Bug already linked to main bug " + tag)
+
+        add_bug_tags(main_bug, ['originate-from-' + str(bug.id)])
+
+
 def add_bug_task(bug, bug_task):
     assert(type(bug_task) == lazr.restfulclient.resource.Entry)
 
@@ -105,6 +128,7 @@ bud-bind -p bugnumber private_bugnumber1 private_bugnumber2"""
     3. Use bug-bind to bind public and private bug."""
 
     parser = argparse.ArgumentParser(description=description, epilog=help, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('-m', '--main', help='main bug for private bugs')
     parser.add_argument('-p', '--public', help='The public bug number')
     parser.add_argument('-i', '--ihv', help='Launchpad project name for IHV\nExpecting "swe", "hwe", "intel", "amd", "nvidia", "lsi", "emulex"', default='swe')
     parser.add_argument('-v', '--vebose', help='shows debug messages', action='store_true', default=False)
@@ -118,5 +142,7 @@ bud-bind -p bugnumber private_bugnumber1 private_bugnumber2"""
         raise Exception('Expecting "swe", "hwe", "intel", "amd", "nvidia", "lsi", "emulex" for ihv')
     if len(private_bugs) == 0:
         parser.error("must provide private bug numbers.")
-
-    link_bugs(args.public, private_bugs, args.ihv)
+    if args.main:
+        link_priv_bugs(args.main, private_bugs, args.ihv)
+    else:
+        link_bugs(args.public, private_bugs, args.ihv)
