@@ -1,3 +1,10 @@
+oem-scripts (0.84) focal; urgency=medium
+
+  * bin-bug: add "-m,--main" to bind common bugs to main bugs in a private
+    project.
+
+ -- Alex Tu <alex.tu@canonical.com>  Tue, 20 Apr 2021 15:08:14 +0800
+
 oem-scripts (0.83) focal; urgency=medium
 
   * oem-meta-packages,
