@@ -1,4 +1,4 @@
-oem-scripts (0.85) UNRELEASED; urgency=medium
+oem-scripts (0.85) focal; urgency=medium
 
   * oem-meta-packages: Add a question before dput and after git push.
 
