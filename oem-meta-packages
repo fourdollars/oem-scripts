@@ -1254,14 +1254,15 @@ END
             warning(f"({pkg_name}:{branch}) $ git show")
             print(out)
             version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"debian/changelog"])
-            if not args.dry_run and yes_or_ask(args.yes, f"Would you like to commit and push the changes of {version} into {pkg_name}'s {branch} branch, and dput Debian source package into ppa:oem-archive/{pkg_info.ppa_archive}?"):
-                os.chdir(os.path.join(git_dir, '..'))
-                _run_command(['debsign', f'{pkg_name}_{version}_source.changes'])
-                _run_command(['dput', f'ppa:oem-archive/{pkg_info.ppa_archive}', f'{pkg_name}_{version}_source.changes'])
+            if not args.dry_run and yes_or_ask(args.yes, f"Would you like to commit and push the changes of {version} into {pkg_name}'s git {branch} branch?"):
                 os.chdir(git_dir)
                 _run_command(['git', 'remote', 'add', 'oem-solutions-engineers', f"git+ssh://{lp.me.name}@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta"])
                 _run_command(['git', 'push', 'oem-solutions-engineers'])
                 _run_command(['git', 'push', 'oem-solutions-engineers', tag])
+                if not args.dry_run and yes_or_ask(args.yes, f"Would you like to dput Debian source package into ppa:oem-archive/{pkg_info.ppa_archive}?"):
+                    os.chdir(os.path.join(git_dir, '..'))
+                    _run_command(['debsign', f'{pkg_name}_{version}_source.changes'])
+                    _run_command(['dput', f'ppa:oem-archive/{pkg_info.ppa_archive}', f'{pkg_name}_{version}_source.changes'])
 
 
 def check_meta_git(pkg_name: str, pkg_info: PkgInfo, skip_bootstrap: False) -> None:
