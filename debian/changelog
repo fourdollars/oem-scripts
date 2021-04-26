@@ -1,4 +1,4 @@
-oem-scripts (0.86) UNRELEASED; urgency=medium
+oem-scripts (0.86) focal; urgency=medium
 
   * oem-meta-packages: Don't check the factory meta in the apt cache.
 
