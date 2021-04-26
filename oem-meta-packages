@@ -329,7 +329,7 @@ def get_oem_meta_packages(cache) -> list:
     pkg_list = []
     for pkg in cache.packages:
         name = pkg.name
-        if not name.startswith('oem-') or not name.endswith('-meta'):
+        if not name.startswith('oem-') or not name.endswith('-meta') or '-factory-' in name:
             continue
         pkg_list.append(name)
     return sorted(pkg_list)
