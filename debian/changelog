@@ -1,3 +1,9 @@
+oem-scripts (0.86) UNRELEASED; urgency=medium
+
+  * oem-meta-packages: Don't check the factory meta in the apt cache.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 26 Apr 2021 11:47:11 +0800
+
 oem-scripts (0.85) focal; urgency=medium
 
   * oem-meta-packages: Add a question before dput and after git push.
