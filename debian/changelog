@@ -1,3 +1,11 @@
+oem-scripts (0.87) UNRELEASED; urgency=medium
+
+  * debian/tests/oem-meta-packages,
+    oem-meta-packages: Add --meta option to specify the meta package to
+    collect the information.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 28 Apr 2021 17:37:13 +0800
+
 oem-scripts (0.86) focal; urgency=medium
 
   * oem-meta-packages: Don't check the factory meta in the apt cache.
