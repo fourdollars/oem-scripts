@@ -16,7 +16,7 @@ mir-bug collect "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs.json
 mir-bug collect --ubuntu-certified "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs-ubuntu-certified.json
 
 # check & update
-BUG_ID="$(basename "$(jq -r '.[] | .bug' < "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs.json | sort | tail -n 1)")"
+BUG_ID="$(basename "$(jq -r '.[] | .bug' < "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs.json | sort | head -n 1)")"
 mir-bug update --yes --skip --ready "$BUG_ID"
 
 mir-bug check --skip --ready "$BUG_ID"
