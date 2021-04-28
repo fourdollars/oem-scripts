@@ -55,7 +55,8 @@ Also there is a meta package oem-dev-tools that installs all scripts''',
           'stap-build-mymodule.sh',
           'stap-dbgsym.sh',
           'bug-bind.py',
-          'mir-bug'
+          'mir-bug',
+          'check-ssid-duplicated.sh'
       ],
       packages=find_packages(),
       data_files=[('share/oem-scripts', ['config.sh'])],
