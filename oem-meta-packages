@@ -133,11 +133,11 @@ parser.add_argument("--apt-dir",
 
 subparsers = parser.add_subparsers(dest="subcommand")
 
-collect = subparsers.add_parser('collect', help='[-h] platforms.json -o|--output meta-info.json',
+collect = subparsers.add_parser('collect', help='[-h] --json platforms.json | --meta oem-qemu-meta -o|--output meta-info.json',
                                 formatter_class=argparse.RawDescriptionHelpFormatter,
                                 epilog="""
 For example,
-    oem-meta-packages collect platforms.json --output meta-info.json
+    oem-meta-packages collect --json platforms.json --output meta-info.json
 
 platforms.json:
 
@@ -171,11 +171,15 @@ platforms.json:
   ...
 ]
 
+oem-meta-packages collect --meta oem-qemu-meta --output meta-info.json
+
 Collect the information of OEM metapackages in PPAs and devel/staging archives.""")
 
-collect.add_argument("json",
+collect.add_argument("--json",
                      help="Specify the json file to read the platforms information.",
                      type=argparse.FileType('r', encoding='UTF-8'))
+collect.add_argument("--meta",
+                     help="Specify the meta package to collect the information.")
 collect.add_argument("-o", "--output", required=True,
                      help="Specify a filename to write the meta information.",
                      type=argparse.FileType('w', encoding='UTF-8'))
@@ -1336,7 +1340,13 @@ elif args.subcommand == 'collect':
     oem_scripts_config.read(oem_scripts_config_ini)
     config = oem_scripts_config['private']
     r = requests.get(config['archive'] + "/dists/", auth=(config['username'], config['password']))
-    pkgInfo = collect_pkg_info(args.json, check_private=True, index=r.text, config=config)
+    if args.json:
+        pkgInfo = collect_pkg_info(args.json, check_private=True, index=r.text, config=config)
+    elif args.meta:
+        pkgInfo = collect_pkg_info(args.meta, check_private=True, index=r.text, config=config)
+    else:
+        print("You need to use --json or --meta.")
+        exit(1)
     args.output.write(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
     args.output.write("\n")
 elif args.subcommand == 'staging-copy':

@@ -35,7 +35,10 @@ export LAUNCHPAD_API="https://api.launchpad.net/"
 
 oem-meta-packages --quiet list
 
-oem-meta-packages collect platforms.json -o meta-info.json
+oem-meta-packages --quiet collect --json platforms.json -o meta-info.json
+jq -r < meta-info.json
+oem-meta-packages --quiet collect --meta oem-somerville-beric-icl-meta -o meta-info.json
+jq -r < meta-info.json
 
 oem-meta-packages --dry-run update --json meta-info.json
 
