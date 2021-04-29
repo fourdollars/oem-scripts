@@ -1,4 +1,4 @@
-oem-scripts (0.87) UNRELEASED; urgency=medium
+oem-scripts (0.87) focal; urgency=medium
 
   * debian/tests/oem-meta-packages,
     oem-meta-packages: Add --meta option to specify the meta package to
@@ -6,7 +6,7 @@ oem-scripts (0.87) UNRELEASED; urgency=medium
   * debian/tests/mir-bug: Adjust the mir-bug test against the oldest one to
     avoid the missing Git repo problem.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 28 Apr 2021 17:37:13 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 29 Apr 2021 02:41:42 +0000
 
 oem-scripts (0.86) focal; urgency=medium
 
