@@ -708,8 +708,12 @@ def search_ppa_and_version(project: str, group: str, platform: str, pkg_name: st
     source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
     while f"oem-archive/{archive.name}/ubuntu" not in source_lists:
         info(f"Subscribing ppa:oem-archive/{archive.name}")
-        archive.newSubscription(subscriber=lp.me)
-        archive.lp_save()
+        try:
+            archive.newSubscription(subscriber=lp.me)
+            archive.lp_save()
+        except lazr.restfulclient.errors.BadRequest as e:
+            if 'already has a current subscription for' not in str(e):
+                raise e
         _run_command(["get-private-ppa", f"ppa:oem-archive/{archive.name}"])
         source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
     sources = archive.getPublishedSources()

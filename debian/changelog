@@ -1,3 +1,9 @@
+oem-scripts (0.88) UNRELEASED; urgency=medium
+
+  * oem-meta-packages: Avoid the already subscription problem.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 29 Apr 2021 21:25:55 +0800
+
 oem-scripts (0.87) focal; urgency=medium
 
   * debian/tests/oem-meta-packages,
