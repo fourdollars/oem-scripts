@@ -42,7 +42,7 @@ jq -r < meta-info.json
 
 oem-meta-packages --dry-run update --json meta-info.json
 
-sed -i 's/"staging_version":.*/"staging_version": "20.04ubuntu2"/' meta-info.json # lower the staging version to simulate
+sed -i 's/"staging_version":.*/"staging_version": "20.04ubuntu2",/' meta-info.json # lower the staging version to simulate
 
 oem-meta-packages --dry-run staging-copy --json meta-info.json
 

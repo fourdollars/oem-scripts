@@ -82,6 +82,10 @@ class PkgInfo:
     staging_version: str
     devel_archive: str
     devel_version: str
+    oem_archive: str
+    oem_version: str
+    ubuntu_version: str
+    proposed_version: str
 
 
 pattern = re.compile(r'oem-([^-]*)-(.*)-meta')
@@ -764,7 +768,69 @@ def get_debian_version_from_git(pkg_name: str, bootstrap=False) -> str:
         return version
 
 
-def search_archive(pkg_name: str, project: str, platform: str, index: str, config: str, branch: str) -> tuple:
+def search_public_archive(pkg_name: str, project: str, codename: str) -> tuple:
+    if project == 'somerville':
+        source_line = 'http://dell.archive.canonical.com/'
+        archive = f"somerville-{codename}"
+    elif project == 'stella':
+        source_line = 'http://hp.archive.canonical.com/'
+        archive = f"stella.{codename}"
+    elif project == 'sutton':
+        source_line = 'http://lenovo.archive.canonical.com/'
+        archive = f"sutton.{codename}"
+    oem_version = ""
+    with TemporaryDirectory() as tmpdir:
+        os.chdir(tmpdir)
+        _run_command(['setup-apt-dir.sh',
+                      '-c', 'focal',
+                      '--disable-base',
+                      '--disable-updates',
+                      '--disable-backports',
+                      '--apt-dir', tmpdir,
+                      '--extra-key', '59AC787C2A8C78BA5ECA0B2ED4D1EAED36962F69',
+                      '--extra-repo', f"deb [signed-by={tmpdir}/59AC787C2A8C78BA5ECA0B2ED4D1EAED36962F69.pub arch=amd64] {source_line} focal {archive}"],
+                     silent=True)
+        output, _, _ = _run_command(['pkg-list', '-v', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
+        for line in output.split('\n'):
+            if pkg_name in line and source_line in line:
+                oem_version = line.split(' ')[1]
+                info(f"{pkg_name} {oem_version} exists in 'deb {source_line} focal {archive}'.")
+                break
+    ubuntu_version = ""
+    with TemporaryDirectory() as tmpdir:
+        os.chdir(tmpdir)
+        _run_command(['setup-apt-dir.sh',
+                      '-c', 'focal',
+                      '--disable-backports',
+                      '--apt-dir', tmpdir],
+                     silent=True)
+        output, _, _ = _run_command(['pkg-list', '-v', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
+        for line in output.split('\n'):
+            if pkg_name in line and 'http://archive.ubuntu.com/ubuntu' in line:
+                ubuntu_version = line.split(' ')[1]
+                info(f"{pkg_name} {ubuntu_version} exists in Ubuntu archive.")
+                break
+    proposed_version = ""
+    with TemporaryDirectory() as tmpdir:
+        os.chdir(tmpdir)
+        _run_command(['setup-apt-dir.sh',
+                      '-c', 'focal',
+                      '--proposed',
+                      '--disable-base',
+                      '--disable-updates',
+                      '--disable-backports',
+                      '--apt-dir', tmpdir],
+                     silent=True)
+        output, _, _ = _run_command(['pkg-list', '-v', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
+        for line in output.split('\n'):
+            if pkg_name in line and 'http://archive.ubuntu.com/ubuntu' in line:
+                proposed_version = line.split(' ')[1]
+                info(f"{pkg_name} {proposed_version} exists in focal-proposed.")
+                break
+    return ubuntu_version, proposed_version, oem_version, archive
+
+
+def search_private_archive(pkg_name: str, project: str, platform: str, index: str, config: str, branch: str) -> tuple:
     domain = config['archive'].split("://")[1].split("/")[0]
     archive = None
     version = None
@@ -919,13 +985,17 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             warning(f"{pkg_name}'s version in Git is {git_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}.")
         info(f"{pkg_name} {ppa_version} exists in ppa:oem-archive/{ppa_archive}.")
 
+        ubuntu_version, proposed_version, oem_version, oem_archive = search_public_archive(pkg_name, "somerville", codename)
+
         pkgInfo[pkg_name] = PkgInfo(ppa_archive=ppa_archive, ppa_version=ppa_version, git_version=git_version,
                                     old_desc="", new_desc="", fingerprint=fingerprint,
                                     staging_archive="", staging_version="",
-                                    devel_archive="", devel_version="")
+                                    devel_archive="", devel_version="",
+                                    oem_archive=oem_archive, oem_version=oem_version,
+                                    ubuntu_version=ubuntu_version, proposed_version=proposed_version)
 
         if check_private:
-            staging_archive, staging_version = search_archive(pkg_name, "somerville", codename, index, config, branch="staging")
+            staging_archive, staging_version = search_private_archive(pkg_name, "somerville", codename, index, config, branch="staging")
             pkgInfo[pkg_name].staging_archive = staging_archive
             if staging_version:
                 info(f"{pkg_name} {staging_version} exists in {staging_archive}.")
@@ -933,7 +1003,7 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             else:
                 debug(f"{pkg_name} doesn't exist in {staging_archive} yet.")
 
-            devel_archive, devel_version = search_archive(pkg_name, "somerville", codename, index, config, branch="devel")
+            devel_archive, devel_version = search_private_archive(pkg_name, "somerville", codename, index, config, branch="devel")
             pkgInfo[pkg_name].devel_archive = devel_archive
             if devel_version:
                 info(f"{pkg_name} {devel_version} exists in {devel_archive}.")
@@ -968,13 +1038,17 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             warning(f"{pkg_name}'s version in Git is {git_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}.")
         info(f"{pkg_name} {ppa_version} exists in ppa:oem-archive/{ppa_archive}")
 
+        ubuntu_version, proposed_version, oem_version, oem_archive = search_public_archive(pkg_name, "stella", group)
+
         pkgInfo[pkg_name] = PkgInfo(ppa_archive=ppa_archive, ppa_version=ppa_version, git_version=git_version,
                                     old_desc="", new_desc="", fingerprint=fingerprint,
                                     staging_archive="", staging_version="",
-                                    devel_archive="", devel_version="")
+                                    devel_archive="", devel_version="",
+                                    oem_archive=oem_archive, oem_version=oem_version,
+                                    ubuntu_version=ubuntu_version, proposed_version=proposed_version)
 
         if check_private:
-            staging_archive, staging_version = search_archive(pkg_name, "stella", group, index, config, branch="staging")
+            staging_archive, staging_version = search_private_archive(pkg_name, "stella", group, index, config, branch="staging")
             pkgInfo[pkg_name].staging_archive = staging_archive
             if staging_version:
                 info(f"{pkg_name} {staging_version} exists in {staging_archive}.")
@@ -982,7 +1056,7 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             else:
                 debug(f"{pkg_name} doesn't exist in {staging_archive} yet.")
 
-            devel_archive, devel_version = search_archive(pkg_name, "stella", group, index, config, branch="devel")
+            devel_archive, devel_version = search_private_archive(pkg_name, "stella", group, index, config, branch="devel")
             pkgInfo[pkg_name].devel_archive = devel_archive
             if devel_version:
                 info(f"{pkg_name} {devel_version} exists in {devel_archive}.")
@@ -1017,13 +1091,17 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             warning(f"{pkg_name}'s version in Git is {git_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}.")
         info(f"{pkg_name} {ppa_version} exists in ppa:oem-archive/{ppa_archive}")
 
+        ubuntu_version, proposed_version, oem_version, oem_archive = search_public_archive(pkg_name, "sutton", group)
+
         pkgInfo[pkg_name] = PkgInfo(ppa_archive=ppa_archive, ppa_version=ppa_version, git_version=git_version,
                                     old_desc="", new_desc="", fingerprint=fingerprint,
                                     staging_archive="", staging_version="",
-                                    devel_archive="", devel_version="")
+                                    devel_archive="", devel_version="",
+                                    oem_archive=oem_archive, oem_version=oem_version,
+                                    ubuntu_version=ubuntu_version, proposed_version=proposed_version)
 
         if check_private:
-            staging_archive, staging_version = search_archive(pkg_name, "sutton", group, index, config, branch="staging")
+            staging_archive, staging_version = search_private_archive(pkg_name, "sutton", group, index, config, branch="staging")
             pkgInfo[pkg_name].staging_archive = staging_archive
             if staging_version:
                 info(f"{pkg_name} {staging_version} exists in {staging_archive}.")
@@ -1031,7 +1109,7 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             else:
                 debug(f"{pkg_name} doesn't exist in {staging_archive} yet.")
 
-            devel_archive, devel_version = search_archive(pkg_name, "sutton", group, index, config, branch="devel")
+            devel_archive, devel_version = search_private_archive(pkg_name, "sutton", group, index, config, branch="devel")
             pkgInfo[pkg_name].devel_archive = devel_archive
             if devel_version:
                 info(f"{pkg_name} {devel_version} exists in {devel_archive}.")
@@ -1064,7 +1142,11 @@ def load_pkg_info(data) -> dict:
                                 staging_archive=data[meta]['staging_archive'],
                                 staging_version=data[meta]['staging_version'],
                                 devel_archive=data[meta]['devel_archive'],
-                                devel_version=data[meta]['devel_version'])
+                                devel_version=data[meta]['devel_version'],
+                                oem_archive=data[meta]['oem_archive'],
+                                oem_version=data[meta]['oem_version'],
+                                ubuntu_version=data[meta]['ubuntu_version'],
+                                proposed_version=data[meta]['proposed_version'])
 
     debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
     return pkgInfo
