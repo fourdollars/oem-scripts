@@ -28,12 +28,13 @@ DEBUG=
 KEYS=()
 LISTS=()
 MIRROR=
+NO_BASE=
 NO_UPDATES=
 NO_BACKPORTS=
 OUTPUT=
 PPA=()
 PROPOSED=
-OPTS="$(getopt -o c:dho:pm: --long apt-dir:,codename:,disable-updates,disable-backports,debug,help,output:,proposed,ppa:,mirror:,extra-repo:,extra-key: -n 'setup-apt-dir.sh' -- "$@")"
+OPTS="$(getopt -o c:dho:pm: --long apt-dir:,codename:,disable-base,disable-updates,disable-backports,debug,help,output:,proposed,ppa:,mirror:,extra-repo:,extra-key: -n 'setup-apt-dir.sh' -- "$@")"
 eval set -- "${OPTS}"
 while :; do
     case "$1" in
@@ -53,6 +54,9 @@ OPTIONS:
 
  -c | --codename focal
       If not specified, it will use the output of \`lsb_release -c -s\`.
+
+ --disable-base
+      Disable the base channel.
 
  --disable-updates
       Disable -updates channel.
@@ -89,6 +93,9 @@ ENDLINE
         ('-c'|'--codename')
             CODENAME="$2"
             shift 2;;
+        ('--disable-base')
+            NO_BASE=1
+            shift;;
         ('--disable-updates')
             NO_UPDATES=1
             shift;;
@@ -152,19 +159,26 @@ fi
 
 PUBKEY="790BC7277767219C42C86F933B4FE6ACC0B21F32"
 
-cat > "$APTDIR/etc/apt/sources.list" <<ENDLINE
+: > "$APTDIR/etc/apt/sources.list"
+
+if [ -z "$NO_BASE" ]; then
+    cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
 deb [signed-by=$APTDIR/$PUBKEY.pub arch=amd64] $MIRROR $CODENAME main restricted universe multiverse
 ENDLINE
+fi
+
 if [ -z "$NO_UPDATES" ]; then
     cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
 deb [signed-by=$APTDIR/$PUBKEY.pub arch=amd64] $MIRROR $CODENAME-updates main restricted universe multiverse
 ENDLINE
 fi
+
 if [ -z "$NO_BACKPORTS" ]; then
     cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
 deb [signed-by=$APTDIR/$PUBKEY.pub arch=amd64] $MIRROR $CODENAME-backports main restricted universe multiverse
 ENDLINE
 fi
+
 if [ -n "$PROPOSED" ]; then
     echo "deb [signed-by=$APTDIR/$PUBKEY.pub arch=amd64] $MIRROR $CODENAME-proposed main restricted universe multiverse" >> "$APTDIR/etc/apt/sources.list"
 fi

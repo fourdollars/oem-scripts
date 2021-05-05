@@ -1,3 +1,9 @@
+oem-scripts (0.89) UNRELEASED; urgency=medium
+
+  * setup-apt-dir.sh: Add '--disable-base' option to disable the base archive.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 05 May 2021 17:49:08 +0800
+
 oem-scripts (0.88) focal; urgency=medium
 
   * oem-meta-packages: Avoid the already subscription problem.
