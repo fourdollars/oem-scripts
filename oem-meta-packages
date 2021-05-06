@@ -75,6 +75,8 @@ class PkgInfo:
     ppa_archive: str
     ppa_version: str
     git_version: str
+    bootstrap_version: str
+    real_version: str
     old_desc: str
     new_desc: str
     fingerprint: str
@@ -733,7 +735,7 @@ def search_ppa_and_version(project: str, group: str, platform: str, pkg_name: st
         return None, None, None
 
 
-def get_debian_version_from_git(pkg_name: str, bootstrap=False) -> str:
+def get_debian_version_from_git(pkg_name: str) -> str:
     result = pattern.match(pkg_name)
 
     if not result:
@@ -748,24 +750,31 @@ def get_debian_version_from_git(pkg_name: str, bootstrap=False) -> str:
     platform = result.group(2)
 
     if group:
-        if bootstrap:
-            branch = f"{group}.{platform}-focal-ubuntu"
-        else:
-            branch = f"{group}.{platform}-focal-oem"
+        ubuntu_branch = f"{group}.{platform}-focal-ubuntu"
+        oem_branch = f"{group}.{platform}-focal-oem"
     else:
-        if bootstrap:
-            branch = f"{platform}-focal-ubuntu"
-        else:
-            branch = f"{platform}-focal-oem"
+        ubuntu_branch = f"{platform}-focal-ubuntu"
+        oem_branch = f"{platform}-focal-oem"
 
     wget_changelog_command = ("wget", '-q', "-O", "changelog",
-                              f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta/plain/debian/changelog?h={branch}")
+                              f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta/plain/debian/changelog?h={ubuntu_branch}")
 
+    bootstrap_version = ""
     with TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
         _run_command(wget_changelog_command)
-        version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"changelog"])
-        return version
+        bootstrap_version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"changelog"])
+
+    wget_changelog_command = ("wget", '-q', "-O", "changelog",
+                              f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta/plain/debian/changelog?h={oem_branch}")
+
+    oem_version = ""
+    with TemporaryDirectory() as tmpdir:
+        os.chdir(tmpdir)
+        _run_command(wget_changelog_command)
+        oem_version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"changelog"])
+
+    return bootstrap_version, oem_version
 
 
 def search_public_archive(pkg_name: str, project: str, codename: str) -> tuple:
@@ -980,14 +989,15 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
-        git_version = get_debian_version_from_git(pkg_name)
-        if ppa_version != git_version:
-            warning(f"{pkg_name}'s version in Git is {git_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}.")
+        bootstrap_version, real_version = get_debian_version_from_git(pkg_name)
+        if ppa_version != real_version:
+            warning(f"{pkg_name}'s version in Git is {real_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}.")
         info(f"{pkg_name} {ppa_version} exists in ppa:oem-archive/{ppa_archive}.")
 
         ubuntu_version, proposed_version, oem_version, oem_archive = search_public_archive(pkg_name, "somerville", codename)
 
-        pkgInfo[pkg_name] = PkgInfo(ppa_archive=ppa_archive, ppa_version=ppa_version, git_version=git_version,
+        pkgInfo[pkg_name] = PkgInfo(ppa_archive=ppa_archive, ppa_version=ppa_version,
+                                    bootstrap_version=bootstrap_version, real_version=real_version, git_version=real_version,
                                     old_desc="", new_desc="", fingerprint=fingerprint,
                                     staging_archive="", staging_version="",
                                     devel_archive="", devel_version="",
@@ -1033,14 +1043,15 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
-        git_version = get_debian_version_from_git(pkg_name)
-        if ppa_version != git_version:
-            warning(f"{pkg_name}'s version in Git is {git_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}.")
+        bootstrap_version, real_version = get_debian_version_from_git(pkg_name)
+        if ppa_version != real_version:
+            warning(f"{pkg_name}'s version in Git is {real_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}.")
         info(f"{pkg_name} {ppa_version} exists in ppa:oem-archive/{ppa_archive}")
 
         ubuntu_version, proposed_version, oem_version, oem_archive = search_public_archive(pkg_name, "stella", group)
 
-        pkgInfo[pkg_name] = PkgInfo(ppa_archive=ppa_archive, ppa_version=ppa_version, git_version=git_version,
+        pkgInfo[pkg_name] = PkgInfo(ppa_archive=ppa_archive, ppa_version=ppa_version,
+                                    bootstrap_version=bootstrap_version, real_version=real_version, git_version=real_version,
                                     old_desc="", new_desc="", fingerprint=fingerprint,
                                     staging_archive="", staging_version="",
                                     devel_archive="", devel_version="",
@@ -1086,14 +1097,15 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
-        git_version = get_debian_version_from_git(pkg_name)
-        if ppa_version != git_version:
-            warning(f"{pkg_name}'s version in Git is {git_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}.")
+        bootstrap_version, real_version = get_debian_version_from_git(pkg_name)
+        if ppa_version != real_version:
+            warning(f"{pkg_name}'s version in Git is {real_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}.")
         info(f"{pkg_name} {ppa_version} exists in ppa:oem-archive/{ppa_archive}")
 
         ubuntu_version, proposed_version, oem_version, oem_archive = search_public_archive(pkg_name, "sutton", group)
 
-        pkgInfo[pkg_name] = PkgInfo(ppa_archive=ppa_archive, ppa_version=ppa_version, git_version=git_version,
+        pkgInfo[pkg_name] = PkgInfo(ppa_archive=ppa_archive, ppa_version=ppa_version,
+                                    bootstrap_version=bootstrap_version, real_version=real_version, git_version=real_version,
                                     old_desc="", new_desc="", fingerprint=fingerprint,
                                     staging_archive="", staging_version="",
                                     devel_archive="", devel_version="",
@@ -1136,6 +1148,8 @@ def load_pkg_info(data) -> dict:
         pkgInfo[meta] = PkgInfo(ppa_archive=data[meta]['ppa_archive'],
                                 ppa_version=data[meta]['ppa_version'],
                                 git_version=data[meta]['git_version'],
+                                bootstrap_version=data[meta]['bootstrap_version'],
+                                real_version=data[meta]['real_version'],
                                 old_desc=data[meta]['old_desc'],
                                 new_desc=data[meta]['new_desc'],
                                 fingerprint=data[meta]['fingerprint'],
