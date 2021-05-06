@@ -1,8 +1,8 @@
-oem-scripts (0.90) UNRELEASED; urgency=medium
+oem-scripts (0.90) focal; urgency=medium
 
   * oem-meta-packages: Collect the bootstrap meta version from Git repository.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 06 May 2021 17:24:16 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 06 May 2021 12:15:03 +0000
 
 oem-scripts (0.89) focal; urgency=medium
 
