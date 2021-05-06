@@ -1,9 +1,9 @@
-oem-scripts (0.89) UNRELEASED; urgency=medium
+oem-scripts (0.89) focal; urgency=medium
 
   * setup-apt-dir.sh: Add '--disable-base' option to disable the base archive.
   * oem-meta-packages: Collect the versions in Ubuntu archive and OEM archive.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 05 May 2021 17:49:08 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 06 May 2021 04:09:09 +0000
 
 oem-scripts (0.88) focal; urgency=medium
 
