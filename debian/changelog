@@ -1,8 +1,8 @@
-oem-scripts (0.91) UNRELEASED; urgency=medium
+oem-scripts (0.91) focal; urgency=medium
 
   * pkg-list: Fix the problem when checking the dependencies.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 10 May 2021 16:43:19 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 10 May 2021 10:18:23 +0000
 
 oem-scripts (0.90) focal; urgency=medium
 
