@@ -1,3 +1,9 @@
+oem-scripts (0.91) UNRELEASED; urgency=medium
+
+  * pkg-list: Fix the problem when checking the dependencies.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 10 May 2021 16:43:19 +0800
+
 oem-scripts (0.90) focal; urgency=medium
 
   * oem-meta-packages: Collect the bootstrap meta version from Git repository.
