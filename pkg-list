@@ -25,7 +25,7 @@ import sys
 import types
 
 from apt import apt_pkg
-from logging import debug, error, critical, info  # , warning
+from logging import debug, error, critical, info, warning
 from urllib.parse import urljoin
 
 
@@ -93,6 +93,10 @@ if args.debug:
     logging.basicConfig(format='<%(levelname)s> %(message)s',
                         level=logging.DEBUG,
                         handlers=[logging.StreamHandler(sys.stdout)])
+elif args.verbose:
+    logging.basicConfig(format='<%(levelname)s> %(message)s',
+                        level=logging.INFO,
+                        handlers=[logging.StreamHandler(sys.stdout)])
 else:
     logging.basicConfig(format='<%(levelname)s> %(message)s',
                         handlers=[logging.StreamHandler(sys.stdout)])
@@ -111,7 +115,7 @@ def _debug_pkg(pkg: str) -> None:
                 debug(f"{attr}: {pkg.__getattribute__(attr)}")
 
 
-def get_depends(pkg_name: str, depends_list: list, recommends: bool, suggests: bool, non_installed: bool) -> None:
+def get_depends(pkg_name: str, depends_list: list, recommends: bool, suggests: bool, non_installed: bool) -> bool:
     """Recursively get all dependencies.
 
     Args:
@@ -140,8 +144,8 @@ def get_depends(pkg_name: str, depends_list: list, recommends: bool, suggests: b
     _debug_pkg(pkg)
 
     if args.fail_unavailable and not pkg.has_versions:
-        error(f"{pkg_name} is unavailable.")
-        exit(1)
+        warning(f"{pkg_name} is unavailable.")
+        return False
 
     for version in pkg.version_list:
         if pkg_name in map(lambda x: x[0], depends_list):
@@ -180,13 +184,20 @@ def get_depends(pkg_name: str, depends_list: list, recommends: bool, suggests: b
             if target not in version.depends_list_str:
                 continue
             for depends in version.depends_list_str[target]:
+                found = False
                 for depend in depends:
                     (name, ver, _) = depend
                     pkg = cache[name]
                     if name in map(lambda x: x[0], depends_list):
-                        continue
-                    info(f"{pkg_name} {target} {name}")
-                    get_depends(name, depends_list, recommends=recommends, suggests=suggests, non_installed=non_installed)
+                        found = True
+                        break
+                    found = get_depends(name, depends_list, recommends=recommends, suggests=suggests, non_installed=non_installed)
+                    if found:
+                        break
+                if not found and args.fail_unavailable:
+                    error(f"{pkg_name} {target} failed. {depends}")
+                    exit(1)
+    return True
 
 
 if args.apt_dir:
