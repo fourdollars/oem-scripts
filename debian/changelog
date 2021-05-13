@@ -1,9 +1,9 @@
-oem-scripts (0.92) UNRELEASED; urgency=medium
+oem-scripts (0.92) focal; urgency=medium
 
   * debian/tests/launchpad-api,
     launchpad-api: Support PATCH method.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 11 May 2021 14:10:31 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 13 May 2021 01:50:25 +0000
 
 oem-scripts (0.91) focal; urgency=medium
 
