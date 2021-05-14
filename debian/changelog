@@ -5,8 +5,10 @@ oem-scripts (0.93) UNRELEASED; urgency=medium
     setup.py: Add a new tool to download all attachments of the bug.
   * debian/tests/control,
     debian/tests/mir-bug: Skip the test of mir-bug because it is buggy.
+  * debian/tests/lp-dl-attm,
+    lp-dl-attm: Support the private bug.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 14 May 2021 10:02:42 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 14 May 2021 10:54:07 +0800
 
 oem-scripts (0.92) focal; urgency=medium
 

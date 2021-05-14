@@ -5,7 +5,19 @@ if [ -z "$1" ]; then
     exit 0
 fi
 
+JSON="$(mktemp -d)_lp$1.json"
+
+cleanup() {
+    rm -f "$JSON"
+}
+trap cleanup EXIT INT TERM
+
 mkdir -p "lp$1"
 cd "lp$1" || exit 1
+launchpad-api get bugs/"$1" > "$JSON"
 
-launchpad-api get bugs/"$1" | jq-lp .attachments_collection_link | jq -r '.entries | .[] | .data_link' | while read -r link; do wget -q --show-progress --content-disposition "$link"; done
+if [ "$(jq -r .information_type < "$JSON")" = 'Public' ]; then
+    jq-lp .attachments_collection_link < "$JSON" | jq -r '.entries | .[] | .data_link' | while read -r link; do wget -q --show-progress --content-disposition "$link"; done
+else
+    jq-lp .attachments_collection_link < "$JSON" | jq -r '.entries | .[] | .data_link + "|" + .title' | while IFS='|' read -r link filename; do launchpad-api get "$link" --print '' --download --output "$filename"; done
+fi
