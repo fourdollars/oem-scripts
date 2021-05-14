@@ -7,3 +7,4 @@
 override_dh_auto_test:
 	./tests/test_flake8
 	./tests/test_pep8
+	./tests/test_shellcheck
