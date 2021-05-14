@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Public
+lp-dl-attm 1
+find lp1
+
+# Private
+lp-dl-attm 1923430
+find lp1923430

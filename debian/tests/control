@@ -15,12 +15,16 @@ Tests:
  jq-lp,
  launchpad-api,
  lp-bug,
- mir-bug,
  oem-meta-packages,
  pkg-list,
  review-merge-proposal,
  run-autopkgtest,
  setup-apt-dir
+Depends: @
+
+Tests:
+ mir-bug
+Restrictions: skippable
 Depends: @
 
 Tests:

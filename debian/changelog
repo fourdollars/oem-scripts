@@ -1,3 +1,18 @@
+oem-scripts (0.93) UNRELEASED; urgency=medium
+
+  * debian/tests/lp-dl-attm,
+    lp-dl-attm,
+    setup.py: Add a new tool to download all attachments of the bug.
+  * debian/tests/control,
+    debian/tests/mir-bug: Skip the test of mir-bug because it is buggy.
+  * debian/tests/lp-dl-attm,
+    lp-dl-attm: Support the private bug.
+  * lp-dl-attm: Refine the usage and check if a valid bug id. 
+  * debian/rules,
+    tests/test_shellcheck: Use shellcheck to check lp-dl-attm.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 14 May 2021 11:44:07 +0800
+
 oem-scripts (0.92) focal; urgency=medium
 
   * debian/tests/launchpad-api,
