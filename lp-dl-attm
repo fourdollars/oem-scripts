@@ -1,7 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 
-if [ -z "$1" ]; then
-    echo "Usage: $0 [bug id]"
+if [ -z "$1" ] || ! [[ "$1" =~ ^[1-9][0-9]*$ ]]; then
+    cat <<ENDLINE
+Usage: $0 [bug id]
+A little tool to download all attachments on the bug into lp[bug id] folder.
+Ex. \`$0 1\` will download all attachments of bug #1 into the 'lp1' folder.
+ENDLINE
     exit 0
 fi
 
