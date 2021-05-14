@@ -1,0 +1,4 @@
+#!/bin/sh
+
+lp-dl-attm 1
+find lp1

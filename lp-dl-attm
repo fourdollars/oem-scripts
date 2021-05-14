@@ -1,0 +1,11 @@
+#!/bin/sh
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 [bug id]"
+    exit 0
+fi
+
+mkdir -p "lp$1"
+cd "lp$1" || exit 1
+
+launchpad-api get bugs/"$1" | jq-lp .attachments_collection_link | jq -r '.entries | .[] | .data_link' | while read -r link; do wget -q --show-progress --content-disposition "$link"; done

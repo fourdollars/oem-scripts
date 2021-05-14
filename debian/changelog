@@ -1,3 +1,11 @@
+oem-scripts (0.93) UNRELEASED; urgency=medium
+
+  * debian/tests/lp-dl-attm,
+    lp-dl-attm,
+    setup.py: Add a new tool to download all attachments of the bug.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 14 May 2021 09:27:45 +0800
+
 oem-scripts (0.92) focal; urgency=medium
 
   * debian/tests/launchpad-api,
