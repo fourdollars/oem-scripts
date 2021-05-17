@@ -46,7 +46,10 @@ parser.add_argument("-d", "--debug",
                     help="print debug messages")
 parser.add_argument("-v", "--verbose",
                     action="store_true",
-                    help="print verbose list")
+                    help="Deprecated.")
+parser.add_argument("-l", "--long",
+                    action="store_true",
+                    help="print long list including the URL, MD5, SHA1 and SHA256.")
 parser.add_argument("--apt-dir",
                     type=str,
                     help="specify the dir for apt")
@@ -92,10 +95,6 @@ logging.addLevelName(logging.CRITICAL,
 if args.debug:
     logging.basicConfig(format='<%(levelname)s> %(message)s',
                         level=logging.DEBUG,
-                        handlers=[logging.StreamHandler(sys.stdout)])
-elif args.verbose:
-    logging.basicConfig(format='<%(levelname)s> %(message)s',
-                        level=logging.INFO,
                         handlers=[logging.StreamHandler(sys.stdout)])
 else:
     logging.basicConfig(format='<%(levelname)s> %(message)s',
@@ -233,7 +232,7 @@ for pkg in args.pkgs:
     get_depends(pkg, pkg_list, recommends=args.recommends, suggests=args.suggests, non_installed=args.non_installed)
 
 for pkg, ver, url, md5, sha1, sha256 in sorted(pkg_list):
-    if args.verbose:
+    if args.long or args.verbose:
         print(pkg, ver, url, md5, sha1, sha256)
     else:
         print(pkg, ver)

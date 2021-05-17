@@ -30,6 +30,6 @@ rm -fr "$APTDIR"
 
 echo "=== oem-scripts ==="
 APTDIR=$(setup-apt-dir.sh -c focal -m http://uk.archive.ubuntu.com/ubuntu -p --ppa ppa:oem-solutions-engineers/pc-enablement-tools | tail -n1)
-pkg-list --verbose oem-scripts --apt-dir "$APTDIR" --exclude all.list
+pkg-list --long oem-scripts --apt-dir "$APTDIR" --exclude all.list
 
 rm -fr "$APTDIR"
