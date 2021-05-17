@@ -799,7 +799,7 @@ def search_public_archive(pkg_name: str, project: str, codename: str) -> tuple:
                       '--extra-key', '59AC787C2A8C78BA5ECA0B2ED4D1EAED36962F69',
                       '--extra-repo', f"deb [signed-by={tmpdir}/59AC787C2A8C78BA5ECA0B2ED4D1EAED36962F69.pub arch=amd64] {source_line} focal {archive}"],
                      silent=True)
-        output, _, _ = _run_command(['pkg-list', '-v', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
+        output, _, _ = _run_command(['pkg-list', '--long', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
         for line in output.split('\n'):
             if pkg_name in line and source_line in line:
                 oem_version = line.split(' ')[1]
@@ -813,7 +813,7 @@ def search_public_archive(pkg_name: str, project: str, codename: str) -> tuple:
                       '--disable-backports',
                       '--apt-dir', tmpdir],
                      silent=True)
-        output, _, _ = _run_command(['pkg-list', '-v', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
+        output, _, _ = _run_command(['pkg-list', '--long', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
         for line in output.split('\n'):
             if pkg_name in line and 'http://archive.ubuntu.com/ubuntu' in line:
                 ubuntu_version = line.split(' ')[1]
@@ -830,7 +830,7 @@ def search_public_archive(pkg_name: str, project: str, codename: str) -> tuple:
                       '--disable-backports',
                       '--apt-dir', tmpdir],
                      silent=True)
-        output, _, _ = _run_command(['pkg-list', '-v', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
+        output, _, _ = _run_command(['pkg-list', '--long', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
         for line in output.split('\n'):
             if pkg_name in line and 'http://archive.ubuntu.com/ubuntu' in line:
                 proposed_version = line.split(' ')[1]
@@ -859,7 +859,7 @@ def search_private_archive(pkg_name: str, project: str, platform: str, index: st
                       '--extra-key', config['fingerprint'],
                       '--extra-repo', f"deb [signed-by={tmpdir}/{config['fingerprint']}.pub arch=amd64] {source_line} {archive} public"],
                      silent=True)
-        output, _, _ = _run_command(['pkg-list', '-v', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
+        output, _, _ = _run_command(['pkg-list', '--long', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
         for line in output.split('\n'):
             if pkg_name in line and domain in line:
                 version = line.split(' ')[1]
@@ -877,7 +877,7 @@ def search_private_archive(pkg_name: str, project: str, platform: str, index: st
                           '--extra-key', config['fingerprint'],
                           '--extra-repo', f"deb [signed-by={tmpdir}/{config['fingerprint']}.pub arch=amd64] {source_line} {archive} public"],
                          silent=True)
-            output, _, _ = _run_command(['pkg-list', '-v', '--apt-dir', tmpdir, pkg_name], silent=True)
+            output, _, _ = _run_command(['pkg-list', '--long', '--apt-dir', tmpdir, pkg_name], silent=True)
             for line in output.split('\n'):
                 if pkg_name in line and domain in line:
                     version = line.split(' ')[1]

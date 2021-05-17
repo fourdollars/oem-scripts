@@ -25,7 +25,7 @@ mir_bug_verify()
     while read -r _ version url; do
         { echo "  old:"; echo "    version: $version"; echo "    url: $url"; } >> "$yaml"
         old="$version"
-    done < <(pkg-list -v "$meta" | grep ^"$meta")
+    done < <(pkg-list --long "$meta" | grep ^"$meta")
     apt-get install "$meta" --yes
     apt-get update
     apt-get full-upgrade --yes
@@ -34,7 +34,7 @@ mir_bug_verify()
     while read -r _ version url; do
         { echo "  new:"; echo "    version: $version"; echo "    url: $url"; } >> "$yaml"
         new="$version"
-    done < <(pkg-list -v "$meta" | grep ^"$meta")
+    done < <(pkg-list --long "$meta" | grep ^"$meta")
     apt-get autopurge "$meta" --yes
     apt-get update
     if dpkg --compare-versions "$old" lt "$new"; then
