@@ -1,11 +1,11 @@
-oem-scripts (0.94) UNRELEASED; urgency=medium
+oem-scripts (0.94) focal; urgency=medium
 
   * debian/tests/mir-bug-verification,
     debian/tests/pkg-list,
     oem-meta-packages,
     pkg-list: Rename the option to avoid ambiguous meaning.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 17 May 2021 10:51:58 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 17 May 2021 06:24:55 +0000
 
 oem-scripts (0.93) focal; urgency=medium
 
