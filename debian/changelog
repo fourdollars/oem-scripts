@@ -1,4 +1,4 @@
-oem-scripts (0.95) UNRELEASED; urgency=medium
+oem-scripts (0.95) focal; urgency=medium
 
   * setup-apt-dir.sh: Add a new option to support /var/lib/dpkg/status.
 
