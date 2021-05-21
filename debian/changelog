@@ -1,3 +1,9 @@
+oem-scripts (0.95) UNRELEASED; urgency=medium
+
+  * setup-apt-dir.sh: Add a new option to support /var/lib/dpkg/status.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 21 May 2021 17:32:51 +0800
+
 oem-scripts (0.94) focal; urgency=medium
 
   * debian/tests/mir-bug-verification,

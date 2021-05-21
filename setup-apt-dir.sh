@@ -31,10 +31,11 @@ MIRROR=
 NO_BASE=
 NO_UPDATES=
 NO_BACKPORTS=
+DPKG_STATUS=
 OUTPUT=
 PPA=()
 PROPOSED=
-OPTS="$(getopt -o c:dho:pm: --long apt-dir:,codename:,disable-base,disable-updates,disable-backports,debug,help,output:,proposed,ppa:,mirror:,extra-repo:,extra-key: -n 'setup-apt-dir.sh' -- "$@")"
+OPTS="$(getopt -o c:dho:ps:m: --long apt-dir:,codename:,dpkg-status:,disable-base,disable-updates,disable-backports,debug,help,output:,proposed,ppa:,mirror:,extra-repo:,extra-key: -n 'setup-apt-dir.sh' -- "$@")"
 eval set -- "${OPTS}"
 while :; do
     case "$1" in
@@ -54,6 +55,9 @@ OPTIONS:
 
  -c | --codename focal
       If not specified, it will use the output of \`lsb_release -c -s\`.
+
+ -s | --dpkg-status /var/lib/dpkg/status
+      If not specified, it will use an empty status. If this is specified, it will copy the dpkg status into the temporary apt folder.
 
  --disable-base
       Disable the base channel.
@@ -92,6 +96,9 @@ ENDLINE
             shift ;;
         ('-c'|'--codename')
             CODENAME="$2"
+            shift 2;;
+        ('-s'|'--dpkg-status')
+            DPKG_STATUS="$2"
             shift 2;;
         ('--disable-base')
             NO_BASE=1
@@ -148,7 +155,11 @@ if [ -z "$APTDIR" ]; then
     echo "APTDIR=$APTDIR"
 fi
 mkdir -p "$APTDIR"/var/lib/apt/lists "$APTDIR"/var/lib/dpkg "$APTDIR"/etc/apt/preferences.d "$APTDIR"/var/lib/dpkg
-:> "$APTDIR"/var/lib/dpkg/status
+if [ -n "$DPKG_STATUS" ] && [ -f "$DPKG_STATUS" ]; then
+    cp -v "$DPKG_STATUS" "$APTDIR"/var/lib/dpkg/status
+else
+    :> "$APTDIR"/var/lib/dpkg/status
+fi
 
 if [ "${#PPA[@]}" != "0" ]; then
     while read -r _ url key; do
