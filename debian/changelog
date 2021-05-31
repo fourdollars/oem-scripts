@@ -1,4 +1,4 @@
-oem-scripts (0.96) UNRELEASED; urgency=medium
+oem-scripts (0.96) focal; urgency=medium
 
   * debian/tests/setup-apt-dir,
     setup-apt-dir.sh: Add an option to enable i386 arch.
@@ -6,7 +6,7 @@ oem-scripts (0.96) UNRELEASED; urgency=medium
     pkg-list: Make it able to deal with i386 dependencies and remove the
     deprecated verbose option.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 31 May 2021 15:49:49 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 31 May 2021 09:10:07 +0000
 
 oem-scripts (0.95) focal; urgency=medium
 
