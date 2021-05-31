@@ -14,9 +14,6 @@ pkg-list --apt-dir "$APTDIR" dkms --exclude ubuntu-desktop.list | tee dkms.list
 
 cat ubuntu-desktop.list dkms.list > all.list
 
-echo "=== nvidia-settings nvidia-prime nvidia-driver-455 ==="
-pkg-list --apt-dir "$APTDIR" nvidia-settings nvidia-prime nvidia-driver-455 --exclude all.list
-
 echo "=== linux-generic ==="
 pkg-list --apt-dir "$APTDIR" linux-generic --exclude all.list
 
@@ -31,5 +28,9 @@ rm -fr "$APTDIR"
 echo "=== oem-scripts ==="
 APTDIR=$(setup-apt-dir.sh -c focal -m http://uk.archive.ubuntu.com/ubuntu -p --ppa ppa:oem-solutions-engineers/pc-enablement-tools | tail -n1)
 pkg-list --long oem-scripts --apt-dir "$APTDIR" --exclude all.list
+rm -fr "$APTDIR"
 
+echo "=== nvidia-driver-460 i386 ==="
+APTDIR=$(setup-apt-dir.sh -c focal -m http://uk.archive.ubuntu.com/ubuntu --i386 | tail -n1)
+pkg-list --recommends --apt-dir "$APTDIR" --exclude all.list nvidia-driver-460 | grep i386
 rm -fr "$APTDIR"

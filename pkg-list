@@ -44,9 +44,6 @@ examples:
 parser.add_argument("-d", "--debug",
                     action="store_true",
                     help="print debug messages")
-parser.add_argument("-v", "--verbose",
-                    action="store_true",
-                    help="Deprecated.")
 parser.add_argument("-l", "--long",
                     action="store_true",
                     help="print long list including the URL, MD5, SHA1 and SHA256.")
@@ -139,7 +136,8 @@ def get_depends(pkg_name: str, depends_list: list, recommends: bool, suggests: b
 
     pkg = cache[pkg_name]
 
-    info(f"check {pkg_name}")
+    info(f"check {pkg_name} {pkg.architecture}")
+    arch = pkg.architecture
     _debug_pkg(pkg)
 
     if args.fail_unavailable and not pkg.has_versions:
@@ -171,7 +169,7 @@ def get_depends(pkg_name: str, depends_list: list, recommends: bool, suggests: b
                 url = urljoin("http://" + pfile[0].site, 'ubuntu/' + record.filename)
                 break
 
-        debug(f"{pkg_name} {version.ver_str} {url}")
+        debug(f"{pkg_name} {version.ver_str} {pkg.architecture} {url}")
         item = (pkg_name, version.ver_str, url, record.hashes.find("MD5Sum"), record.hashes.find("SHA1"), record.hashes.find("SHA256"))
         depends_list.append(item)
 
@@ -190,6 +188,9 @@ def get_depends(pkg_name: str, depends_list: list, recommends: bool, suggests: b
                     if name in map(lambda x: x[0], depends_list):
                         found = True
                         break
+                    if arch == 'i386' and pkg.architecture == 'amd64':
+                        name = name + ":i386"
+                        pkg = cache[name]
                     found = get_depends(name, depends_list, recommends=recommends, suggests=suggests, non_installed=non_installed)
                     if found:
                         break
@@ -232,7 +233,7 @@ for pkg in args.pkgs:
     get_depends(pkg, pkg_list, recommends=args.recommends, suggests=args.suggests, non_installed=args.non_installed)
 
 for pkg, ver, url, md5, sha1, sha256 in sorted(pkg_list):
-    if args.long or args.verbose:
+    if args.long:
         print(pkg, ver, url, md5, sha1, sha256)
     else:
         print(pkg, ver)
