@@ -1,3 +1,10 @@
+oem-scripts (0.96) UNRELEASED; urgency=medium
+
+  * debian/tests/setup-apt-dir,
+    setup-apt-dir.sh: Add an option to enable i386 arch.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 31 May 2021 14:35:09 +0800
+
 oem-scripts (0.95) focal; urgency=medium
 
   * setup-apt-dir.sh: Add a new option to support /var/lib/dpkg/status.

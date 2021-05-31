@@ -25,6 +25,7 @@ set -euo pipefail
 APTDIR=
 CODENAME=
 DEBUG=
+I386=
 KEYS=()
 LISTS=()
 MIRROR=
@@ -35,7 +36,7 @@ DPKG_STATUS=
 OUTPUT=
 PPA=()
 PROPOSED=
-OPTS="$(getopt -o c:dho:ps:m: --long apt-dir:,codename:,dpkg-status:,disable-base,disable-updates,disable-backports,debug,help,output:,proposed,ppa:,mirror:,extra-repo:,extra-key: -n 'setup-apt-dir.sh' -- "$@")"
+OPTS="$(getopt -o c:dho:ps:m: --long apt-dir:,codename:,dpkg-status:,disable-base,disable-updates,disable-backports,debug,help,i386,output:,proposed,ppa:,mirror:,extra-repo:,extra-key: -n 'setup-apt-dir.sh' -- "$@")"
 eval set -- "${OPTS}"
 while :; do
     case "$1" in
@@ -67,6 +68,9 @@ OPTIONS:
 
  --disable-backports
       Disable -backports channel.
+
+ --i386
+      Enable i386 arch.
 
  -m | --mirror mirror://mirrors.ubuntu.com/mirrors.txt
       If not specified, it will use http://archive.ubuntu.com/ubuntu by default.
@@ -108,6 +112,9 @@ ENDLINE
             shift;;
         ('--disable-backports')
             NO_BACKPORTS=1
+            shift;;
+        ('--i386')
+            I386=1
             shift;;
         ('-o'|'--output')
             OUTPUT="$2"
@@ -172,26 +179,32 @@ PUBKEY="790BC7277767219C42C86F933B4FE6ACC0B21F32"
 
 : > "$APTDIR/etc/apt/sources.list"
 
+if [ -z "$I386" ]; then
+    ARCH=" arch=amd64"
+else
+    ARCH=""
+fi
+
 if [ -z "$NO_BASE" ]; then
     cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
-deb [signed-by=$APTDIR/$PUBKEY.pub arch=amd64] $MIRROR $CODENAME main restricted universe multiverse
+deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME main restricted universe multiverse
 ENDLINE
 fi
 
 if [ -z "$NO_UPDATES" ]; then
     cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
-deb [signed-by=$APTDIR/$PUBKEY.pub arch=amd64] $MIRROR $CODENAME-updates main restricted universe multiverse
+deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-updates main restricted universe multiverse
 ENDLINE
 fi
 
 if [ -z "$NO_BACKPORTS" ]; then
     cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
-deb [signed-by=$APTDIR/$PUBKEY.pub arch=amd64] $MIRROR $CODENAME-backports main restricted universe multiverse
+deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-backports main restricted universe multiverse
 ENDLINE
 fi
 
 if [ -n "$PROPOSED" ]; then
-    echo "deb [signed-by=$APTDIR/$PUBKEY.pub arch=amd64] $MIRROR $CODENAME-proposed main restricted universe multiverse" >> "$APTDIR/etc/apt/sources.list"
+    echo "deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-proposed main restricted universe multiverse" >> "$APTDIR/etc/apt/sources.list"
 fi
 
 for list in "${LISTS[@]}"; do
