@@ -1,4 +1,4 @@
-oem-scripts (0.97) UNRELEASED; urgency=medium
+oem-scripts (0.97) focal; urgency=medium
 
   * pkg-oem-meta: Add linux-oem-20.04c parameter support
 
