@@ -48,9 +48,9 @@ else:
     exit(1)
 
 parser.add_argument('-k', '--kernel',
-                    choices=['linux-oem-20.04', 'linux-oem-20.04b', 'linux-generic-hwe-20.04'],
+                    choices=['linux-oem-20.04', 'linux-oem-20.04b', 'linux-oem-20.04c', 'linux-generic-hwe-20.04'],
                     default='linux-oem-20.04',
-                    help="Specify the kernel meta. [linux-oem-20.04|linux-oem-20.04b|linux-generic-hwe-20.04]")
+                    help="Specify the kernel meta. [linux-oem-20.04|linux-oem-20.04b|linux-oem-20.04c|linux-generic-hwe-20.04]")
 info = UbuntuDistroInfo()
 try:
     # for bionic
@@ -146,6 +146,10 @@ def generate_debian_package(version, bootstrap=False, real=False):
     elif args.kernel == 'linux-oem-20.04b':
         if real:
             extra = ', linux-oem-20.04b | linux-oem-20.04'
+        flavour = 'oem'
+    elif args.kernel == 'linux-oem-20.04c':
+        if real:
+            extra = ', linux-oem-20.04c'
         flavour = 'oem'
 
     if group:
