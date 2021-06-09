@@ -1,6 +1,8 @@
 oem-scripts (0.98) UNRELEASED; urgency=medium
 
   * Black all Python files.
+  * debian/control,
+    debian/rules: Use black to check all Python files.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 09 Jun 2021 20:55:21 +0800
 
