@@ -23,6 +23,27 @@ fi
 LAUNCHPAD_URL="${LAUNCHPAD_URL:=https://launchpad.net}"
 LAUNCHPAD_API="${LAUNCHPAD_API:=https://api.launchpad.net/}"
 
+usage_auth_failed()
+{
+	>&2 echo === Failure as accessing the web service.
+	>&2 echo
+	>&2 echo It\'s likely your authentication token is removed or expired.
+	>&2 echo Please backup/remove the config.ini, get authentication token and try again.
+	>&2 echo
+	>&2 echo Ex:
+	>&2 echo
+	>&2 echo $ mv ~/.config/oem-scripts/config.ini ~/.config/oem-scripts/config.ini.backup
+	>&2 echo $ launchpad-api get devel/people/+me
+	>&2 echo $ \# try your command after reset token by using above commands.
+}
+
+usage()
+{
+	>&2 echo === Useage:
+	>&2 echo   \$ launchpad-api get devel/people/+me \# same as \$ launchpad-api test
+	>&2 echo   \$ launchpad-api get devel/people/+me ws.op==getArchiveSubscriptionURLs
+}
+
 get_token()
 {
     [ "x$debug" = "x1" ] && echo "oauth_consumer_key=${oauth_consumer_key}"
@@ -97,7 +118,7 @@ get_api()
         oauth_timestamp=="$(date +%s)" \
         oauth_token=="${oauth_token}" \
         oauth_version=="1.0" \
-        "$@"
+        "$@" || ( usage_auth_failed ; usage )
 }
 
 patch_api()
@@ -162,10 +183,14 @@ case "$1" in
         shift
         post_api "$@"
         ;;
+    ("test")
+        get_api devel/people/+me
+        ;;
     ("debug")
         debug=1
         get_api devel/people/+me
         ;;
     (*)
+        usage
         ;;
 esac
