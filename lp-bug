@@ -30,77 +30,94 @@ from logging import debug, warning, info, critical
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
 from tempfile import TemporaryDirectory
 
-parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
-                                 epilog="""
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog="""
 examples:
     lp-bug copy --output=target_bug_id SOURCE_BUG_ID
     lp-bug cleanup BUG_ID
-    lp-bug cqa-verify [BUG_ID]""")
+    lp-bug cqa-verify [BUG_ID]""",
+)
 
-parser.add_argument("-d", "--debug",
-                    help="print debug messages", action="store_true")
-parser.add_argument("-q", "--quiet",
-                    help="Don't print info messages", action="store_true")
+parser.add_argument("-d", "--debug", help="print debug messages", action="store_true")
+parser.add_argument(
+    "-q", "--quiet", help="Don't print info messages", action="store_true"
+)
 
 subparsers = parser.add_subparsers(dest="subcommand")
 
-copy = subparsers.add_parser('copy', help='[-h] [-o=targetBugID|--output=targetBugID] sourceBugID')
-copy.add_argument("-o", "--output",
-                  help="Specify a file name to write the bug number.",
-                  type=argparse.FileType('w', encoding='UTF-8'))
-copy.add_argument("-t", "--target",
-                  help="Specify the target project, 'oem-priority' by default.",
-                  type=str)
-copy.add_argument("bugID",
-                  help="Specify the bug number on Launchpad to copy from.", type=int)
-copy.add_argument("--public",
-                  help="Make the bug public.", action="store_true")
+copy = subparsers.add_parser(
+    "copy", help="[-h] [-o=targetBugID|--output=targetBugID] sourceBugID"
+)
+copy.add_argument(
+    "-o",
+    "--output",
+    help="Specify a file name to write the bug number.",
+    type=argparse.FileType("w", encoding="UTF-8"),
+)
+copy.add_argument(
+    "-t",
+    "--target",
+    help="Specify the target project, 'oem-priority' by default.",
+    type=str,
+)
+copy.add_argument(
+    "bugID", help="Specify the bug number on Launchpad to copy from.", type=int
+)
+copy.add_argument("--public", help="Make the bug public.", action="store_true")
 
-cleanup = subparsers.add_parser('cleanup', help='[-h] [--yes] bugID')
-cleanup.add_argument("bugID",
-                     help="Specify the bug number on Launchpad to clean up.", type=int)
-cleanup.add_argument("--yes",
-                     help="Say yes for all prompts.", action="store_true")
+cleanup = subparsers.add_parser("cleanup", help="[-h] [--yes] bugID")
+cleanup.add_argument(
+    "bugID", help="Specify the bug number on Launchpad to clean up.", type=int
+)
+cleanup.add_argument("--yes", help="Say yes for all prompts.", action="store_true")
 
-cqa_verify = subparsers.add_parser('cqa-verify', help='[-h] [--yes] [--dry-run] [bugID]',
-                                   formatter_class=argparse.RawDescriptionHelpFormatter,
-                                   epilog="""
-The 'cqa-verify' subcommand will check the versions in the production archive automatically.""")
-cqa_verify.add_argument("--yes",
-                        help="Say yes for all prompts.", action="store_true")
-cqa_verify.add_argument("--dry-run",
-                        help="Dry run the process.", action="store_true")
-cqa_verify.add_argument('bugID', nargs='?', type=int)
+cqa_verify = subparsers.add_parser(
+    "cqa-verify",
+    help="[-h] [--yes] [--dry-run] [bugID]",
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog="""
+The 'cqa-verify' subcommand will check the versions in the production archive automatically.""",
+)
+cqa_verify.add_argument("--yes", help="Say yes for all prompts.", action="store_true")
+cqa_verify.add_argument("--dry-run", help="Dry run the process.", action="store_true")
+cqa_verify.add_argument("bugID", nargs="?", type=int)
 
 args = parser.parse_args()
 
-logging.addLevelName(logging.DEBUG,
-                     "\033[1;96m%s\033[1;0m" %
-                     logging.getLevelName(logging.DEBUG))
-logging.addLevelName(logging.INFO,
-                     "\033[1;32m%s\033[1;0m" %
-                     logging.getLevelName(logging.INFO))
-logging.addLevelName(logging.WARNING,
-                     "\033[1;33m%s\033[1;0m" %
-                     logging.getLevelName(logging.WARNING))
-logging.addLevelName(logging.ERROR,
-                     "\033[1;31m%s\033[1;0m" %
-                     logging.getLevelName(logging.ERROR))
-logging.addLevelName(logging.CRITICAL,
-                     "\033[1;41m%s\033[1;0m" %
-                     logging.getLevelName(logging.CRITICAL))
+logging.addLevelName(
+    logging.DEBUG, "\033[1;96m%s\033[1;0m" % logging.getLevelName(logging.DEBUG)
+)
+logging.addLevelName(
+    logging.INFO, "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.INFO)
+)
+logging.addLevelName(
+    logging.WARNING, "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING)
+)
+logging.addLevelName(
+    logging.ERROR, "\033[1;31m%s\033[1;0m" % logging.getLevelName(logging.ERROR)
+)
+logging.addLevelName(
+    logging.CRITICAL, "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.CRITICAL)
+)
 
 if args.debug:
-    logging.basicConfig(format='<%(levelname)s> %(message)s',
-                        level=logging.DEBUG,
-                        handlers=[logging.StreamHandler(sys.stdout)])
+    logging.basicConfig(
+        format="<%(levelname)s> %(message)s",
+        level=logging.DEBUG,
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
 elif not args.quiet:
-    logging.basicConfig(format='<%(levelname)s> %(message)s',
-                        level=logging.INFO,
-                        handlers=[logging.StreamHandler(sys.stdout)])
+    logging.basicConfig(
+        format="<%(levelname)s> %(message)s",
+        level=logging.INFO,
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
 else:
-    logging.basicConfig(format='<%(levelname)s> %(message)s',
-                        handlers=[logging.StreamHandler(sys.stdout)])
+    logging.basicConfig(
+        format="<%(levelname)s> %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
 
 
 def _yes_or_ask(yes: bool, message: str) -> bool:
@@ -111,7 +128,7 @@ def _yes_or_ask(yes: bool, message: str) -> bool:
         res = input(f"> \033[1;34m{message}\033[1;0m (y/n) ").lower()
         if res not in {"y", "n"}:
             continue
-        if res == 'y':
+        if res == "y":
             return True
         else:
             return False
@@ -125,7 +142,7 @@ def copy_bug(lp, bug_number: int, target: str, public: bool, output=None) -> Non
         project = lp.projects["oem-priority"]
 
     if public:
-        information_type = 'Public'
+        information_type = "Public"
     else:
         information_type = bug.information_type
 
@@ -134,7 +151,8 @@ def copy_bug(lp, bug_number: int, target: str, public: bool, output=None) -> Non
         target=project,
         title=bug.title,
         information_type=information_type,
-        tags=bug.tags)
+        tags=bug.tags,
+    )
     info(f'LP: #{new_bug.id} - "{new_bug.title}" is created. {new_bug.web_link}')
     if output:
         output.write(f"{new_bug.id}\n")
@@ -142,7 +160,10 @@ def copy_bug(lp, bug_number: int, target: str, public: bool, output=None) -> Non
 
 def cleanup_bug(lp, bug_number: int, yes: bool) -> None:
     bug = lp.bugs[bug_number]
-    if not _yes_or_ask(yes, f'Do you want to cleanup all information on LP: #{bug_number} - "{bug.title}"? {bug.web_link}'):
+    if not _yes_or_ask(
+        yes,
+        f'Do you want to cleanup all information on LP: #{bug_number} - "{bug.title}"? {bug.web_link}',
+    ):
         return
 
     if bug.title != "null":
@@ -159,14 +180,17 @@ def cleanup_bug(lp, bug_number: int, yes: bool) -> None:
     found = False
 
     for bug_task in bug.bug_tasks:
-        if bug_task.bug_target_name == 'null-and-void':
+        if bug_task.bug_target_name == "null-and-void":
             found = True
 
-    if not found and bug.information_type == 'Public':
+    if not found and bug.information_type == "Public":
         bug.addTask(target=lp.projects["null-and-void"])
 
     for bug_task in bug.bug_tasks:
-        if bug_task.bug_target_name != 'null-and-void' and bug.information_type == 'Public':
+        if (
+            bug_task.bug_target_name != "null-and-void"
+            and bug.information_type == "Public"
+        ):
             try:
                 bug_task.lp_delete()
             except lazr.restfulclient.errors.BadRequest as e:
@@ -183,21 +207,27 @@ def cleanup_bug(lp, bug_number: int, yes: bool) -> None:
         if subscription.canBeUnsubscribedByUser():
             bug.unsubscribe(person=lp.people[subscription.person.name])
         else:
-            warning(f"{lp.me.name} doesn't have the permission to unsubscribe {subscription.person.name}.")
+            warning(
+                f"{lp.me.name} doesn't have the permission to unsubscribe {subscription.person.name}."
+            )
 
-    info(f'LP: #{bug.id} has been cleaned. {bug.web_link}')
+    info(f"LP: #{bug.id} has been cleaned. {bug.web_link}")
 
 
-def _run_command(command: list or tuple, returncode=(0,), env=None, silent=False) -> (str, str, int):
+def _run_command(
+    command: list or tuple, returncode=(0,), env=None, silent=False
+) -> (str, str, int):
     if not silent:
         debug("$ " + " ".join(command))
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+    proc = subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
+    )
     out, err = proc.communicate()
 
     if out:
-        out = out.decode('utf-8').strip()
+        out = out.decode("utf-8").strip()
     if err:
-        err = err.decode('utf-8').strip()
+        err = err.decode("utf-8").strip()
 
     if proc.returncode not in returncode:
         critical(f"return {proc.returncode}")
@@ -216,44 +246,46 @@ def _run_command(command: list or tuple, returncode=(0,), env=None, silent=False
     return (out, err, proc.returncode)
 
 
-pattern = re.compile(r'(.*) \(==(.*)\)')
+pattern = re.compile(r"(.*) \(==(.*)\)")
 
 
 def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> None:
-    cloudberry = lp.projects['cloudberry']
+    cloudberry = lp.projects["cloudberry"]
     # Only deal with those bugs with 'Fix Committed' and 'request of publish_package' in the title.
-    tasks = cloudberry.searchTasks(status=['Fix Committed'], search_text='request of publish_package')
+    tasks = cloudberry.searchTasks(
+        status=["Fix Committed"], search_text="request of publish_package"
+    )
     for task in tasks:
         bug = task.bug
         # Only deal with one bug id when it is provided.
         if bugID and bug.id != bugID:
             continue
         # Only deal with those bugs with this tag.
-        if 'cqa-verified-staging' not in bug.tags:
+        if "cqa-verified-staging" not in bug.tags:
             continue
         info(f'LP: #{bug.id} "{bug.title}"\n{bug.description}')
         debug(bug.tags)
         multiple = False
         packages = []
         prod_archive_line = ""
-        lines = bug.description.split('\n')
+        lines = bug.description.split("\n")
         # Parse the package list and the production archive in the bug description.
         for idx, line in enumerate(lines):
-            if line.startswith('Package: '):
+            if line.startswith("Package: "):
                 debug(line)
-                if line.endswith(','):
+                if line.endswith(","):
                     multiple = True
                     packages.append(line[9:-1])
                 else:
-                    packages = line[9:].split(',')
+                    packages = line[9:].split(",")
             elif multiple is True:
                 debug(line)
-                if not line.endswith(','):
+                if not line.endswith(","):
                     multiple = False
                     packages.append(line.strip())
                 else:
                     packages.append(line.strip()[:-1])
-            elif 'production archive' in line:
+            elif "production archive" in line:
                 prod_archive_line = lines[idx + 2]
         # Skip the bug when it found no production archive.
         if not prod_archive_line:
@@ -272,9 +304,9 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> None:
         # Check if the production archive provided the packages and versions.
         with TemporaryDirectory() as tmpdir:
             failed = False
-            fingerprint = 'F9FDA6BED73CDC22'
-            series = ['focal', 'bionic', 'xenial']
-            codename = ''
+            fingerprint = "F9FDA6BED73CDC22"
+            series = ["focal", "bionic", "xenial"]
+            codename = ""
             for item in series:
                 if item in prod_archive_line:
                     codename = item
@@ -284,23 +316,32 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> None:
                 continue
             # Setup the temporary apt dir to include the production archive.
             output, _, returncode = _run_command(
-                ['setup-apt-dir.sh',
-                 '-c', codename,
-                 '--disable-updates',
-                 '--disable-backports',
-                 '--apt-dir', tmpdir,
-                 '--extra-key', fingerprint,
-                 '--extra-repo', prod_archive_line.replace("deb ", f"deb [signed-by={tmpdir}/{fingerprint}.pub] ")
-                 ], returncode=(0, 100))
+                [
+                    "setup-apt-dir.sh",
+                    "-c",
+                    codename,
+                    "--disable-updates",
+                    "--disable-backports",
+                    "--apt-dir",
+                    tmpdir,
+                    "--extra-key",
+                    fingerprint,
+                    "--extra-repo",
+                    prod_archive_line.replace(
+                        "deb ", f"deb [signed-by={tmpdir}/{fingerprint}.pub] "
+                    ),
+                ],
+                returncode=(0, 100),
+            )
             # Skip the bug when it found some error in the production archive.
             if returncode == 100:
                 warning(output)
                 continue
             # Use the temporary apt dir to compare the package versions.
             for pkg, ver in packages:
-                output, _, _ = _run_command(['pkg-list', '--apt-dir', tmpdir, pkg])
-                for line in output.split('\n'):
-                    archive_pkg, archive_ver = line.split(' ')
+                output, _, _ = _run_command(["pkg-list", "--apt-dir", tmpdir, pkg])
+                for line in output.split("\n"):
+                    archive_pkg, archive_ver = line.split(" ")
                     if pkg == archive_pkg:
                         if apt_pkg.version_compare(archive_ver, ver) >= 0:
                             print(f"{line} >= {ver}")
@@ -309,9 +350,12 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> None:
                             failed = True
             # Tag "cqa-verified" if no failure.
             if not failed:
-                if not args.dry_run and _yes_or_ask(yes, f'Would you like to tag "cqa-verified" for LP: #{bug.id} "{bug.title}"?'):
+                if not args.dry_run and _yes_or_ask(
+                    yes,
+                    f'Would you like to tag "cqa-verified" for LP: #{bug.id} "{bug.title}"?',
+                ):
                     tags = bug.tags.copy()
-                    tags.append('cqa-verified')
+                    tags.append("cqa-verified")
                     if f"oem-scripts-{oem_scripts.__version__}" not in tags:
                         tags.append(f"oem-scripts-{oem_scripts.__version__}")
                     bug.tags = tags
@@ -322,11 +366,11 @@ if args.subcommand:
     login = LaunchpadLogin()
     lp = login.lp
 
-if args.subcommand == 'copy':
+if args.subcommand == "copy":
     copy_bug(lp, args.bugID, output=args.output, target=args.target, public=args.public)
-elif args.subcommand == 'cleanup':
+elif args.subcommand == "cleanup":
     cleanup_bug(lp, args.bugID, args.yes)
-elif args.subcommand == 'cqa-verify':
+elif args.subcommand == "cqa-verify":
     cloudberry_cqa_verified(lp, args.yes, args.bugID)
 else:
     parser.print_help()

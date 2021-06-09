@@ -11,11 +11,10 @@ import sys
 import re
 from optparse import OptionParser
 
-__DEBUG__ = (os.getenv('DEBUG') == 'true')
+__DEBUG__ = os.getenv("DEBUG") == "true"
 
 
 class ImageURI(object):
-
     def __init__(self, project, date, buildorder, image_type):
         self.project = project
         self.date = date
@@ -24,13 +23,12 @@ class ImageURI(object):
         self.image_type = image_type
 
         # default value
-        self.siteurl = 'https://oem-share.canonical.com'
+        self.siteurl = "https://oem-share.canonical.com"
         self.ispublished = False
 
     @property
     def rootdir(self):
-        self._rootdir = self.ispublished and\
-            '/partners/' or '/oem/cesg-builds/'
+        self._rootdir = self.ispublished and "/partners/" or "/oem/cesg-builds/"
         return self._rootdir
 
     @property
@@ -44,23 +42,31 @@ class ImageURI(object):
     @property
     def imagepath(self):
         if self.ispublished:
-            return os.path.join(self.project, 'images',
-                                '{}-{}'.format(self.date, self.buildorder),
-                                self.image_type, self.isoname)
+            return os.path.join(
+                self.project,
+                "images",
+                "{}-{}".format(self.date, self.buildorder),
+                self.image_type,
+                self.isoname,
+            )
         else:
-            return os.path.join(self.project, self.date, self.buildorder,
-                                'images', self.image_type, self.isoname)
+            return os.path.join(
+                self.project,
+                self.date,
+                self.buildorder,
+                "images",
+                self.image_type,
+                self.isoname,
+            )
 
     @property
     def isoname(self):
         if self.manifest_ver:
-            project = self.project + '-' + self.manifest_ver
+            project = self.project + "-" + self.manifest_ver
         else:
             project = self.project
-        image_type = 'iso' \
-            if re.match(r'^dell-bto', self.project) else self.image_type
-        return '{}-{}-{}-{}.iso'.format(project, image_type,
-                                        self.date, self.buildorder)
+        image_type = "iso" if re.match(r"^dell-bto", self.project) else self.image_type
+        return "{}-{}-{}-{}.iso".format(project, image_type, self.date, self.buildorder)
 
     @classmethod
     def from_url(cls, url):
@@ -88,33 +94,41 @@ class ImageURI(object):
         'dell-bto-oneiric-pebble-beach-X05-iso-20111226-0.iso'
         >>> o = ImageURI.from_url('https://oem-share.canonical.com/partners/dell-bto-oneiric-audi-13-intel/images/20120316-3/iso/dell-bto-oneiric-audi-13-intel-A04-iso-20120316-3.iso')
         """
+
         def _parse(url):
             from urllib.parse import urlparse
-            if not re.match(r'^https.*', url):
-                logging.error('{0} is not a valid image URL'.format(url))
+
+            if not re.match(r"^https.*", url):
+                logging.error("{0} is not a valid image URL".format(url))
                 raise IndexError
-            comps = urlparse(url).path.split('/')
-            published = (comps[1] == 'partners')
+            comps = urlparse(url).path.split("/")
+            published = comps[1] == "partners"
             if published:
                 (proj, image_type) = (comps[2], comps[5])
-                (date, buildorder) = comps[4].split('-')
+                (date, buildorder) = comps[4].split("-")
             else:
-                (proj, date, buildorder, image_type) = \
-                    (comps[3], comps[4], comps[5], comps[7])
-            if 'dell-bto' in proj:
+                (proj, date, buildorder, image_type) = (
+                    comps[3],
+                    comps[4],
+                    comps[5],
+                    comps[7],
+                )
+            if "dell-bto" in proj:
                 manifest_ver_index = published and 6 or 8
                 try:
-                    manifest_ver = comps[manifest_ver_index].split('-')[-4]
+                    manifest_ver = comps[manifest_ver_index].split("-")[-4]
                 except IndexError:
-                    logging.error('published:{0} manifest_ver_index:{1}'
-                                  .format(published, manifest_ver_index))
+                    logging.error(
+                        "published:{0} manifest_ver_index:{1}".format(
+                            published, manifest_ver_index
+                        )
+                    )
                     raise IndexError
             else:
                 manifest_ver = None
-            return (proj, date, buildorder, published,
-                    manifest_ver, image_type)
-        (project, date, buildorder, published, manifest_ver, image_type) = \
-            _parse(url)
+            return (proj, date, buildorder, published, manifest_ver, image_type)
+
+        (project, date, buildorder, published, manifest_ver, image_type) = _parse(url)
         obj = cls(project, date, buildorder, image_type)
         obj.manifest_ver = manifest_ver
         obj.ispublished = published
@@ -141,25 +155,24 @@ class ImageURI(object):
 
 def __testself():
     import doctest
+
     doctest.testmod()
 
 
 class RsyncURI(object):
-
     def __init__(self, imguri, username=None, siteurl=None):
         self.imguri = imguri
-        self.siteurl = siteurl or 'oem-share.canonical.com'
-        self.username = username or os.getenv('USER')
-        self.rootdir = '/srv/oem-share.canonical.com/www'
+        self.siteurl = siteurl or "oem-share.canonical.com"
+        self.username = username or os.getenv("USER")
+        self.rootdir = "/srv/oem-share.canonical.com/www"
 
     @property
     def isolink(self):
-        return '{}@{}:{}'.format(self.username, self.siteurl, self.imagepath)
+        return "{}@{}:{}".format(self.username, self.siteurl, self.imagepath)
 
     @property
     def imagepath(self):
-        return self.rootdir + os.path.join(self.imguri.rootdir,
-                                           self.imguri.imagepath)
+        return self.rootdir + os.path.join(self.imguri.rootdir, self.imguri.imagepath)
 
     @classmethod
     def from_imguri(cls, imguri):
@@ -176,7 +189,6 @@ class RsyncURI(object):
 
 
 class _Downloader(object):
-
     def __init__(self, url):
         """
         >>> o = _Downloader('https://oem-share.canonical.com/partners/somerville-oneiric-amd64/images/20111116-1/iso/somerville-oneiric-amd64-iso-20111116-1.iso')
@@ -185,8 +197,7 @@ class _Downloader(object):
         self.imguri = ImageURI.from_url(url)
 
     def find_lastdownloadediso(self):
-        proj_isos = filter(lambda iso: self.imguri.project in iso,
-                           glob.glob('*.iso'))
+        proj_isos = filter(lambda iso: self.imguri.project in iso, glob.glob("*.iso"))
         try:
             return sorted_isos(proj_isos)[-1]
         except IndexError:
@@ -205,12 +216,12 @@ class _Downloader(object):
 
     def run(self):
         self.lastiso = self.find_lastdownloadediso()
-        print('Found last downloaded file:{}'.format(self.lastiso))
+        print("Found last downloaded file:{}".format(self.lastiso))
         self.isolink = RsyncURI.from_imguri(self.imguri).isolink
         # if os.path.exists(self.imguri.isoname):
         #     sys.exit("Image {} already be downloaded.".format(
         #         self.imguri.isoname))
-        print('Starting to download file:{}'.format(self.imguri.isoname))
+        print("Starting to download file:{}".format(self.imguri.isoname))
         self.proc = self.do_download()
         ret = self.proc.wait()
         self.post_download()
@@ -222,10 +233,7 @@ class RsyncDownloader(_Downloader):
 
     def do_download(self):
         self.filename = self.lastiso and self.lastiso or self.imguri.isoname
-        cmd = ['rsync', '-Pv',
-               self.isolink,
-               self.filename
-               ]
+        cmd = ["rsync", "-Pv", self.isolink, self.filename]
 
         return subprocess.Popen(cmd)
 
@@ -235,24 +243,27 @@ class RsyncDownloader(_Downloader):
 
 
 class ZsyncDownloader(_Downloader):
-
     def __init__(self, url, auth_token):
         super(ZsyncDownloader, self).__init__(url)
         self.auth_token = auth_token
 
     def do_download(self):
-        cmd = ['zsync_curl',
-               self.imguri.isolink + '.zsync',
-               '-c pysid=' + self.auth_token
-               ]
+        cmd = [
+            "zsync_curl",
+            self.imguri.isolink + ".zsync",
+            "-c pysid=" + self.auth_token,
+        ]
         if self.lastiso:
-            cmd.append('-i ' + self.lastiso)
+            cmd.append("-i " + self.lastiso)
 
         return subprocess.Popen(" ".join(cmd), shell=True)
 
     def post_download(self):
-        if self.lastiso and self.lastiso != self.imguri.isoname and \
-           os.path.exists(self.lastiso):
+        if (
+            self.lastiso
+            and self.lastiso != self.imguri.isoname
+            and os.path.exists(self.lastiso)
+        ):
             os.remove(self.lastiso)
         if os.path.exists(self.imguri.isoname + ".zs-old"):
             os.remove(self.imguri.isoname + ".zs-old")
@@ -267,19 +278,21 @@ def sorted_isos(isos):
     >>> sorted_isos(isos)
     ['watauga2-precise-amd64-norecovery-iso-20130121-0.iso', 'watauga2-precise-amd64-norecovery-iso-20130121-1.iso']
     """
+
     def _f(e):
-        e = e.replace('.iso', '')
-        if e.startswith('dell'):
-            e = e.replace('dell-bto-oneiric-', '')
-            comps = e.split('-iso-')
-            comps = comps[1].split('-')
+        e = e.replace(".iso", "")
+        if e.startswith("dell"):
+            e = e.replace("dell-bto-oneiric-", "")
+            comps = e.split("-iso-")
+            comps = comps[1].split("-")
             (date, order) = (comps[0], comps[1])
         else:
             # Date and build number are guaranteed to be the last 2 fields
             # in the name of an ISO produced by Offspring
-            comps = e.rsplit('-', 2)
+            comps = e.rsplit("-", 2)
             (date, order) = (comps[1], comps[2])
-        return int('{}{}'.format(date, order))
+        return int("{}{}".format(date, order))
+
     return sorted(isos, key=_f)
 
 
@@ -289,7 +302,8 @@ def iso_of_bugdesc(desc):
     ('somerville-oneiric-amd64', '20111116', '1')
     """
     import re
-    ret = re.findall('Image:\\s+((\\S+)-(\\d+)-(\\d)).*', desc)
+
+    ret = re.findall("Image:\\s+((\\S+)-(\\d+)-(\\d)).*", desc)
     if ret:
         return (ret[0][1], ret[0][2], ret[0][3])
     else:
@@ -302,9 +316,10 @@ def isourl_of_bug(q):
     'https://oem-share.canonical.com/oem/cesg-builds/stella-anaheim-precise-amd64/20130116/0/images/iso/stella-anaheim-precise-amd64-iso-20130116-0.iso'
     """
     from launchpadlib.launchpad import Launchpad
+
     cachedir = os.path.join(os.environ["HOME"], ".launchpadlib/cache")
     try:
-        lp = Launchpad.login_with("oem-getiso", 'production', cachedir)
+        lp = Launchpad.login_with("oem-getiso", "production", cachedir)
         found_iso = iso_of_bugdesc(lp.bugs[q].description)
     except KeyboardInterrupt:
         print("Terminated by user reqeust!")
@@ -317,20 +332,29 @@ def isourl_of_bug(q):
     return img.isolink
 
 
-if __name__ == '__main__':
-    usage = "usage: %prog --method [rsync|zsync --auth_token " \
-            "<auth_token>] iso_url|bug_number"
+if __name__ == "__main__":
+    usage = (
+        "usage: %prog --method [rsync|zsync --auth_token "
+        "<auth_token>] iso_url|bug_number"
+    )
     parser = OptionParser(usage=usage)
     parser.add_option(
-        "--method", dest="method", default="rsync", metavar="METHOD",
-        help="The METHOD of download.  Defaults to 'rsync'.")
+        "--method",
+        dest="method",
+        default="rsync",
+        metavar="METHOD",
+        help="The METHOD of download.  Defaults to 'rsync'.",
+    )
     parser.add_option(
-        "--auth_token", dest="auth_token", metavar="AUTH_TOKEN",
-        help="The authetication token needed to access oem-share.")
+        "--auth_token",
+        dest="auth_token",
+        metavar="AUTH_TOKEN",
+        help="The authetication token needed to access oem-share.",
+    )
     (options, args) = parser.parse_args()
 
     if __DEBUG__:
-        print('self testing...')
+        print("self testing...")
         __testself()
         sys.exit()
 
@@ -353,8 +377,7 @@ if __name__ == '__main__':
         if options.auth_token is None:
             sys.exit(parser.get_usage())
         if not os.path.exists("/usr/bin/zsync_curl"):
-            sys.exit(
-                "The zync-curl package must be installed to use this method.")
+            sys.exit("The zync-curl package must be installed to use this method.")
         runner = ZsyncDownloader(url, options.auth_token)
     else:
         sys.exit(parser.get_usage())

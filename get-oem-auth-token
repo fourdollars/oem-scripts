@@ -23,7 +23,7 @@ def prompt_for_credentials():
     """
     Return username and password collected from stdin.
     """
-    print("\rEmail: ", file=sys.stderr, end='')
+    print("\rEmail: ", file=sys.stderr, end="")
     username = input()
     password = getpass.getpass(stream=sys.stderr)
     return username, password
@@ -41,7 +41,7 @@ def prompt_for_code():
     """
     Return code collected from stdin.
     """
-    print("\r2FA Code: ", file=sys.stderr, end='')
+    print("\r2FA Code: ", file=sys.stderr, end="")
     return input()
 
 
@@ -52,14 +52,16 @@ def get_session_cookie(browser=get_browser(), args=None):
     """
 
     prop = {
-        'oem-ibs': {
+        "oem-ibs": {
             "name": "oem-ibs.canonical.com",
             "url": "https://oem-ibs.canonical.com/builds/",
-            "session": "sessionid"},
-        'oem-share': {
+            "session": "sessionid",
+        },
+        "oem-share": {
             "name": "oem-share.canonical.com",
             "url": "https://oem-share.canonical.com/oem/cesg-builds/",
-            "session": "pysid"}
+            "session": "pysid",
+        },
     }
 
     bad_creds = False
@@ -75,8 +77,7 @@ def get_session_cookie(browser=get_browser(), args=None):
         return
     server = prop[args.server]
 
-    print("Authenticating %s with Ubuntu SSO..." % args.server,
-          file=sys.stderr)
+    print("Authenticating %s with Ubuntu SSO..." % args.server, file=sys.stderr)
     browser.open(server["url"])
     # apachd2-openid
     try:
@@ -144,15 +145,16 @@ def get_session_cookie(browser=get_browser(), args=None):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Retrieve Canonical internal websites session ID',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("server",
-                        help="Specify server identifier [oem-ibs|oem-share]")
+        description="Retrieve Canonical internal websites session ID",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("server", help="Specify server identifier [oem-ibs|oem-share]")
     parser.add_argument("-u", "--username", help="Specify user's email")
     parser.add_argument("-p", "--password", help="Specify password")
     parser.add_argument("-c", "--code", help="Specify 2-factor code")
-    parser.add_argument("-r", "--retry", help="Sepcify authentication retry",
-                        type=int, default=3)
+    parser.add_argument(
+        "-r", "--retry", help="Sepcify authentication retry", type=int, default=3
+    )
     args = parser.parse_args()
     result = 1
     try:

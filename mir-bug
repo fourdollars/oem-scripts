@@ -36,75 +36,108 @@ from oem_scripts.logging import setup_logging
 from string import Template
 from tempfile import TemporaryDirectory
 
-SUBSCRIBER_LIST = ('oem-solutions-engineers', 'ubuntu-sponsors', 'ubuntu-desktop')
-TAG_LIST = ('oem-meta-packages', 'oem-priority', f'oem-scripts-{oem_scripts.__version__:.2f}')
+SUBSCRIBER_LIST = ("oem-solutions-engineers", "ubuntu-sponsors", "ubuntu-desktop")
+TAG_LIST = (
+    "oem-meta-packages",
+    "oem-priority",
+    f"oem-scripts-{oem_scripts.__version__:.2f}",
+)
 
-parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
-                                 epilog="""
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog="""
 examples:
     mir-bug create sutton.newell ace \"ThinkPad X1 Carbon Gen 8\"
     mir-bug check BUG_NUMBER
     mir-bug update BUG_NUMBER
-    mir-bug collect oem-meta-mir-bugs.json""")
+    mir-bug collect oem-meta-mir-bugs.json""",
+)
 
-parser.add_argument("-d", "--debug",
-                    help="print debug messages", action="store_true")
-parser.add_argument("-q", "--quiet",
-                    help="Don't print info messages", action="store_true")
+parser.add_argument("-d", "--debug", help="print debug messages", action="store_true")
+parser.add_argument(
+    "-q", "--quiet", help="Don't print info messages", action="store_true"
+)
 
 subparsers = parser.add_subparsers(dest="subcommand")
 
-create = subparsers.add_parser('create', help='[-h] [-o=bugID|--output=bugID] oemCodename platformCodename deviceName')
-create.add_argument("oemCodename",
-                    help="Such as somerville, stella, or sutton.simon")
-create.add_argument("platformCodename",
-                    help="Name deined by PM, like ace.")
-create.add_argument("deviceName",
-                    help="ThinkPad X1 Carbon Gen 8")
-create.add_argument("-o", "--output",
-                    help="Specify a file name to write the bug number.",
-                    type=argparse.FileType('w', encoding='UTF-8'))
+create = subparsers.add_parser(
+    "create",
+    help="[-h] [-o=bugID|--output=bugID] oemCodename platformCodename deviceName",
+)
+create.add_argument("oemCodename", help="Such as somerville, stella, or sutton.simon")
+create.add_argument("platformCodename", help="Name deined by PM, like ace.")
+create.add_argument("deviceName", help="ThinkPad X1 Carbon Gen 8")
+create.add_argument(
+    "-o",
+    "--output",
+    help="Specify a file name to write the bug number.",
+    type=argparse.FileType("w", encoding="UTF-8"),
+)
 
-update = subparsers.add_parser('update', help='[-h] [--ready] [--skip] [--tz=UTC-8] [--yes] bugNumber')
-update.add_argument("bugNumber",
-                    help="Specify the bug number on Launchpad to update.", type=int)
-update.add_argument("--yes",
-                    help="Say yes for all prompts.", action="store_true")
-update.add_argument("--skip",
-                    help="Skip updating bootstrap branch of Git repository.", action="store_true")
-update.add_argument("--tz",
-                    help="Specify the value for TZ. (UTC-8 by default)", default="UTC-8")
-update.add_argument("--ready",
-                    action="store_true",
-                    help="Update the bug to Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.")
+update = subparsers.add_parser(
+    "update", help="[-h] [--ready] [--skip] [--tz=UTC-8] [--yes] bugNumber"
+)
+update.add_argument(
+    "bugNumber", help="Specify the bug number on Launchpad to update.", type=int
+)
+update.add_argument("--yes", help="Say yes for all prompts.", action="store_true")
+update.add_argument(
+    "--skip",
+    help="Skip updating bootstrap branch of Git repository.",
+    action="store_true",
+)
+update.add_argument(
+    "--tz", help="Specify the value for TZ. (UTC-8 by default)", default="UTC-8"
+)
+update.add_argument(
+    "--ready",
+    action="store_true",
+    help="Update the bug to Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.",
+)
 
-check = subparsers.add_parser('check', help='[-h] [--ready] [--skip] [--tz=UTC-8] bugNumber')
-check.add_argument("bugNumber",
-                   help="Specify the bug number on Launchpad to do some sanity checks.", type=int)
-check.add_argument("--skip",
-                   help="Skip checking oem branch of Git repository.", action="store_true")
-check.add_argument("--tz",
-                   help="Specify the value for TZ. (UTC-8 by default)", default="UTC-8")
-check.add_argument("--ready",
-                   action="store_true",
-                   help="Check if the bug is Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.")
+check = subparsers.add_parser(
+    "check", help="[-h] [--ready] [--skip] [--tz=UTC-8] bugNumber"
+)
+check.add_argument(
+    "bugNumber",
+    help="Specify the bug number on Launchpad to do some sanity checks.",
+    type=int,
+)
+check.add_argument(
+    "--skip", help="Skip checking oem branch of Git repository.", action="store_true"
+)
+check.add_argument(
+    "--tz", help="Specify the value for TZ. (UTC-8 by default)", default="UTC-8"
+)
+check.add_argument(
+    "--ready",
+    action="store_true",
+    help="Check if the bug is Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.",
+)
 
-collect = subparsers.add_parser('collect', help='[-h] [--ubuntu-certified] jsonFile')
-collect.add_argument("json",
-                     help="Specify the json file name to write.",
-                     type=argparse.FileType('w', encoding='UTF-8'))
-collect.add_argument("--ubuntu-certified",
-                     action="store_true",
-                     help="Only collect those bugs with the 'ubuntu-certified' tag.")
-collect.add_argument("--verification-needed",
-                     action="store_true",
-                     help="Only collect those bugs with the 'verification-needed' tag.")
+collect = subparsers.add_parser("collect", help="[-h] [--ubuntu-certified] jsonFile")
+collect.add_argument(
+    "json",
+    help="Specify the json file name to write.",
+    type=argparse.FileType("w", encoding="UTF-8"),
+)
+collect.add_argument(
+    "--ubuntu-certified",
+    action="store_true",
+    help="Only collect those bugs with the 'ubuntu-certified' tag.",
+)
+collect.add_argument(
+    "--verification-needed",
+    action="store_true",
+    help="Only collect those bugs with the 'verification-needed' tag.",
+)
 
 args = parser.parse_args()
 
 setup_logging(debug=args.debug, quiet=args.quiet)
 
-mir_bug_description_template = Template(f"""[Availability]
+mir_bug_description_template = Template(
+    f"""[Availability]
 This is a meta package for https://wiki.ubuntu.com/MIRTeam/Exceptions/OEM that means the package doesn't exist in Debian or Ubuntu archive yet.
 The source code of the $metaPkgName for focal:
     git clone -b $branchName https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-$oemCodenameNogroup-projects-meta
@@ -131,26 +164,27 @@ Canonical OEM Enablement Team will take care of the maintenance.
 [Background information]
 Please check https://wiki.ubuntu.com/MIRTeam/Exceptions/OEM for details.
 
-Please use "oem-metapackage-mir-check" in lp:ubuntu-archive-tools to verify this MIR against the reference package in the archive.""")
+Please use "oem-metapackage-mir-check" in lp:ubuntu-archive-tools to verify this MIR against the reference package in the archive."""
+)
 
-pattern = re.compile(r'.*\[MIR\]\W*oem-([^-]*)-(.*)-meta\W*')
+pattern = re.compile(r".*\[MIR\]\W*oem-([^-]*)-(.*)-meta\W*")
 
 
 def create_bug(lp, oemCodename, platformCodename, deviceName):
     info("Creating bug...")
-    tempList = oemCodename.split('.')
+    tempList = oemCodename.split(".")
     oemCodenameNogroup = tempList[0]
     if len(tempList) == 2:
         oemGroupName = tempList[1]
     else:
-        oemGroupName = ''
+        oemGroupName = ""
 
     # metaPkgName's examples
     # oem-somerville-metapod-meta
     # oem-sutton.newell-ace-meta
     metaPkgName = "oem-" + oemCodename + "-" + platformCodename + "-meta"
 
-    if oemGroupName.strip() != '':
+    if oemGroupName.strip() != "":
         branchName = oemGroupName + "." + platformCodename + "-focal-ubuntu"
     else:
         branchName = platformCodename + "-focal-ubuntu"
@@ -162,8 +196,15 @@ def create_bug(lp, oemCodename, platformCodename, deviceName):
         metaPkgName=metaPkgName,
         branchName=branchName,
         oemCodenameNogroup=oemCodenameNogroup,
-        deviceName=deviceName)
-    bug = lp.bugs.createBug(description=bd, target=project, title=bt, information_type='Public', tags=TAG_LIST)
+        deviceName=deviceName,
+    )
+    bug = lp.bugs.createBug(
+        description=bd,
+        target=project,
+        title=bt,
+        information_type="Public",
+        tags=TAG_LIST,
+    )
 
     info("meta package public bug: " + bug.web_link)
 
@@ -171,23 +212,32 @@ def create_bug(lp, oemCodename, platformCodename, deviceName):
         args.output.write(f"{bug.id}\n")
 
     for task in bug.bug_tasks:
-        task.status = 'Confirmed'
-        task.importance = 'Critical'
+        task.status = "Confirmed"
+        task.importance = "Critical"
         # Assign to reporter by default
         task.assignee = lp.me
         task.lp_save()
 
     # Subscribe the oem-solutions-engineers
-    bug.subscribe(person=lp.people['oem-solutions-engineers'])
+    bug.subscribe(person=lp.people["oem-solutions-engineers"])
     bug.lp_save()
 
 
 def collect_bugs(lp, output):
     info("Collecting bugs...")
-    project = lp.projects['oem-priority']
+    project = lp.projects["oem-priority"]
     tasks = project.searchTasks(
-        status=['New', 'Incomplete', 'Triaged', 'Opinion', 'Confirmed', 'In Progress', 'Fix Committed'],
-        search_text='[MIR]')
+        status=[
+            "New",
+            "Incomplete",
+            "Triaged",
+            "Opinion",
+            "Confirmed",
+            "In Progress",
+            "Fix Committed",
+        ],
+        search_text="[MIR]",
+    )
     try:
         total = int(tasks.total_size)
     except TypeError:  # When the total size becomes more than 50, it won't return 'int' but 'ScalarValue' instead.
@@ -197,28 +247,38 @@ def collect_bugs(lp, output):
     for counter, task in enumerate(tasks, 1):
         bug = task.bug
 
-        if '[MIR]' not in bug.title or 'oem' not in bug.title or 'meta' not in bug.title:
-            info(f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status}) **NOT MATCHED**")
+        if (
+            "[MIR]" not in bug.title
+            or "oem" not in bug.title
+            or "meta" not in bug.title
+        ):
+            info(
+                f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status}) **NOT MATCHED**"
+            )
             continue
 
-        if args.ubuntu_certified and 'ubuntu-certified' not in bug.tags:
-            info(f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status}) **NOT CERTIFIED**")
+        if args.ubuntu_certified and "ubuntu-certified" not in bug.tags:
+            info(
+                f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status}) **NOT CERTIFIED**"
+            )
             continue
 
         if args.verification_needed:
             verification_needed = False
             for tag in bug.tags:
-                if tag.startswith('verification-needed'):
+                if tag.startswith("verification-needed"):
                     verification_needed = True
             if not verification_needed:
-                info(f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status}) **NOT VERIFICATION NEEDED**")
+                info(
+                    f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status}) **NOT VERIFICATION NEEDED**"
+                )
                 continue
 
         result = pattern.match(bug.title)
         git = None
         if result:
-            if '.' in result.group(1):
-                project, group = result.group(1).split('.')
+            if "." in result.group(1):
+                project, group = result.group(1).split(".")
             else:
                 project = result.group(1)
                 group = None
@@ -234,32 +294,38 @@ def collect_bugs(lp, output):
 
         ubuntu_status = None
         for bug_task in bug.bug_tasks:
-            if bug_task.bug_target_name == 'ubuntu':
+            if bug_task.bug_target_name == "ubuntu":
                 ubuntu_status = bug_task.status
 
         attachments = []
         for attachment in bug.attachments:
-            attachments.append({'title': attachment.title, 'data_link': attachment.data_link, 'type': attachment.type})
+            attachments.append(
+                {
+                    "title": attachment.title,
+                    "data_link": attachment.data_link,
+                    "type": attachment.type,
+                }
+            )
         clip = {
-            'bug': "https://bugs.launchpad.net/bugs/%s" % bug.id,
-            'link': bug.self_link,
-            'title': bug.title,
-            'importance': task.importance,
-            'tag': bug.tags,
-            'description': bug.description,
-            'status': task.status,
-            'ubuntu_status': ubuntu_status,
-            'owner': task.owner.name,
-            'assignee': task.assignee.name if task.assignee else 'none',
-            'subscriptions': subscriptions,
-            'attachments': attachments,
-            'git': git
+            "bug": "https://bugs.launchpad.net/bugs/%s" % bug.id,
+            "link": bug.self_link,
+            "title": bug.title,
+            "importance": task.importance,
+            "tag": bug.tags,
+            "description": bug.description,
+            "status": task.status,
+            "ubuntu_status": ubuntu_status,
+            "owner": task.owner.name,
+            "assignee": task.assignee.name if task.assignee else "none",
+            "subscriptions": subscriptions,
+            "attachments": attachments,
+            "git": git,
         }
         bugs.append(clip)
         info(f"{counter}/{total} LP: #{bug.id} {bug.title} ({task.status})")
 
     info("total: %d matched" % len(bugs))
-    output.write(json.dumps(bugs, sort_keys=True, separators=(',', ':')))
+    output.write(json.dumps(bugs, sort_keys=True, separators=(",", ":")))
     output.write("\n")
 
 
@@ -271,7 +337,7 @@ def yes_or_ask(yes: bool, message: str) -> bool:
         res = input(f"> \033[1;34m{message}\033[1;0m (y/n) ").lower()
         if res not in {"y", "n"}:
             continue
-        if res == 'y':
+        if res == "y":
             return True
         else:
             return False
@@ -288,7 +354,9 @@ def update_bug(lp, bug_number: int, yes: bool) -> None:
         bug_modified = True
         bug.description = desc
 
-    if check_bug_title(bug, pkg_name) is False and yes_or_ask(yes, "Do you want to update the bug title?"):
+    if check_bug_title(bug, pkg_name) is False and yes_or_ask(
+        yes, "Do you want to update the bug title?"
+    ):
         bug_modified = True
         bug.title = f"[MIR] {pkg_name}"
 
@@ -298,11 +366,13 @@ def update_bug(lp, bug_number: int, yes: bool) -> None:
 
     if check_bug_importance(bug) is False:
         for task in bug.bug_tasks:
-            if task.importance != 'Critical':
-                if task.bug_target_name == 'oem-priority' and \
-                        yes_or_ask(yes, f"Do you want to update the importance of {task.bug_target_name} from {task.importance} to Critical?"):
+            if task.importance != "Critical":
+                if task.bug_target_name == "oem-priority" and yes_or_ask(
+                    yes,
+                    f"Do you want to update the importance of {task.bug_target_name} from {task.importance} to Critical?",
+                ):
                     task_modified = True
-                    task.importance = 'Critical'
+                    task.importance = "Critical"
                     task.lp_save()
 
     update_bug_status(bug, yes)
@@ -312,12 +382,14 @@ def update_bug(lp, bug_number: int, yes: bool) -> None:
     if check_bug_tags(bug) is False:
         tags = copy(bug.tags)
         for tag in TAG_LIST:
-            if tag not in bug.tags and yes_or_ask(yes, f"Do you want to add '{tag}' tag?"):
+            if tag not in bug.tags and yes_or_ask(
+                yes, f"Do you want to add '{tag}' tag?"
+            ):
                 bug_modified = True
                 tags.append(tag)
         for tag in bug.tags:
-            if tag.startswith('oem-scripts-'):
-                if tag[len("oem-scripts-"):] != f'{oem_scripts.__version__:.2f}':
+            if tag.startswith("oem-scripts-"):
+                if tag[len("oem-scripts-") :] != f"{oem_scripts.__version__:.2f}":
                     if yes_or_ask(yes, f"Do you want to remove '{tag}' tag?"):
                         tags.remove(tag)
         if tags != bug.tags:
@@ -329,11 +401,11 @@ def update_bug(lp, bug_number: int, yes: bool) -> None:
 
     if bug_modified:
         bug.lp_save()
-        info(f'LP: #{bug_number} is updated.')
+        info(f"LP: #{bug_number} is updated.")
     elif task_modified:
-        info(f'LP: #{bug_number} is updated.')
+        info(f"LP: #{bug_number} is updated.")
     elif yes:
-        info('Everything looks OK.')
+        info("Everything looks OK.")
 
 
 def check_bug(lp, bug_number: int) -> None:
@@ -357,11 +429,14 @@ def check_bug(lp, bug_number: int) -> None:
         need_fixing = True
     if check_and_update_bug_attachments(bug, pkg_name) is False:
         need_fixing = True
-    if not args.skip and check_and_update_git_repo(bug, pkg_name, bootstrap=False) is False:
+    if (
+        not args.skip
+        and check_and_update_git_repo(bug, pkg_name, bootstrap=False) is False
+    ):
         need_fixing = True
 
     if need_fixing is False:
-        info('Everything looks OK.')
+        info("Everything looks OK.")
     else:
         exit(1)
 
@@ -373,8 +448,8 @@ def check_bug_description(bug) -> (str, str):
         critical(f"LP: #{bug.id} '{bug.title}' is NOT MATCHED")
         exit(1)
 
-    if '.' in result.group(1):
-        project, group = result.group(1).split('.')
+    if "." in result.group(1):
+        project, group = result.group(1).split(".")
         platform = result.group(2)
         branchName = group + "." + platform + "-focal-ubuntu"
     else:
@@ -384,10 +459,10 @@ def check_bug_description(bug) -> (str, str):
         branchName = platform + "-focal-ubuntu"
 
     metaPkgName = f"oem-{result.group(1)}-{result.group(2)}-meta"
-    prog = re.compile(r'\W*We want to improve the hardware support for ([^.]*).\W*')
+    prog = re.compile(r"\W*We want to improve the hardware support for ([^.]*).\W*")
     deviceName = None
 
-    for line in bug.description.split('\n'):
+    for line in bug.description.split("\n"):
         result = prog.match(line)
         if not result:
             continue
@@ -403,11 +478,12 @@ def check_bug_description(bug) -> (str, str):
         metaPkgName=metaPkgName,
         branchName=branchName,
         oemCodenameNogroup=project,
-        deviceName=deviceName)
+        deviceName=deviceName,
+    )
 
     if bug.description != desc:
         d = difflib.Differ()
-        diff = d.compare(bug.description.split('\n'), desc.split('\n'))
+        diff = d.compare(bug.description.split("\n"), desc.split("\n"))
         error("The description needs to update.")
         if not args.quiet:
             for i, line in enumerate(diff):
@@ -431,15 +507,19 @@ def check_bug_importance(bug) -> bool:
     info("Checking bug importance...")
     result = True
     for task in bug.bug_tasks:
-        if task.bug_target_name == 'oem-priority' and task.importance != 'Critical':
-            error(f"The '{task.bug_target_name}' importance is expected to be 'Critical' instead of '{task.importance}'.")
+        if task.bug_target_name == "oem-priority" and task.importance != "Critical":
+            error(
+                f"The '{task.bug_target_name}' importance is expected to be 'Critical' instead of '{task.importance}'."
+            )
             result = False
     return result
 
 
 def _expected_status(target_name: str, status: str, expected: str) -> bool:
     if status != expected:
-        error(f"The '{target_name}' status is expected to be '{expected}' instead of '{status}'.")
+        error(
+            f"The '{target_name}' status is expected to be '{expected}' instead of '{status}'."
+        )
         return False
     return True
 
@@ -449,20 +529,32 @@ def check_bug_status(bug, pkg_name: str) -> bool:
     result = True
     saw_ubuntu_task = False
     for task in bug.bug_tasks:
-        if task.bug_target_name == 'oem-priority':
+        if task.bug_target_name == "oem-priority":
             if args.ready:
-                if _expected_status(task.bug_target_name, task.status, 'Fix Committed') is False:
+                if (
+                    _expected_status(task.bug_target_name, task.status, "Fix Committed")
+                    is False
+                ):
                     result = False
             else:
-                if _expected_status(task.bug_target_name, task.status, 'In Progress') is False:
+                if (
+                    _expected_status(task.bug_target_name, task.status, "In Progress")
+                    is False
+                ):
                     result = False
-        elif task.bug_target_name == 'ubuntu':
+        elif task.bug_target_name == "ubuntu":
             saw_ubuntu_task = True
             if args.ready:
-                if _expected_status(task.bug_target_name, task.status, 'Confirmed') is False:
+                if (
+                    _expected_status(task.bug_target_name, task.status, "Confirmed")
+                    is False
+                ):
                     result = False
             else:
-                if _expected_status(task.bug_target_name, task.status, 'Incomplete') is False:
+                if (
+                    _expected_status(task.bug_target_name, task.status, "Incomplete")
+                    is False
+                ):
                     result = False
         elif f"{pkg_name} (Ubuntu)" not in task.bug_target_name:
             critical(f"It is unexpected to have '{task.bug_target_name}' task")
@@ -472,17 +564,25 @@ def check_bug_status(bug, pkg_name: str) -> bool:
     return result
 
 
-def _ok_to_change_status(target_name: str, orig_status: str, new_status: str, yes: bool) -> bool:
+def _ok_to_change_status(
+    target_name: str, orig_status: str, new_status: str, yes: bool
+) -> bool:
     if orig_status == new_status:
         return False
-    if yes_or_ask(yes, f"Would you like to change the '{target_name}' status from '{orig_status}' to '{new_status}'?"):
+    if yes_or_ask(
+        yes,
+        f"Would you like to change the '{target_name}' status from '{orig_status}' to '{new_status}'?",
+    ):
         return True
     return False
 
 
 def _change_task_status(task, new_status: str, yes: bool) -> bool:
-    if _expected_status(task.bug_target_name, task.status, new_status) is False and \
-            _ok_to_change_status(task.bug_target_name, task.status, new_status, yes):
+    if _expected_status(
+        task.bug_target_name, task.status, new_status
+    ) is False and _ok_to_change_status(
+        task.bug_target_name, task.status, new_status, yes
+    ):
         task.status = new_status
         task.lp_save()
 
@@ -491,35 +591,42 @@ def update_bug_status(bug, yes: bool) -> None:
     info("Updating bug status...")
     saw_ubuntu_task = False
     for bug_task in bug.bug_tasks:
-        if bug_task.bug_target_name == 'oem-priority':
+        if bug_task.bug_target_name == "oem-priority":
             if args.ready:
-                _change_task_status(bug_task, 'Fix Committed', yes)
+                _change_task_status(bug_task, "Fix Committed", yes)
             else:
-                _change_task_status(bug_task, 'In Progress', yes)
-        elif bug_task.bug_target_name == 'ubuntu':
+                _change_task_status(bug_task, "In Progress", yes)
+        elif bug_task.bug_target_name == "ubuntu":
             saw_ubuntu_task = True
             if args.ready:
-                _change_task_status(bug_task, 'Confirmed', yes)
-            elif yes_or_ask(yes, f"Would you like to delete the '{bug_task.bug_target_name}' bug_task? (Don't affect '{bug_task.bug_target_display_name}')"):
+                _change_task_status(bug_task, "Confirmed", yes)
+            elif yes_or_ask(
+                yes,
+                f"Would you like to delete the '{bug_task.bug_target_name}' bug_task? (Don't affect '{bug_task.bug_target_display_name}')",
+            ):
                 try:
                     bug_task.lp_delete()
                 except lazr.restfulclient.errors.BadRequest as e:
-                    warning(f"{bug_task.bug_target_name} can not be deleted, so changing the status to Incomplete instead.")
+                    warning(
+                        f"{bug_task.bug_target_name} can not be deleted, so changing the status to Incomplete instead."
+                    )
                     debug(e)
-                    _change_task_status(bug_task, 'Incomplete', yes)
+                    _change_task_status(bug_task, "Incomplete", yes)
                 except lazr.restfulclient.errors.Unauthorized as e:
-                    warning(f"{bug_task.bug_target_name} can not be deleted, so changing the status to Incomplete instead.")
+                    warning(
+                        f"{bug_task.bug_target_name} can not be deleted, so changing the status to Incomplete instead."
+                    )
                     debug(e)
-                    _change_task_status(bug_task, 'Incomplete', yes)
+                    _change_task_status(bug_task, "Incomplete", yes)
             else:
-                _change_task_status(bug_task, 'Incomplete', yes)
+                _change_task_status(bug_task, "Incomplete", yes)
         else:
             warning(f"{bug_task.bug_target_name} {bug_task.status}")
     if args.ready and saw_ubuntu_task is False:
         bug.addTask(target=lp.projects["Ubuntu"])
         for bug_task in bug.bug_tasks:
-            if bug_task.bug_target_name == 'ubuntu':
-                _change_task_status(bug_task, 'Confirmed', yes)
+            if bug_task.bug_target_name == "ubuntu":
+                _change_task_status(bug_task, "Confirmed", yes)
 
 
 def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool:
@@ -532,29 +639,41 @@ def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool
     for subscription in bug.subscriptions:
         subscriptions.append(subscription.person.name)
         if not args.ready:
-            for subscriber in ('ubuntu-sponsors', 'ubuntu-desktop'):
+            for subscriber in ("ubuntu-sponsors", "ubuntu-desktop"):
                 if subscriber == subscription.person.name:
                     error(f"'{subscriber}' should not be in the subscriptions.")
-                    if update and yes_or_ask(yes, f"Do you want to unsubscribe '{subscriber}'?"):
+                    if update and yes_or_ask(
+                        yes, f"Do you want to unsubscribe '{subscriber}'?"
+                    ):
                         if subscription.canBeUnsubscribedByUser():
                             bug.unsubscribe(person=lp.people[subscriber])
                         else:
-                            warning(f"{lp.me.name} doesn't have the permission to unsubscribe {subscriber}.")
+                            warning(
+                                f"{lp.me.name} doesn't have the permission to unsubscribe {subscriber}."
+                            )
                             result = False
                     else:
                         result = False
     if args.ready:
-        for subscriber in ('oem-solutions-engineers', 'ubuntu-sponsors', 'ubuntu-desktop'):
+        for subscriber in (
+            "oem-solutions-engineers",
+            "ubuntu-sponsors",
+            "ubuntu-desktop",
+        ):
             if subscriber not in subscriptions:
                 error(f"'{subscriber}' is not in the subscriptions.")
-                if update and yes_or_ask(yes, f"Do you want to subscribe '{subscriber}'?"):
+                if update and yes_or_ask(
+                    yes, f"Do you want to subscribe '{subscriber}'?"
+                ):
                     bug.subscribe(person=lp.people[subscriber])
                 else:
                     result = False
     else:
-        if 'oem-solutions-engineers' not in subscriptions:
+        if "oem-solutions-engineers" not in subscriptions:
             error(f"'oem-solutions-engineers' is not in the subscriptions.")
-            if update and yes_or_ask(yes, f"Do you want to subscribe 'oem-solutions-engineers'?"):
+            if update and yes_or_ask(
+                yes, f"Do you want to subscribe 'oem-solutions-engineers'?"
+            ):
                 bug.subscribe(person=lp.people[subscriber])
             else:
                 result = False
@@ -573,13 +692,15 @@ def check_bug_tags(bug) -> bool:
 
 def _run_command(command: list or tuple, returncode=(0,), env=None) -> (str, str):
     debug("$ " + " ".join(command))
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+    proc = subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
+    )
     out, err = proc.communicate()
 
     if out:
-        out = out.decode('utf-8').strip()
+        out = out.decode("utf-8").strip()
     if err:
-        err = err.decode('utf-8').strip()
+        err = err.decode("utf-8").strip()
 
     if proc.returncode not in returncode:
         critical(f"return {proc.returncode}")
@@ -597,7 +718,9 @@ def _run_command(command: list or tuple, returncode=(0,), env=None) -> (str, str
     return (out, err, proc.returncode)
 
 
-def check_and_update_bug_attachments(bug, pkg_name: str, update=False, yes=False) -> bool:
+def check_and_update_bug_attachments(
+    bug, pkg_name: str, update=False, yes=False
+) -> bool:
     if update:
         info("Checking and updating attachments...")
     else:
@@ -608,8 +731,8 @@ def check_and_update_bug_attachments(bug, pkg_name: str, update=False, yes=False
         critical(f"{pkg_name} failed.")
         exit(1)
 
-    if '.' in result.group(1):
-        project, group = result.group(1).split('.')
+    if "." in result.group(1):
+        project, group = result.group(1).split(".")
     else:
         project = result.group(1)
         group = None
@@ -620,7 +743,16 @@ def check_and_update_bug_attachments(bug, pkg_name: str, update=False, yes=False
     else:
         branch = f"{platform}-focal-ubuntu"
 
-    git_command = ("git", "clone", "--depth", "1", "-b", branch, f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta", pkg_name)
+    git_command = (
+        "git",
+        "clone",
+        "--depth",
+        "1",
+        "-b",
+        branch,
+        f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta",
+        pkg_name,
+    )
 
     debdiff = None
     content = None
@@ -628,33 +760,49 @@ def check_and_update_bug_attachments(bug, pkg_name: str, update=False, yes=False
 
     with TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
-        _run_command(['wget', 'https://bazaar.launchpad.net/~ubuntu-archive/ubuntu-archive-tools/trunk/download/head:/oem-metapackage-mir-check'])
+        _run_command(
+            [
+                "wget",
+                "https://bazaar.launchpad.net/~ubuntu-archive/ubuntu-archive-tools/trunk/download/head:/oem-metapackage-mir-check",
+            ]
+        )
         _run_command(git_command)
         git_dir = os.path.join(tmpdir, pkg_name)
         os.chdir(git_dir)
-        _run_command(['dpkg-buildpackage', '-S', '-us', '-uc'])
+        _run_command(["dpkg-buildpackage", "-S", "-us", "-uc"])
         os.chdir(tmpdir)
-        dsc = glob(f'{pkg_name}*.dsc')[0]
-        prog = re.compile(fr'{pkg_name}_(.*).dsc')
+        dsc = glob(f"{pkg_name}*.dsc")[0]
+        prog = re.compile(fr"{pkg_name}_(.*).dsc")
         result = prog.match(dsc)
         version = result.group(1)
         debdiff = f"{pkg_name}_{version}.debdiff"
         # It should generate some debdiff so the return code should be 1 unless comparing to oem-qemu-meta itself.
         debug(f"TZ={args.tz}")
-        content, _, _ = _run_command(['bash', 'oem-metapackage-mir-check', dsc], returncode=(1,), env=dict(os.environ, TZ=args.tz))
+        content, _, _ = _run_command(
+            ["bash", "oem-metapackage-mir-check", dsc],
+            returncode=(1,),
+            env=dict(os.environ, TZ=args.tz),
+        )
         content += "\n"
-        with open(debdiff, 'w') as f:
+        with open(debdiff, "w") as f:
             f.write(content)
 
         for attachment in bug.attachments:
-            if 'debdiff' in attachment.title:
-                _run_command(['wget', attachment.data_link, '-O', 'data'])
-                out, err, returncode = _run_command(['colordiff', '-ur', 'data', debdiff], returncode=(0, 1))
+            if "debdiff" in attachment.title:
+                _run_command(["wget", attachment.data_link, "-O", "data"])
+                out, err, returncode = _run_command(
+                    ["colordiff", "-ur", "data", debdiff], returncode=(0, 1)
+                )
                 if returncode == 1:
-                    warning(f"{attachment.title} - {attachment.web_link} has unexpected content.")
+                    warning(
+                        f"{attachment.title} - {attachment.web_link} has unexpected content."
+                    )
                     info(f"{out}")
                     found = True
-                    if update and yes_or_ask(yes, f"Do you want to remove {attachment.title} - {attachment.web_link}?"):
+                    if update and yes_or_ask(
+                        yes,
+                        f"Do you want to remove {attachment.title} - {attachment.web_link}?",
+                    ):
                         try:
                             attachment.removeFromBug()
                         except lazr.restfulclient.errors.NotFound as e:
@@ -669,32 +817,54 @@ def check_and_update_bug_attachments(bug, pkg_name: str, update=False, yes=False
         error(f"There is no {debdiff}.")
     info(content)
     if update and yes_or_ask(yes, f"Do you want to attach {debdiff}?"):
-        bug.addAttachment(filename=debdiff, data=content.encode("utf-8"), comment=f"Attach {debdiff} by oem-scripts {oem_scripts.__version__:.2f}.", is_patch=True)
+        bug.addAttachment(
+            filename=debdiff,
+            data=content.encode("utf-8"),
+            comment=f"Attach {debdiff} by oem-scripts {oem_scripts.__version__:.2f}.",
+            is_patch=True,
+        )
         return True
     else:
         return False
 
 
 def _get_items_from_git(project: str, branch: str, pkg_name: str) -> tuple:
-    git_command = ("git", "clone", "--depth", "1", "-b", branch, f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta", pkg_name)
+    git_command = (
+        "git",
+        "clone",
+        "--depth",
+        "1",
+        "-b",
+        branch,
+        f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta",
+        pkg_name,
+    )
     with TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
         _run_command(git_command)
         git_dir = os.path.join(tmpdir, pkg_name)
 
-        if project == 'somerville':
-            prog = re.compile(r"alias pci:\*sv00001028sd0000([0-9A-F]{4})[^ ]* meta (.*)")
-        elif project == 'stella':
-            prog = re.compile(r"alias pci:\*sv0000103Csd0000([0-9A-F]{4})[^ ]* meta (.*)")
+        if project == "somerville":
+            prog = re.compile(
+                r"alias pci:\*sv00001028sd0000([0-9A-F]{4})[^ ]* meta (.*)"
+            )
+        elif project == "stella":
+            prog = re.compile(
+                r"alias pci:\*sv0000103Csd0000([0-9A-F]{4})[^ ]* meta (.*)"
+            )
         else:
-            prog = re.compile(r"alias dmi:\*bvn([0-9a-zA-Z]+):bvr([0-9a-zA-Z]{3})\* meta (.*)")
+            prog = re.compile(
+                r"alias dmi:\*bvn([0-9a-zA-Z]+):bvr([0-9a-zA-Z]{3})\* meta (.*)"
+            )
 
         ids = []
-        with open(os.path.join(git_dir, 'debian', 'modaliases'), 'r') as modaliases:
+        with open(os.path.join(git_dir, "debian", "modaliases"), "r") as modaliases:
             for line in modaliases:
                 result = prog.match(line.strip())
                 if result.group(result.lastindex) != pkg_name:
-                    error("Something wrong in debian/modaliases. Please fix it manually first.")
+                    error(
+                        "Something wrong in debian/modaliases. Please fix it manually first."
+                    )
                     return False
                 if result.lastindex == 3:
                     ids.append((result.group(1), result.group(2)))
@@ -702,21 +872,25 @@ def _get_items_from_git(project: str, branch: str, pkg_name: str) -> tuple:
                     ids.append(result.group(1))
         kernel_flavour = None
         kernel_meta = None
-        with open(os.path.join(git_dir, 'debian', 'control'), 'r') as control:
+        with open(os.path.join(git_dir, "debian", "control"), "r") as control:
             for line in control:
-                if line.startswith('XB-Ubuntu-OEM-Kernel-Flavour:'):
-                    kernel_flavour = line[len('XB-Ubuntu-OEM-Kernel-Flavour:'):].strip()
-                elif line.startswith('Depends:'):
-                    if 'linux-oem-20.04b' in line:
-                        kernel_meta = 'linux-oem-20.04b'
-                    elif 'linux-oem-20.04' in line:
-                        kernel_meta = 'linux-oem-20.04'
-                    elif 'linux-generic-hwe-20.04' in line:
-                        kernel_meta = 'linux-generic-hwe-20.04'
+                if line.startswith("XB-Ubuntu-OEM-Kernel-Flavour:"):
+                    kernel_flavour = line[
+                        len("XB-Ubuntu-OEM-Kernel-Flavour:") :
+                    ].strip()
+                elif line.startswith("Depends:"):
+                    if "linux-oem-20.04b" in line:
+                        kernel_meta = "linux-oem-20.04b"
+                    elif "linux-oem-20.04" in line:
+                        kernel_meta = "linux-oem-20.04"
+                    elif "linux-generic-hwe-20.04" in line:
+                        kernel_meta = "linux-generic-hwe-20.04"
         return kernel_flavour, kernel_meta, ids
 
 
-def check_and_update_git_repo(bug, pkg_name: str, yes=False, bootstrap=True, update=False, username=None) -> bool:
+def check_and_update_git_repo(
+    bug, pkg_name: str, yes=False, bootstrap=True, update=False, username=None
+) -> bool:
     if update:
         if bootstrap:
             info("Checking and updating git repo for bootstrap branch...")
@@ -734,17 +908,17 @@ def check_and_update_git_repo(bug, pkg_name: str, yes=False, bootstrap=True, upd
         critical(f"{pkg_name} failed.")
         exit(1)
 
-    if '.' in result.group(1):
-        project, group = result.group(1).split('.')
+    if "." in result.group(1):
+        project, group = result.group(1).split(".")
     else:
         project = result.group(1)
         group = None
     platform = result.group(2)
 
     if bootstrap:
-        suffix = 'ubuntu'
+        suffix = "ubuntu"
     else:
-        suffix = 'oem'
+        suffix = "oem"
 
     if group:
         branch = f"{group}.{platform}-focal-{suffix}"
@@ -752,23 +926,27 @@ def check_and_update_git_repo(bug, pkg_name: str, yes=False, bootstrap=True, upd
         branch = f"{platform}-focal-{suffix}"
 
     kernel_flavour, kernel_meta, ids = _get_items_from_git(project, branch, pkg_name)
-    if kernel_flavour == 'default':
+    if kernel_flavour == "default":
         if kernel_meta is None:
-            kernel_meta = 'linux-generic-hwe-20.04'
-        elif kernel_meta == 'linux-generic-hwe-20.04':
+            kernel_meta = "linux-generic-hwe-20.04"
+        elif kernel_meta == "linux-generic-hwe-20.04":
             pass
         else:
-            critical(f"{pkg_name}'s {branch} branch has unexpected kernel_flavour=${kernel_flavour}, kernel_meta={kernel_meta}.")
+            critical(
+                f"{pkg_name}'s {branch} branch has unexpected kernel_flavour=${kernel_flavour}, kernel_meta={kernel_meta}."
+            )
             exit(1)
-    elif kernel_flavour == 'oem':
+    elif kernel_flavour == "oem":
         if kernel_meta is None:
-            kernel_meta = 'linux-oem-20.04'
-        elif kernel_meta == 'linux-oem-20.04b':
+            kernel_meta = "linux-oem-20.04"
+        elif kernel_meta == "linux-oem-20.04b":
             pass
-        elif kernel_meta == 'linux-oem-20.04':
+        elif kernel_meta == "linux-oem-20.04":
             pass
         else:
-            critical(f"{pkg_name}'s {branch} branch has unexpected kernel_flavour=${kernel_flavour}, kernel_meta={kernel_meta}.")
+            critical(
+                f"{pkg_name}'s {branch} branch has unexpected kernel_flavour=${kernel_flavour}, kernel_meta={kernel_meta}."
+            )
             exit(1)
 
     if ids == []:
@@ -778,27 +956,61 @@ def check_and_update_git_repo(bug, pkg_name: str, yes=False, bootstrap=True, upd
     with TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
         # Generated the meta package by pkg-oem-meta
-        if project == 'somerville':
-            command = ['pkg-somerville-meta', '-s', 'focal', '-k', kernel_meta, '-p', platform, '--public-bug', str(bug.id)]
+        if project == "somerville":
+            command = [
+                "pkg-somerville-meta",
+                "-s",
+                "focal",
+                "-k",
+                kernel_meta,
+                "-p",
+                platform,
+                "--public-bug",
+                str(bug.id),
+            ]
             command.extend(ids)
-        elif project == 'stella':
-            command = ['pkg-stella-meta', '-s', 'focal', '-k', kernel_meta, '-g', group, '-p', platform, '--public-bug', str(bug.id)]
+        elif project == "stella":
+            command = [
+                "pkg-stella-meta",
+                "-s",
+                "focal",
+                "-k",
+                kernel_meta,
+                "-g",
+                group,
+                "-p",
+                platform,
+                "--public-bug",
+                str(bug.id),
+            ]
             command.extend(ids)
-        elif project == 'sutton':
-            command = ['pkg-sutton-meta', '-s', 'focal', '-k', kernel_meta, '-g', group, '-p', platform, '--public-bug', str(bug.id)]
+        elif project == "sutton":
+            command = [
+                "pkg-sutton-meta",
+                "-s",
+                "focal",
+                "-k",
+                kernel_meta,
+                "-g",
+                group,
+                "-p",
+                platform,
+                "--public-bug",
+                str(bug.id),
+            ]
             for bvn, bvr in ids:
                 command.append(f"bvn{bvn}:bvr{bvr}")
         _run_command(command)
         new_dir = os.path.join(tmpdir, pkg_name)
         os.chdir(new_dir)
         if bootstrap:
-            _run_command(['git', 'checkout', branch])
+            _run_command(["git", "checkout", branch])
 
         os.chdir(tmpdir)
-        os.rename(new_dir, new_dir + '.new')
+        os.rename(new_dir, new_dir + ".new")
         new_dir += ".new"
-        shutil.rmtree(os.path.join(new_dir, '.git'))
-        os.remove(os.path.join(new_dir, 'debian', 'changelog'))
+        shutil.rmtree(os.path.join(new_dir, ".git"))
+        os.remove(os.path.join(new_dir, "debian", "changelog"))
 
         if username:
             git_repo = f"git+ssh://{username}@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta"
@@ -811,25 +1023,27 @@ def check_and_update_git_repo(bug, pkg_name: str, yes=False, bootstrap=True, upd
 
         if bootstrap:
             lines = None
-            changelog = os.path.join(tmpdir, pkg_name, 'debian', 'changelog')
-            with open(changelog, 'r') as f:
+            changelog = os.path.join(tmpdir, pkg_name, "debian", "changelog")
+            with open(changelog, "r") as f:
                 lines = f.readlines()
 
             lines[0] = f"{pkg_name} (20.04~ubuntu1) UNRELEASED; urgency=medium\n"
 
-            if f"(LP: #{bug.id})" not in lines[2] and lines[2].startswith("  * Meta package for"):
+            if f"(LP: #{bug.id})" not in lines[2] and lines[2].startswith(
+                "  * Meta package for"
+            ):
                 lines[2] = "  " + lines[2].strip() + f" (LP: #{bug.id})\n"
 
-            with open(changelog, 'w') as f:
+            with open(changelog, "w") as f:
                 f.writelines(lines)
 
         # Remove deprecated autopkgtest file
-        deprecated_test = os.path.join(tmpdir, pkg_name, 'debian', 'tests', pkg_name)
+        deprecated_test = os.path.join(tmpdir, pkg_name, "debian", "tests", pkg_name)
         if os.path.exists(deprecated_test):
             _run_command(["git", "rm", f"debian/tests/{pkg_name}"])
 
         # Remove deprecated debian/compat
-        deprecated_compat = os.path.join(tmpdir, pkg_name, 'debian', 'compat')
+        deprecated_compat = os.path.join(tmpdir, pkg_name, "debian", "compat")
         if os.path.exists(deprecated_compat):
             _run_command(["git", "rm", f"debian/compat"])
 
@@ -841,22 +1055,39 @@ def check_and_update_git_repo(bug, pkg_name: str, yes=False, bootstrap=True, upd
 
         _run_command(["git", "add", "."])
         out, _, _ = _run_command(["git", "diff", "--color=always", "--cached"])
-        if out != b'':
+        if out != b"":
             warning("$ git diff")
             print(out)
             if update is True:
                 if args.skip:
-                    warning(f"The update of the '{branch}' branch of {pkg_name}'s Git repository is skipped on demand.")
+                    warning(
+                        f"The update of the '{branch}' branch of {pkg_name}'s Git repository is skipped on demand."
+                    )
                     return False
-                elif yes_or_ask(yes, f"Do you want to commit and push the changes above into the '{branch}' branch of {pkg_name}'s Git repository?"):
-                    _run_command(['git', 'commit', '-a', '-m', f"Updated by oem-scripts {oem_scripts.__version__:.2f}."])
-                    _run_command(['git', 'push'])
+                elif yes_or_ask(
+                    yes,
+                    f"Do you want to commit and push the changes above into the '{branch}' branch of {pkg_name}'s Git repository?",
+                ):
+                    _run_command(
+                        [
+                            "git",
+                            "commit",
+                            "-a",
+                            "-m",
+                            f"Updated by oem-scripts {oem_scripts.__version__:.2f}.",
+                        ]
+                    )
+                    _run_command(["git", "push"])
                     return True
             else:
                 if bootstrap:
-                    error(f"The '{branch}' branch of {pkg_name} in Git repository needs to update.")
+                    error(
+                        f"The '{branch}' branch of {pkg_name} in Git repository needs to update."
+                    )
                 else:
-                    warning(f"The '{branch}' branch of {pkg_name} in Git repository may need to update.")
+                    warning(
+                        f"The '{branch}' branch of {pkg_name} in Git repository may need to update."
+                    )
                 return False
         else:
             info(f"The '{branch}' branch of {pkg_name} in Git repository looks fine.")
@@ -867,13 +1098,13 @@ if args.subcommand:
     login = LaunchpadLogin()
     lp = login.lp
 
-if args.subcommand == 'create':
+if args.subcommand == "create":
     create_bug(lp, args.oemCodename, args.platformCodename, args.deviceName)
-elif args.subcommand == 'update':
+elif args.subcommand == "update":
     update_bug(lp, args.bugNumber, args.yes)
-elif args.subcommand == 'check':
+elif args.subcommand == "check":
     check_bug(lp, args.bugNumber)
-elif args.subcommand == 'collect':
+elif args.subcommand == "collect":
     collect_bugs(lp, args.json)
 else:
     parser.print_help()

@@ -29,8 +29,9 @@ from logging import debug, error, critical, info, warning
 from urllib.parse import urljoin
 
 
-parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
-                                 epilog="""
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog="""
 examples:
     pkg-list ubuntu-desktop --recommends > ubuntu-desktop.list
     pkg-list dkms --exclude ubuntu-desktop.list > dkms.list
@@ -39,63 +40,74 @@ examples:
     pkg-list linux-generic --exclude all.list
     pkg-list linux-generic-hwe-20.04 --exclude all.list
     pkg-list linux-oem-20.04 --exclude all.list
-    pkg-list linux-oem-20.04-edge --exclude all.list""")
+    pkg-list linux-oem-20.04-edge --exclude all.list""",
+)
 
-parser.add_argument("-d", "--debug",
-                    action="store_true",
-                    help="print debug messages")
-parser.add_argument("-l", "--long",
-                    action="store_true",
-                    help="print long list including the URL, MD5, SHA1 and SHA256.")
-parser.add_argument("--apt-dir",
-                    type=str,
-                    help="specify the dir for apt")
-parser.add_argument("--recommends",
-                    action="store_true",
-                    help="include recommends packages")
-parser.add_argument("--suggests",
-                    action="store_true",
-                    help="include suggests packages")
-parser.add_argument("--non-installed",
-                    action="store_true",
-                    help="only get non-installed packages per check current running environments")
-parser.add_argument("--fail-unavailable",
-                    action="store_true",
-                    help="Return error when any package is unavailable.")
-parser.add_argument("--exclude",
-                    metavar='pkg.list',
-                    type=argparse.FileType('r', encoding='UTF-8'),
-                    help="package names and versions to exclude.")
-parser.add_argument('pkgs',
-                    metavar='PKG_NAME',
-                    type=str, nargs='+',
-                    help='the names of Debian binary packages')
+parser.add_argument("-d", "--debug", action="store_true", help="print debug messages")
+parser.add_argument(
+    "-l",
+    "--long",
+    action="store_true",
+    help="print long list including the URL, MD5, SHA1 and SHA256.",
+)
+parser.add_argument("--apt-dir", type=str, help="specify the dir for apt")
+parser.add_argument(
+    "--recommends", action="store_true", help="include recommends packages"
+)
+parser.add_argument("--suggests", action="store_true", help="include suggests packages")
+parser.add_argument(
+    "--non-installed",
+    action="store_true",
+    help="only get non-installed packages per check current running environments",
+)
+parser.add_argument(
+    "--fail-unavailable",
+    action="store_true",
+    help="Return error when any package is unavailable.",
+)
+parser.add_argument(
+    "--exclude",
+    metavar="pkg.list",
+    type=argparse.FileType("r", encoding="UTF-8"),
+    help="package names and versions to exclude.",
+)
+parser.add_argument(
+    "pkgs",
+    metavar="PKG_NAME",
+    type=str,
+    nargs="+",
+    help="the names of Debian binary packages",
+)
 
 args = parser.parse_args()
 
-logging.addLevelName(logging.DEBUG,
-                     "\033[1;96m%s\033[1;0m" %
-                     logging.getLevelName(logging.DEBUG))
-logging.addLevelName(logging.INFO,
-                     "\033[1;32m%s\033[1;0m" %
-                     logging.getLevelName(logging.INFO))
-logging.addLevelName(logging.WARNING,
-                     "\033[1;33m%s\033[1;0m" %
-                     logging.getLevelName(logging.WARNING))
-logging.addLevelName(logging.ERROR,
-                     "\033[1;31m%s\033[1;0m" %
-                     logging.getLevelName(logging.ERROR))
-logging.addLevelName(logging.CRITICAL,
-                     "\033[1;41m%s\033[1;0m" %
-                     logging.getLevelName(logging.CRITICAL))
+logging.addLevelName(
+    logging.DEBUG, "\033[1;96m%s\033[1;0m" % logging.getLevelName(logging.DEBUG)
+)
+logging.addLevelName(
+    logging.INFO, "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.INFO)
+)
+logging.addLevelName(
+    logging.WARNING, "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING)
+)
+logging.addLevelName(
+    logging.ERROR, "\033[1;31m%s\033[1;0m" % logging.getLevelName(logging.ERROR)
+)
+logging.addLevelName(
+    logging.CRITICAL, "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.CRITICAL)
+)
 
 if args.debug:
-    logging.basicConfig(format='<%(levelname)s> %(message)s',
-                        level=logging.DEBUG,
-                        handlers=[logging.StreamHandler(sys.stdout)])
+    logging.basicConfig(
+        format="<%(levelname)s> %(message)s",
+        level=logging.DEBUG,
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
 else:
-    logging.basicConfig(format='<%(levelname)s> %(message)s',
-                        handlers=[logging.StreamHandler(sys.stdout)])
+    logging.basicConfig(
+        format="<%(levelname)s> %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
 
 
 def _debug_pkg(pkg: str) -> None:
@@ -106,12 +118,18 @@ def _debug_pkg(pkg: str) -> None:
     debug(dir(pkg))
 
     for attr in dir(pkg):
-        if not attr.startswith('__'):
+        if not attr.startswith("__"):
             if not isinstance(pkg.__getattribute__(attr), types.BuiltinFunctionType):
                 debug(f"{attr}: {pkg.__getattribute__(attr)}")
 
 
-def get_depends(pkg_name: str, depends_list: list, recommends: bool, suggests: bool, non_installed: bool) -> bool:
+def get_depends(
+    pkg_name: str,
+    depends_list: list,
+    recommends: bool,
+    suggests: bool,
+    non_installed: bool,
+) -> bool:
     """Recursively get all dependencies.
 
     Args:
@@ -158,25 +176,34 @@ def get_depends(pkg_name: str, depends_list: list, recommends: bool, suggests: b
         if pkg_name in map(lambda x: x[0], depends_list):
             continue
 
-        if any(pkg_name == name and version.ver_str == ver for name, ver in exclude_list):
+        if any(
+            pkg_name == name and version.ver_str == ver for name, ver in exclude_list
+        ):
             break
 
         if non_installed and pkg.current_ver == version:
             break
 
         for pfile in version.file_list:
-            if pfile[0].filename != '/var/lib/dpkg/status' and record.lookup(pfile):
-                url = urljoin("http://" + pfile[0].site, 'ubuntu/' + record.filename)
+            if pfile[0].filename != "/var/lib/dpkg/status" and record.lookup(pfile):
+                url = urljoin("http://" + pfile[0].site, "ubuntu/" + record.filename)
                 break
 
         debug(f"{pkg_name} {version.ver_str} {pkg.architecture} {url}")
-        item = (pkg_name, version.ver_str, url, record.hashes.find("MD5Sum"), record.hashes.find("SHA1"), record.hashes.find("SHA256"))
+        item = (
+            pkg_name,
+            version.ver_str,
+            url,
+            record.hashes.find("MD5Sum"),
+            record.hashes.find("SHA1"),
+            record.hashes.find("SHA256"),
+        )
         depends_list.append(item)
 
-        for target in ('PreDepends', 'Depends', 'Recommends', 'Suggests'):
-            if target == 'Recommends' and not recommends:
+        for target in ("PreDepends", "Depends", "Recommends", "Suggests"):
+            if target == "Recommends" and not recommends:
                 continue
-            if target == 'Suggests' and not suggests:
+            if target == "Suggests" and not suggests:
                 continue
             if target not in version.depends_list_str:
                 continue
@@ -188,10 +215,16 @@ def get_depends(pkg_name: str, depends_list: list, recommends: bool, suggests: b
                     if name in map(lambda x: x[0], depends_list):
                         found = True
                         break
-                    if arch == 'i386' and pkg.architecture == 'amd64':
+                    if arch == "i386" and pkg.architecture == "amd64":
                         name = name + ":i386"
                         pkg = cache[name]
-                    found = get_depends(name, depends_list, recommends=recommends, suggests=suggests, non_installed=non_installed)
+                    found = get_depends(
+                        name,
+                        depends_list,
+                        recommends=recommends,
+                        suggests=suggests,
+                        non_installed=non_installed,
+                    )
                     if found:
                         break
                 if not found and args.fail_unavailable:
@@ -205,11 +238,13 @@ if args.apt_dir:
     if args.debug:
         old = apt_pkg.config.dump()
     apt_pkg.config.set("Dir", args.apt_dir)
-    apt_pkg.config.set("Dir::State::status", os.path.join(args.apt_dir, "var/lib/dpkg/status"))
+    apt_pkg.config.set(
+        "Dir::State::status", os.path.join(args.apt_dir, "var/lib/dpkg/status")
+    )
     if args.debug:
         new = apt_pkg.config.dump()
         d = difflib.Differ()
-        diff = d.compare(old.split('\n'), new.split('\n'))
+        diff = d.compare(old.split("\n"), new.split("\n"))
         for line in diff:
             debug(line.strip())
     apt_pkg.init_system()
@@ -225,12 +260,18 @@ exclude_list = []
 
 if args.exclude:
     for line in args.exclude.readlines():
-        (name, ver) = line.strip().split(' ')
+        (name, ver) = line.strip().split(" ")
         if not any(name == _name and ver == _ver for _name, _ver in exclude_list):
             exclude_list.append((name, ver))
 
 for pkg in args.pkgs:
-    get_depends(pkg, pkg_list, recommends=args.recommends, suggests=args.suggests, non_installed=args.non_installed)
+    get_depends(
+        pkg,
+        pkg_list,
+        recommends=args.recommends,
+        suggests=args.suggests,
+        non_installed=args.non_installed,
+    )
 
 for pkg, ver, url, md5, sha1, sha256 in sorted(pkg_list):
     if args.long:

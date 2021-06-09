@@ -40,7 +40,8 @@ from string import Template
 from tempfile import TemporaryDirectory
 
 
-staging_copy_template = Template(f'''Operation: copy_package
+staging_copy_template = Template(
+    f'''Operation: copy_package
 Source: $source
 Destination: $destination
 Package: $packages
@@ -60,7 +61,8 @@ And then verify the production archive.
 """
 deb http://oem.archive.canonical.com $distribution $component
 deb-src http://oem.archive.canonical.com $distribution $component
-"""''')
+"""'''
+)
 
 
 class DataJSONEncoder(json.JSONEncoder):
@@ -90,10 +92,11 @@ class PkgInfo:
     proposed_version: str
 
 
-pattern = re.compile(r'oem-([^-]*)-(.*)-meta')
-staging_pattern = re.compile(r'.*>(.*)/</a>')
-parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
-                                 epilog="""
+pattern = re.compile(r"oem-([^-]*)-(.*)-meta")
+staging_pattern = re.compile(r".*>(.*)/</a>")
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog="""
 You need to have the [oem-scripts] section in ~/.config/oem-scripts/config.ini.
 Executing `launchpad-api get people/+me` will generate it.
 
@@ -113,35 +116,38 @@ url = SomewhereToProvideTheInformationForUsernameAndPassword
 username = UserName
 password = PassWord
 archive = https://cesg.canonical.com/canonical
-fingerprint = 54F1860295829CE3""")
+fingerprint = 54F1860295829CE3""",
+)
 
 
-parser.add_argument("-d", "--debug",
-                    help="print debug messages", action="store_true")
-parser.add_argument("-q", "--quiet",
-                    help="Don't print info messages", action="store_true")
-parser.add_argument("-v", "--verbose", action="store_true",
-                    help="print verbose messages")
-parser.add_argument("--dry-run",
-                    help="Dry run the process.", action="store_true")
-parser.add_argument("--yes",
-                    help="Say yes for all prompts.", action="store_true")
-parser.add_argument("--skip",
-                    help="Skip some projects or some meta packages.", type=str, default="")
-parser.add_argument("--only",
-                    help="Specified the meta package. Skip others.", type=str)
-parser.add_argument("--since",
-                    help="Begin from the specified meta package. Skip previous meta packages.", type=str)
-parser.add_argument("--apt-dir",
-                    type=str,
-                    help="specify the dir for apt")
+parser.add_argument("-d", "--debug", help="print debug messages", action="store_true")
+parser.add_argument(
+    "-q", "--quiet", help="Don't print info messages", action="store_true"
+)
+parser.add_argument(
+    "-v", "--verbose", action="store_true", help="print verbose messages"
+)
+parser.add_argument("--dry-run", help="Dry run the process.", action="store_true")
+parser.add_argument("--yes", help="Say yes for all prompts.", action="store_true")
+parser.add_argument(
+    "--skip", help="Skip some projects or some meta packages.", type=str, default=""
+)
+parser.add_argument("--only", help="Specified the meta package. Skip others.", type=str)
+parser.add_argument(
+    "--since",
+    help="Begin from the specified meta package. Skip previous meta packages.",
+    type=str,
+)
+parser.add_argument("--apt-dir", type=str, help="specify the dir for apt")
 
 
 subparsers = parser.add_subparsers(dest="subcommand")
 
-collect = subparsers.add_parser('collect', help='[-h] --json platforms.json | --meta oem-qemu-meta -o|--output meta-info.json',
-                                formatter_class=argparse.RawDescriptionHelpFormatter,
-                                epilog="""
+collect = subparsers.add_parser(
+    "collect",
+    help="[-h] --json platforms.json | --meta oem-qemu-meta -o|--output meta-info.json",
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog="""
 For example,
     oem-meta-packages collect --json platforms.json --output meta-info.json
 
@@ -179,24 +185,37 @@ platforms.json:
 
 oem-meta-packages collect --meta oem-qemu-meta --output meta-info.json
 
-Collect the information of OEM metapackages in PPAs and devel/staging archives.""")
+Collect the information of OEM metapackages in PPAs and devel/staging archives.""",
+)
 
-collect.add_argument("--json",
-                     help="Specify the json file to read the platforms information.",
-                     type=argparse.FileType('r', encoding='UTF-8'))
-collect.add_argument("--meta",
-                     help="Specify the meta package to collect the information.")
-collect.add_argument("-o", "--output", required=True,
-                     help="Specify a filename to write the meta information.",
-                     type=argparse.FileType('w', encoding='UTF-8'))
+collect.add_argument(
+    "--json",
+    help="Specify the json file to read the platforms information.",
+    type=argparse.FileType("r", encoding="UTF-8"),
+)
+collect.add_argument(
+    "--meta", help="Specify the meta package to collect the information."
+)
+collect.add_argument(
+    "-o",
+    "--output",
+    required=True,
+    help="Specify a filename to write the meta information.",
+    type=argparse.FileType("w", encoding="UTF-8"),
+)
 
-list_pkg = subparsers.add_parser('list', help='[-h]',
-                                 formatter_class=argparse.RawDescriptionHelpFormatter,
-                                 epilog="List all OEM meta packages in Ubuntu archive.")
+list_pkg = subparsers.add_parser(
+    "list",
+    help="[-h]",
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog="List all OEM meta packages in Ubuntu archive.",
+)
 
-subscribe = subparsers.add_parser('subscribe', help='[-h]',
-                                  formatter_class=argparse.RawDescriptionHelpFormatter,
-                                  epilog="""
+subscribe = subparsers.add_parser(
+    "subscribe",
+    help="[-h]",
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog="""
 Make all bugs of all oem meta packages be subscribed by oem-solutions-engineers.
  (search current apt source for package lists)
 
@@ -205,56 +224,81 @@ Make all bugs of all oem meta packages be subscribed by oem-solutions-engineers.
  (search current apt source for package lists)
 
 Check "To all bugs in oem-qemu-meta in Ubuntu:" on https://launchpad.net/ubuntu/+source/oem-qemu-meta/+subscribe for example.
-""")
+""",
+)
 
-unsubscribe = subparsers.add_parser('unsubscribe', help='[-h] pkgName',
-                                    formatter_class=argparse.RawDescriptionHelpFormatter,
-                                    epilog="""
+unsubscribe = subparsers.add_parser(
+    "unsubscribe",
+    help="[-h] pkgName",
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog="""
 Unsubscribe oem-solutions-engineers from oem-qemu-meta
 
 For example,
     oem-meta-packages unsubscribe oem-qemu-meta
-""")
-unsubscribe.add_argument("pkgName", type=str,
-                         help="Specify the package name to unsubscribe.")
+""",
+)
+unsubscribe.add_argument(
+    "pkgName", type=str, help="Specify the package name to unsubscribe."
+)
 
-staging_copy = subparsers.add_parser('staging-copy', help='[-h] [--ignore-staging-lock] --json meta-info.json | --meta oem-qemu-meta',
-                                     formatter_class=argparse.RawDescriptionHelpFormatter,
-                                     epilog="""
+staging_copy = subparsers.add_parser(
+    "staging-copy",
+    help="[-h] [--ignore-staging-lock] --json meta-info.json | --meta oem-qemu-meta",
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog="""
 For example,
     oem-meta-packages --dry-run staging-copy --meta oem-qemu-meta
     or
     oem-meta-packages --dry-run staging-copy --json meta-info.json (generated by the 'collect' subcommand.)
 
-Copy the meta package from the devel archive into the staging archive.""")
+Copy the meta package from the devel archive into the staging archive.""",
+)
 
-staging_copy.add_argument("--json",
-                          help="Specify the json file to read the meta information.",
-                          type=argparse.FileType('r', encoding='UTF-8'))
-staging_copy.add_argument("--meta",
-                          help="Specify the meta package to copy.")
-staging_copy.add_argument("--ignore-staging-lock",
-                          help="Ignore the staging-lock tag.", action="store_true")
+staging_copy.add_argument(
+    "--json",
+    help="Specify the json file to read the meta information.",
+    type=argparse.FileType("r", encoding="UTF-8"),
+)
+staging_copy.add_argument("--meta", help="Specify the meta package to copy.")
+staging_copy.add_argument(
+    "--ignore-staging-lock", help="Ignore the staging-lock tag.", action="store_true"
+)
 
-update = subparsers.add_parser('update', help='[-h] [--autopkgtest] --json meta-info.json | --meta oem-qemu-meta',
-                               formatter_class=argparse.RawDescriptionHelpFormatter,
-                               epilog="""
+update = subparsers.add_parser(
+    "update",
+    help="[-h] [--autopkgtest] --json meta-info.json | --meta oem-qemu-meta",
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog="""
 For example,
     oem-meta-packages --dry-run update --meta oem-qemu-meta --kernel linux-oem-20.04
     or
     oem-meta-packages --dry-run update --json meta-info.json (generated by the 'collect' subcommand.)
 
-Update the market name and the kernel flavour of the OEM meta package to the default kernel flavour, i.e. linux-generic-hwe-20.04.""")
-update.add_argument("--autopkgtest", action="store_true",
-                    help="Run autopkgtest when checking the git repository.")
-update.add_argument("--json", type=argparse.FileType('r', encoding='UTF-8'),
-                    help="Specify the json file to read the meta information.")
-update.add_argument("--meta", type=str,
-                    help="Specify the meta package to update.")
-update.add_argument("--kernel", type=str, default="linux-generic-hwe-20.04",
-                    help="Specify the kernel meta to update. linux-generic-hwe-20.04|linux-oem-20.04b|linux-oem-20.04")
-update.add_argument("--factory", action="store_true",
-                    help="Make the factory meta to depend on the kernel meta directly.")
+Update the market name and the kernel flavour of the OEM meta package to the default kernel flavour, i.e. linux-generic-hwe-20.04.""",
+)
+update.add_argument(
+    "--autopkgtest",
+    action="store_true",
+    help="Run autopkgtest when checking the git repository.",
+)
+update.add_argument(
+    "--json",
+    type=argparse.FileType("r", encoding="UTF-8"),
+    help="Specify the json file to read the meta information.",
+)
+update.add_argument("--meta", type=str, help="Specify the meta package to update.")
+update.add_argument(
+    "--kernel",
+    type=str,
+    default="linux-generic-hwe-20.04",
+    help="Specify the kernel meta to update. linux-generic-hwe-20.04|linux-oem-20.04b|linux-oem-20.04",
+)
+update.add_argument(
+    "--factory",
+    action="store_true",
+    help="Make the factory meta to depend on the kernel meta directly.",
+)
 
 args = parser.parse_args()
 
@@ -263,18 +307,20 @@ setup_logging(debug=args.debug, quiet=args.quiet)
 if args.subcommand:
     login = LaunchpadLogin()
     lp = login.lp
-    oem_archive = lp.people['oem-archive']
+    oem_archive = lp.people["oem-archive"]
 
 if args.apt_dir:
     apt_pkg.init_config()
     if args.debug:
         old = apt_pkg.config.dump()
     apt_pkg.config.set("Dir", args.apt_dir)
-    apt_pkg.config.set("Dir::State::status", os.path.join(args.apt_dir, "var/lib/dpkg/status"))
+    apt_pkg.config.set(
+        "Dir::State::status", os.path.join(args.apt_dir, "var/lib/dpkg/status")
+    )
     if args.debug:
         new = apt_pkg.config.dump()
         d = difflib.Differ()
-        diff = d.compare(old.split('\n'), new.split('\n'))
+        diff = d.compare(old.split("\n"), new.split("\n"))
         for line in diff:
             debug(line.strip())
     apt_pkg.init_system()
@@ -288,7 +334,7 @@ def yes_or_ask(yes: bool, message: str) -> bool:
         res = input(f"> \033[1;34m{message}\033[1;0m (y/n) ").lower()
         if res not in {"y", "n"}:
             continue
-        if res == 'y':
+        if res == "y":
             return True
         else:
             return False
@@ -302,21 +348,25 @@ def _debug_obj(pkg) -> None:
     debug(dir(pkg))
 
     for attr in dir(pkg):
-        if not attr.startswith('__'):
+        if not attr.startswith("__"):
             if not isinstance(pkg.__getattribute__(attr), types.BuiltinFunctionType):
                 debug(f"{attr}: {pkg.__getattribute__(attr)}")
 
 
-def _run_command(command: list or tuple, returncode=(0,), env=None, silent=False) -> (str, str, int):
+def _run_command(
+    command: list or tuple, returncode=(0,), env=None, silent=False
+) -> (str, str, int):
     if not silent:
         debug("$ " + " ".join(command))
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+    proc = subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
+    )
     out, err = proc.communicate()
 
     if out:
-        out = out.decode('utf-8').strip()
+        out = out.decode("utf-8").strip()
     if err:
-        err = err.decode('utf-8').strip()
+        err = err.decode("utf-8").strip()
 
     if proc.returncode not in returncode:
         critical(f"return {proc.returncode}")
@@ -339,7 +389,11 @@ def get_oem_meta_packages(cache) -> list:
     pkg_list = []
     for pkg in cache.packages:
         name = pkg.name
-        if not name.startswith('oem-') or not name.endswith('-meta') or '-factory-' in name:
+        if (
+            not name.startswith("oem-")
+            or not name.endswith("-meta")
+            or "-factory-" in name
+        ):
             continue
         pkg_list.append(name)
     return sorted(pkg_list)
@@ -347,8 +401,8 @@ def get_oem_meta_packages(cache) -> list:
 
 def _grouping_market_names(market_names: list, maxsplit=1) -> str:
     # Remove empty item
-    while '' in market_names:
-        market_names.remove('')
+    while "" in market_names:
+        market_names.remove("")
     tmp = collections.defaultdict(list)
     space_in_model = False
     try:
@@ -356,28 +410,28 @@ def _grouping_market_names(market_names: list, maxsplit=1) -> str:
             if maxsplit == 1:
                 name, model = market_name.split(maxsplit=maxsplit)
                 tmp[name].append(model)
-                if ' ' in model:
+                if " " in model:
                     space_in_model = True
             elif maxsplit == 2:
                 brand, name, model = market_name.split(maxsplit=maxsplit)
-                tmp[brand + ' ' + name].append(model)
-                if ' ' in model:
+                tmp[brand + " " + name].append(model)
+                if " " in model:
                     space_in_model = True
     except ValueError:
-        return ', '.join(sorted(market_names))
+        return ", ".join(sorted(market_names))
 
     if space_in_model:
-        return ', '.join(f"{name} {', '.join(models)}" for name, models in tmp.items())
+        return ", ".join(f"{name} {', '.join(models)}" for name, models in tmp.items())
     else:
-        return ', '.join(f"{name} {'/'.join(models)}" for name, models in tmp.items())
+        return ", ".join(f"{name} {'/'.join(models)}" for name, models in tmp.items())
 
 
 def deal_with_description(git_dir, old, new) -> bool:
     if not old or not new:
         return False
     os.chdir(git_dir)
-    file_path = os.path.join(git_dir, 'debian', 'control')
-    with open(file_path, 'r') as control:
+    file_path = os.path.join(git_dir, "debian", "control")
+    with open(file_path, "r") as control:
         lines = control.readlines()
     changed = False
     for i, line in enumerate(lines):
@@ -385,7 +439,7 @@ def deal_with_description(git_dir, old, new) -> bool:
             changed = True
             lines[i] = line.replace(old, new)
     info(f'"{old}" will be replaced by "{new}".')
-    with open(file_path, 'w') as control:
+    with open(file_path, "w") as control:
         control.writelines(lines)
     _run_command(["git", "add", "debian/control"])
     return changed
@@ -395,39 +449,41 @@ def deal_with_kernel_flavour(pkg_name, branch, git_dir) -> bool:
     os.chdir(git_dir)
     idx = -1
     kernel_flavour = None
-    file_path = os.path.join(git_dir, 'debian', 'control')
-    with open(file_path, 'r') as control:
+    file_path = os.path.join(git_dir, "debian", "control")
+    with open(file_path, "r") as control:
         lines = control.readlines()
     for i, line in enumerate(lines):
-        if line.startswith('XB-Ubuntu-OEM-Kernel-Flavour:'):
-            kernel_flavour = line[len('XB-Ubuntu-OEM-Kernel-Flavour:'):].strip()
+        if line.startswith("XB-Ubuntu-OEM-Kernel-Flavour:"):
+            kernel_flavour = line[len("XB-Ubuntu-OEM-Kernel-Flavour:") :].strip()
             idx = i
             break
 
     if not kernel_flavour:
-        critical(f"There is no XB-Ubuntu-OEM-Kernel-Flavour in debian/control of {branch} for {pkg_name}.")
+        critical(
+            f"There is no XB-Ubuntu-OEM-Kernel-Flavour in debian/control of {branch} for {pkg_name}."
+        )
         exit(1)
 
     debug(f"XB-Ubuntu-OEM-Kernel-Flavour: {kernel_flavour}")
 
-    if args.kernel == 'linux-generic-hwe-20.04':
-        if kernel_flavour == 'default':
+    if args.kernel == "linux-generic-hwe-20.04":
+        if kernel_flavour == "default":
             return False
-        kernel_flavour = 'default'
-    elif args.kernel == 'linux-oem-20.04':
-        if kernel_flavour == 'oem':
+        kernel_flavour = "default"
+    elif args.kernel == "linux-oem-20.04":
+        if kernel_flavour == "oem":
             return False
-        kernel_flavour = 'oem'
-    elif args.kernel == 'linux-oem-20.04b':
-        if kernel_flavour == 'oem':
+        kernel_flavour = "oem"
+    elif args.kernel == "linux-oem-20.04b":
+        if kernel_flavour == "oem":
             return False
-        kernel_flavour = 'oem'
+        kernel_flavour = "oem"
     else:
         print(f"{args.kernel} is not supported.")
         exit(1)
 
     lines[idx] = f"XB-Ubuntu-OEM-Kernel-Flavour: {kernel_flavour}\n"
-    with open(file_path, 'w') as control:
+    with open(file_path, "w") as control:
         control.writelines(lines)
     _run_command(["git", "add", "debian/control"])
     return True
@@ -436,12 +492,12 @@ def deal_with_kernel_flavour(pkg_name, branch, git_dir) -> bool:
 def deal_with_kernel_depends(pkg_name, branch, git_dir) -> bool:
     os.chdir(git_dir)
     idx = -1
-    file_path = os.path.join(git_dir, 'debian', 'control')
+    file_path = os.path.join(git_dir, "debian", "control")
     changed = False
-    with open(file_path, 'r') as control:
+    with open(file_path, "r") as control:
         lines = control.readlines()
     for i, line in enumerate(lines):
-        if line.startswith('Depends:'):
+        if line.startswith("Depends:"):
             idx = i
             break
 
@@ -452,24 +508,42 @@ def deal_with_kernel_depends(pkg_name, branch, git_dir) -> bool:
     debug(lines[idx].strip())
 
     # this only works for updating auto-generated code
-    if args.kernel == 'linux-generic-hwe-20.04' and ', linux-generic-hwe-20.04,' not in lines[idx]:
-        lines[idx] = lines[idx].replace(', linux-oem-20.04,', ', linux-generic-hwe-20.04,')
-        lines[idx] = lines[idx].replace(', linux-oem-20.04b | linux-oem-20.04,', ', linux-generic-hwe-20.04,')
+    if (
+        args.kernel == "linux-generic-hwe-20.04"
+        and ", linux-generic-hwe-20.04," not in lines[idx]
+    ):
+        lines[idx] = lines[idx].replace(
+            ", linux-oem-20.04,", ", linux-generic-hwe-20.04,"
+        )
+        lines[idx] = lines[idx].replace(
+            ", linux-oem-20.04b | linux-oem-20.04,", ", linux-generic-hwe-20.04,"
+        )
         changed = True
-    elif args.kernel == 'linux-oem-20.04' and ', linux-oem-20.04,' not in lines[idx]:
-        lines[idx] = lines[idx].replace(', linux-generic-hwe-20.04,', ', linux-oem-20.04,')
-        lines[idx] = lines[idx].replace(', linux-oem-20.04b | linux-oem-20.04,', ', linux-oem-20.04,')
+    elif args.kernel == "linux-oem-20.04" and ", linux-oem-20.04," not in lines[idx]:
+        lines[idx] = lines[idx].replace(
+            ", linux-generic-hwe-20.04,", ", linux-oem-20.04,"
+        )
+        lines[idx] = lines[idx].replace(
+            ", linux-oem-20.04b | linux-oem-20.04,", ", linux-oem-20.04,"
+        )
         changed = True
-    elif args.kernel == 'linux-oem-20.04b' and ', linux-oem-20.04b | linux-oem-20.04,' not in lines[idx]:
-        lines[idx] = lines[idx].replace(', linux-generic-hwe-20.04,', ', linux-oem-20.04b | linux-oem-20.04,')
-        lines[idx] = lines[idx].replace(', linux-oem-20.04,', ', linux-oem-20.04b | linux-oem-20.04,')
+    elif (
+        args.kernel == "linux-oem-20.04b"
+        and ", linux-oem-20.04b | linux-oem-20.04," not in lines[idx]
+    ):
+        lines[idx] = lines[idx].replace(
+            ", linux-generic-hwe-20.04,", ", linux-oem-20.04b | linux-oem-20.04,"
+        )
+        lines[idx] = lines[idx].replace(
+            ", linux-oem-20.04,", ", linux-oem-20.04b | linux-oem-20.04,"
+        )
         changed = True
 
     if args.factory:
         factory_idx = -1
         # Find the factory depends.
         for i, line in enumerate(lines):
-            if i > idx and line.startswith('Depends:'):
+            if i > idx and line.startswith("Depends:"):
                 factory_idx = i
                 depends_line = lines[factory_idx].strip()
                 break
@@ -478,7 +552,11 @@ def deal_with_kernel_depends(pkg_name, branch, git_dir) -> bool:
             critical("It can not find factory 'Depends' in debian/control.")
             exit(1)
 
-        for kernel in ('linux-generic-hwe-20.04', 'linux-oem-20.04', 'linux-oem-20.04b'):
+        for kernel in (
+            "linux-generic-hwe-20.04",
+            "linux-oem-20.04",
+            "linux-oem-20.04b",
+        ):
             if depends_line.endswith(kernel) or f"{kernel}," in depends_line:
                 if kernel != args.kernel:
                     lines[factory_idx] = lines[factory_idx].replace(kernel, args.kernel)
@@ -488,7 +566,7 @@ def deal_with_kernel_depends(pkg_name, branch, git_dir) -> bool:
             lines[factory_idx] = depends_line + f", {args.kernel}\n"
             changed = True
 
-    with open(file_path, 'w') as control:
+    with open(file_path, "w") as control:
         control.writelines(lines)
 
     if changed:
@@ -497,12 +575,14 @@ def deal_with_kernel_depends(pkg_name, branch, git_dir) -> bool:
     return changed
 
 
-def deal_with_debian_tests(pkg_name: str, git_dir: str, branch: str, bootstrap: bool) -> bool:
+def deal_with_debian_tests(
+    pkg_name: str, git_dir: str, branch: str, bootstrap: bool
+) -> bool:
     os.chdir(git_dir)
 
     changed = False
 
-    tests_folder = os.path.join(git_dir, 'debian', 'tests')
+    tests_folder = os.path.join(git_dir, "debian", "tests")
     if not os.path.exists(tests_folder):
         os.mkdir(tests_folder)
 
@@ -510,17 +590,17 @@ def deal_with_debian_tests(pkg_name: str, git_dir: str, branch: str, bootstrap: 
 Depends: @
 Restrictions: needs-root
 """
-    control = os.path.join(git_dir, 'debian', 'tests', 'control')
+    control = os.path.join(git_dir, "debian", "tests", "control")
 
     if os.path.exists(control):
-        with open(control, 'r') as f:
+        with open(control, "r") as f:
             if f.read() != control_content:
-                with open(control, 'w') as fp:
+                with open(control, "w") as fp:
                     fp.write(control_content)
                 _run_command(["git", "add", "debian/tests/control"])
                 changed = True
     else:
-        with open(control, 'w') as fp:
+        with open(control, "w") as fp:
             fp.write(control_content)
         _run_command(["git", "add", "debian/tests/control"])
         changed = True
@@ -538,29 +618,37 @@ apt-get update
 apt-get full-upgrade --yes
 """
     if not bootstrap:
-        if 'oem' in args.kernel:
-            grub_flavour = 'oem'
+        if "oem" in args.kernel:
+            grub_flavour = "oem"
         else:
-            grub_flavour = 'generic'
-        meta_content += '\ngrep ^GRUB_FLAVOUR_ORDER=' + grub_flavour + '$ /etc/default/grub.d/oem-flavour.cfg\n'
-        meta_content += '\ndpkg-query -W -f=\'${Status}\' ' + args.kernel + ' | grep "install ok installed"\n'
+            grub_flavour = "generic"
+        meta_content += (
+            "\ngrep ^GRUB_FLAVOUR_ORDER="
+            + grub_flavour
+            + "$ /etc/default/grub.d/oem-flavour.cfg\n"
+        )
+        meta_content += (
+            "\ndpkg-query -W -f='${Status}' "
+            + args.kernel
+            + ' | grep "install ok installed"\n'
+        )
     meta_content += f"\napt-get autoremove --purge --yes {pkg_name}\n"
-    meta = os.path.join(git_dir, 'debian', 'tests', 'meta')
-    old_meta = os.path.join(git_dir, 'debian', 'tests', pkg_name)
+    meta = os.path.join(git_dir, "debian", "tests", "meta")
+    old_meta = os.path.join(git_dir, "debian", "tests", pkg_name)
 
     if os.path.exists(old_meta):
         _run_command(["git", "rm", "-f", f"debian/tests/{pkg_name}"])
         changed = True
 
     if os.path.exists(meta):
-        with open(meta, 'r') as f:
+        with open(meta, "r") as f:
             if f.read() != meta_content:
-                with open(meta, 'w') as fp:
+                with open(meta, "w") as fp:
                     fp.write(meta_content)
                 _run_command(["git", "add", "debian/tests/meta"])
                 changed = True
     else:
-        with open(meta, 'w') as fp:
+        with open(meta, "w") as fp:
             fp.write(meta_content)
         _run_command(["git", "add", "debian/tests/meta"])
         changed = True
@@ -570,29 +658,30 @@ apt-get full-upgrade --yes
 
 def deal_with_gbp_conf(git_dir, branch) -> bool:
     os.chdir(git_dir)
-    file_path = os.path.join(git_dir, 'debian', 'gbp.conf')
+    file_path = os.path.join(git_dir, "debian", "gbp.conf")
     gbp_conf = f"""[DEFAULT]
 pristine-tar = False
 debian-branch = {branch}
 debian-tag = {branch}_%(version)s
 """
     if os.path.exists(file_path):
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             if f.read() == gbp_conf:
                 return False
-    with open(file_path, 'w') as f:
+    with open(file_path, "w") as f:
         f.write(gbp_conf)
     _run_command(["git", "add", "debian/gbp.conf"])
     return True
 
 
 def deal_with_maintainer_scripts(pkg_name, branch, git_dir) -> bool:
-    postinst_path = os.path.join(git_dir, 'debian', 'postinst')
-    postrm_path = os.path.join(git_dir, 'debian', 'postrm')
+    postinst_path = os.path.join(git_dir, "debian", "postinst")
+    postrm_path = os.path.join(git_dir, "debian", "postrm")
     modified = False
 
-    with open(postinst_path, 'w') as f:
-        f.write(f'''#!/bin/sh
+    with open(postinst_path, "w") as f:
+        f.write(
+            f"""#!/bin/sh
 
 set -e
 
@@ -609,14 +698,16 @@ case "$1" in
 esac
 
 #DEBHELPER#
-''')
+"""
+        )
     _run_command(["git", "add", "debian/postinst"])
     output, _, _ = _run_command(["git", "status", "--porcelain", "debian/postinst"])
     if output:
         modified = True
 
-    with open(postrm_path, 'w') as f:
-        f.write('''#!/bin/sh
+    with open(postrm_path, "w") as f:
+        f.write(
+            """#!/bin/sh
 
 set -e
 
@@ -632,7 +723,8 @@ case "$1" in
 esac
 
 #DEBHELPER#
-''')
+"""
+        )
     _run_command(["git", "add", "debian/postrm"])
     output, _, _ = _run_command(["git", "status", "--porcelain", "debian/postrm"])
     if output:
@@ -644,39 +736,41 @@ esac
 def deal_with_grub_flavour(pkg_name, branch, git_dir) -> bool:
     os.chdir(git_dir)
     grub_flavour = None
-    file_path = os.path.join(git_dir, 'oem-flavour.cfg')
+    file_path = os.path.join(git_dir, "oem-flavour.cfg")
     if os.path.exists(file_path):
-        with open(file_path, 'r') as oem_flavour:
+        with open(file_path, "r") as oem_flavour:
             for line in oem_flavour:
-                if line.startswith('GRUB_FLAVOUR_ORDER='):
-                    grub_flavour = line[len('GRUB_FLAVOUR_ORDER='):].strip()
+                if line.startswith("GRUB_FLAVOUR_ORDER="):
+                    grub_flavour = line[len("GRUB_FLAVOUR_ORDER=") :].strip()
                     break
 
-    if args.kernel == 'linux-generic-hwe-20.04':
-        if grub_flavour == 'generic':
+    if args.kernel == "linux-generic-hwe-20.04":
+        if grub_flavour == "generic":
             return False
-        grub_flavour = 'generic'
-    elif args.kernel == 'linux-oem-20.04':
-        if grub_flavour == 'oem':
+        grub_flavour = "generic"
+    elif args.kernel == "linux-oem-20.04":
+        if grub_flavour == "oem":
             return False
-        grub_flavour = 'oem'
-    elif args.kernel == 'linux-oem-20.04b':
-        if grub_flavour == 'oem':
+        grub_flavour = "oem"
+    elif args.kernel == "linux-oem-20.04b":
+        if grub_flavour == "oem":
             return False
-        grub_flavour = 'oem'
+        grub_flavour = "oem"
     else:
         print(f"{args.kernel} is not supported.")
         exit(1)
 
     if not os.path.exists(file_path):
-        with open(os.path.join(git_dir, 'debian', 'install'), 'a') as f:
+        with open(os.path.join(git_dir, "debian", "install"), "a") as f:
             f.write(f"oem-flavour.cfg /usr/share/{pkg_name}/\n")
         _run_command(["git", "add", "debian/install"])
 
-    with open(file_path, 'w') as f:
-        f.write(f"""# This file is automatically generated by {pkg_name}, and changes will be overriden
+    with open(file_path, "w") as f:
+        f.write(
+            f"""# This file is automatically generated by {pkg_name}, and changes will be overriden
 GRUB_FLAVOUR_ORDER={grub_flavour}
-""")
+"""
+        )
     _run_command(["git", "add", "oem-flavour.cfg"])
 
     return True
@@ -684,29 +778,31 @@ GRUB_FLAVOUR_ORDER={grub_flavour}
 
 # Python 3.9 supports this.
 def remove_prefix(s, prefix):
-    return s[len(prefix):] if s.startswith(prefix) else s
+    return s[len(prefix) :] if s.startswith(prefix) else s
 
 
 # Python 3.9 supports this.
 def remove_suffix(s, suffix):
-    return s[:-len(suffix)] if s.endswith(suffix) else s
+    return s[: -len(suffix)] if s.endswith(suffix) else s
 
 
 def remove_prefix_suffix(s, prefix, suffix):
     return remove_suffix(remove_prefix(s, prefix), suffix)
 
 
-def search_ppa_and_version(project: str, group: str, platform: str, pkg_name: str, archive_name=None):
+def search_ppa_and_version(
+    project: str, group: str, platform: str, pkg_name: str, archive_name=None
+):
     if archive_name:
         archive = oem_archive.getPPAByName(name=archive_name)
-    elif project == 'somerville':
+    elif project == "somerville":
         try:
             archive = oem_archive.getPPAByName(name=f"{project}-fossa-{platform}")
         except lazr.restfulclient.errors.NotFound:
             archive = oem_archive.getPPAByName(name=f"{project}-{platform}")
-    elif project == 'stella':
+    elif project == "stella":
         archive = oem_archive.getPPAByName(name=f"{project}-{group}-ouagadougou")
-    elif project == 'sutton':
+    elif project == "sutton":
         try:
             archive = oem_archive.getPPAByName(name=f"{project}-{group}-ouagadougou")
         except lazr.restfulclient.errors.NotFound:
@@ -718,7 +814,7 @@ def search_ppa_and_version(project: str, group: str, platform: str, pkg_name: st
             archive.newSubscription(subscriber=lp.me)
             archive.lp_save()
         except lazr.restfulclient.errors.BadRequest as e:
-            if 'already has a current subscription for' not in str(e):
+            if "already has a current subscription for" not in str(e):
                 raise e
         _run_command(["get-private-ppa", f"ppa:oem-archive/{archive.name}"])
         source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
@@ -726,8 +822,10 @@ def search_ppa_and_version(project: str, group: str, platform: str, pkg_name: st
     fingerprint = archive.signing_key_fingerprint
     version = ""
     for source in sources:
-        if source.source_package_name == pkg_name and \
-                apt_pkg.version_compare(source.source_package_version, version) > 0:
+        if (
+            source.source_package_name == pkg_name
+            and apt_pkg.version_compare(source.source_package_version, version) > 0
+        ):
             version = source.source_package_version
     if version:
         return archive.name, version, fingerprint
@@ -741,8 +839,8 @@ def get_debian_version_from_git(pkg_name: str) -> str:
     if not result:
         return None
 
-    if '.' in result.group(1):
-        project, group = result.group(1).split('.')
+    if "." in result.group(1):
+        project, group = result.group(1).split(".")
     else:
         project = result.group(1)
         group = None
@@ -756,137 +854,215 @@ def get_debian_version_from_git(pkg_name: str) -> str:
         ubuntu_branch = f"{platform}-focal-ubuntu"
         oem_branch = f"{platform}-focal-oem"
 
-    wget_changelog_command = ("wget", '-q', "-O", "changelog",
-                              f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta/plain/debian/changelog?h={ubuntu_branch}")
+    wget_changelog_command = (
+        "wget",
+        "-q",
+        "-O",
+        "changelog",
+        f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta/plain/debian/changelog?h={ubuntu_branch}",
+    )
 
     bootstrap_version = ""
     with TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
         _run_command(wget_changelog_command)
-        bootstrap_version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"changelog"])
+        bootstrap_version, _, _ = _run_command(
+            ["dpkg-parsechangelog", "--show-field", "Version", "-l", f"changelog"]
+        )
 
-    wget_changelog_command = ("wget", '-q', "-O", "changelog",
-                              f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta/plain/debian/changelog?h={oem_branch}")
+    wget_changelog_command = (
+        "wget",
+        "-q",
+        "-O",
+        "changelog",
+        f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta/plain/debian/changelog?h={oem_branch}",
+    )
 
     oem_version = ""
     with TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
         _run_command(wget_changelog_command)
-        oem_version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"changelog"])
+        oem_version, _, _ = _run_command(
+            ["dpkg-parsechangelog", "--show-field", "Version", "-l", f"changelog"]
+        )
 
     return bootstrap_version, oem_version
 
 
 def search_public_archive(pkg_name: str, project: str, codename: str) -> tuple:
-    if project == 'somerville':
-        source_line = 'http://dell.archive.canonical.com/'
+    if project == "somerville":
+        source_line = "http://dell.archive.canonical.com/"
         archive = f"somerville-{codename}"
-    elif project == 'stella':
-        source_line = 'http://hp.archive.canonical.com/'
+    elif project == "stella":
+        source_line = "http://hp.archive.canonical.com/"
         archive = f"stella.{codename}"
-    elif project == 'sutton':
-        source_line = 'http://lenovo.archive.canonical.com/'
+    elif project == "sutton":
+        source_line = "http://lenovo.archive.canonical.com/"
         archive = f"sutton.{codename}"
     oem_version = ""
     with TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
-        _run_command(['setup-apt-dir.sh',
-                      '-c', 'focal',
-                      '--disable-base',
-                      '--disable-updates',
-                      '--disable-backports',
-                      '--apt-dir', tmpdir,
-                      '--extra-key', '59AC787C2A8C78BA5ECA0B2ED4D1EAED36962F69',
-                      '--extra-repo', f"deb [signed-by={tmpdir}/59AC787C2A8C78BA5ECA0B2ED4D1EAED36962F69.pub arch=amd64] {source_line} focal {archive}"],
-                     silent=True)
-        output, _, _ = _run_command(['pkg-list', '--long', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
-        for line in output.split('\n'):
+        _run_command(
+            [
+                "setup-apt-dir.sh",
+                "-c",
+                "focal",
+                "--disable-base",
+                "--disable-updates",
+                "--disable-backports",
+                "--apt-dir",
+                tmpdir,
+                "--extra-key",
+                "59AC787C2A8C78BA5ECA0B2ED4D1EAED36962F69",
+                "--extra-repo",
+                f"deb [signed-by={tmpdir}/59AC787C2A8C78BA5ECA0B2ED4D1EAED36962F69.pub arch=amd64] {source_line} focal {archive}",
+            ],
+            silent=True,
+        )
+        output, _, _ = _run_command(
+            ["pkg-list", "--long", "--apt-dir", tmpdir, pkg_name],
+            returncode=(0, 1),
+            silent=True,
+        )
+        for line in output.split("\n"):
             if pkg_name in line and source_line in line:
-                oem_version = line.split(' ')[1]
-                info(f"{pkg_name} {oem_version} exists in 'deb {source_line} focal {archive}'.")
+                oem_version = line.split(" ")[1]
+                info(
+                    f"{pkg_name} {oem_version} exists in 'deb {source_line} focal {archive}'."
+                )
                 break
     ubuntu_version = ""
     with TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
-        _run_command(['setup-apt-dir.sh',
-                      '-c', 'focal',
-                      '--disable-backports',
-                      '--apt-dir', tmpdir],
-                     silent=True)
-        output, _, _ = _run_command(['pkg-list', '--long', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
-        for line in output.split('\n'):
-            if pkg_name in line and 'http://archive.ubuntu.com/ubuntu' in line:
-                ubuntu_version = line.split(' ')[1]
+        _run_command(
+            [
+                "setup-apt-dir.sh",
+                "-c",
+                "focal",
+                "--disable-backports",
+                "--apt-dir",
+                tmpdir,
+            ],
+            silent=True,
+        )
+        output, _, _ = _run_command(
+            ["pkg-list", "--long", "--apt-dir", tmpdir, pkg_name],
+            returncode=(0, 1),
+            silent=True,
+        )
+        for line in output.split("\n"):
+            if pkg_name in line and "http://archive.ubuntu.com/ubuntu" in line:
+                ubuntu_version = line.split(" ")[1]
                 info(f"{pkg_name} {ubuntu_version} exists in Ubuntu archive.")
                 break
     proposed_version = ""
     with TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
-        _run_command(['setup-apt-dir.sh',
-                      '-c', 'focal',
-                      '--proposed',
-                      '--disable-base',
-                      '--disable-updates',
-                      '--disable-backports',
-                      '--apt-dir', tmpdir],
-                     silent=True)
-        output, _, _ = _run_command(['pkg-list', '--long', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
-        for line in output.split('\n'):
-            if pkg_name in line and 'http://archive.ubuntu.com/ubuntu' in line:
-                proposed_version = line.split(' ')[1]
+        _run_command(
+            [
+                "setup-apt-dir.sh",
+                "-c",
+                "focal",
+                "--proposed",
+                "--disable-base",
+                "--disable-updates",
+                "--disable-backports",
+                "--apt-dir",
+                tmpdir,
+            ],
+            silent=True,
+        )
+        output, _, _ = _run_command(
+            ["pkg-list", "--long", "--apt-dir", tmpdir, pkg_name],
+            returncode=(0, 1),
+            silent=True,
+        )
+        for line in output.split("\n"):
+            if pkg_name in line and "http://archive.ubuntu.com/ubuntu" in line:
+                proposed_version = line.split(" ")[1]
                 info(f"{pkg_name} {proposed_version} exists in focal-proposed.")
                 break
     return ubuntu_version, proposed_version, oem_version, archive
 
 
-def search_private_archive(pkg_name: str, project: str, platform: str, index: str, config: str, branch: str) -> tuple:
-    domain = config['archive'].split("://")[1].split("/")[0]
+def search_private_archive(
+    pkg_name: str, project: str, platform: str, index: str, config: str, branch: str
+) -> tuple:
+    domain = config["archive"].split("://")[1].split("/")[0]
     archive = None
     version = None
-    for line in index.split('\n'):
-        if project in line and platform in line and f'focal-{branch}' in line:
+    for line in index.split("\n"):
+        if project in line and platform in line and f"focal-{branch}" in line:
             result = staging_pattern.match(line)
             if result:
                 archive = result.group(1)
     with TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
-        source_line = config['archive'].replace("https://", f"https://{config['username']}:{config['password']}@")
-        _run_command(['setup-apt-dir.sh',
-                      '-c', 'focal',
-                      '--disable-updates',
-                      '--disable-backports',
-                      '--apt-dir', tmpdir,
-                      '--extra-key', config['fingerprint'],
-                      '--extra-repo', f"deb [signed-by={tmpdir}/{config['fingerprint']}.pub arch=amd64] {source_line} {archive} public"],
-                     silent=True)
-        output, _, _ = _run_command(['pkg-list', '--long', '--apt-dir', tmpdir, pkg_name], returncode=(0, 1), silent=True)
-        for line in output.split('\n'):
+        source_line = config["archive"].replace(
+            "https://", f"https://{config['username']}:{config['password']}@"
+        )
+        _run_command(
+            [
+                "setup-apt-dir.sh",
+                "-c",
+                "focal",
+                "--disable-updates",
+                "--disable-backports",
+                "--apt-dir",
+                tmpdir,
+                "--extra-key",
+                config["fingerprint"],
+                "--extra-repo",
+                f"deb [signed-by={tmpdir}/{config['fingerprint']}.pub arch=amd64] {source_line} {archive} public",
+            ],
+            silent=True,
+        )
+        output, _, _ = _run_command(
+            ["pkg-list", "--long", "--apt-dir", tmpdir, pkg_name],
+            returncode=(0, 1),
+            silent=True,
+        )
+        for line in output.split("\n"):
             if pkg_name in line and domain in line:
-                version = line.split(' ')[1]
+                version = line.split(" ")[1]
                 break
     if version is None and project == "somerville":
         archive = f"somerville-focal-{branch}"
         with TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
-            source_line = config['archive'].replace("https://", f"https://{config['username']}:{config['password']}@")
-            _run_command(['setup-apt-dir.sh',
-                          '-c', 'focal',
-                          '--disable-updates',
-                          '--disable-backports',
-                          '--apt-dir', tmpdir,
-                          '--extra-key', config['fingerprint'],
-                          '--extra-repo', f"deb [signed-by={tmpdir}/{config['fingerprint']}.pub arch=amd64] {source_line} {archive} public"],
-                         silent=True)
-            output, _, _ = _run_command(['pkg-list', '--long', '--apt-dir', tmpdir, pkg_name], silent=True)
-            for line in output.split('\n'):
+            source_line = config["archive"].replace(
+                "https://", f"https://{config['username']}:{config['password']}@"
+            )
+            _run_command(
+                [
+                    "setup-apt-dir.sh",
+                    "-c",
+                    "focal",
+                    "--disable-updates",
+                    "--disable-backports",
+                    "--apt-dir",
+                    tmpdir,
+                    "--extra-key",
+                    config["fingerprint"],
+                    "--extra-repo",
+                    f"deb [signed-by={tmpdir}/{config['fingerprint']}.pub arch=amd64] {source_line} {archive} public",
+                ],
+                silent=True,
+            )
+            output, _, _ = _run_command(
+                ["pkg-list", "--long", "--apt-dir", tmpdir, pkg_name], silent=True
+            )
+            for line in output.split("\n"):
                 if pkg_name in line and domain in line:
-                    version = line.split(' ')[1]
+                    version = line.split(" ")[1]
                     break
 
     return (archive, version)
 
 
-def collect_pkg_info(data, check_private: bool = False, index=None, config=None) -> dict:
+def collect_pkg_info(
+    data, check_private: bool = False, index=None, config=None
+) -> dict:
     if type(data) is str:
         result = pattern.match(data)
 
@@ -894,8 +1070,8 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             print(f"{data} is not supported.")
             exit(1)
 
-        if '.' in result.group(1):
-            project, group = result.group(1).split('.')
+        if "." in result.group(1):
+            project, group = result.group(1).split(".")
         else:
             project = result.group(1)
             group = "N/A"
@@ -917,14 +1093,16 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             print(f"{data} is not supported.")
             exit(1)
 
-        json_data = json.loads(f"""[{{
+        json_data = json.loads(
+            f"""[{{
 "Customer": "{customer}",
 "Group": "{group}",
 "Codename": "{codename}",
 "Platform": "",
 "MarketName": "",
 "PlatformLPTag": "{tag}"
-}}]""")
+}}]"""
+        )
     else:
         json_data = json.load(data)
 
@@ -935,27 +1113,27 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
     sutton = dict()
 
     for item in json_data:
-        customer = item['Customer'].lower()
-        platform = item['Platform'].lower()
-        codename = item['Codename'].lower()
-        group = item['Group'].lower()
-        market_name = item['MarketName']
-        lp_tag = item['PlatformLPTag'].lower()
-        if 'dell' in customer:
-            if 'somerville' in args.skip:
+        customer = item["Customer"].lower()
+        platform = item["Platform"].lower()
+        codename = item["Codename"].lower()
+        group = item["Group"].lower()
+        market_name = item["MarketName"]
+        lp_tag = item["PlatformLPTag"].lower()
+        if "dell" in customer:
+            if "somerville" in args.skip:
                 continue
-            platform = remove_prefix(lp_tag, 'fossa-')
+            platform = remove_prefix(lp_tag, "fossa-")
             lst = somerville.get(platform, [])
             lst.append(market_name)
             somerville[platform] = lst
-        elif 'hp' in customer:
-            if 'stella' in args.skip:
+        elif "hp" in customer:
+            if "stella" in args.skip:
                 continue
             lst = stella.get(f"{group}-{codename}", [])
             lst.append(market_name)
             stella[f"{group}-{codename}"] = lst
-        elif 'lenovo' in customer:
-            if 'sutton' in args.skip:
+        elif "lenovo" in customer:
+            if "sutton" in args.skip:
                 continue
             lst = sutton.get(f"{group}-{codename}", [])
             lst.append(market_name)
@@ -975,37 +1153,58 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
         info("Finding the corresponding PPAs...")
 
     for codename, v in somerville.items():
-        pkg_name = 'oem-somerville-' + codename + '-meta'
+        pkg_name = "oem-somerville-" + codename + "-meta"
         if args.only and pkg_name != args.only:
             warning(f"Skip {pkg_name}")
             continue
         if pkg_name in args.skip:
             warning(f"Skip {pkg_name}")
             continue
-        ppa_archive, ppa_version, fingerprint = search_ppa_and_version("somerville", None, codename, pkg_name)
+        ppa_archive, ppa_version, fingerprint = search_ppa_and_version(
+            "somerville", None, codename, pkg_name
+        )
         if ppa_archive is None:
-            ppa_archive, ppa_version, fingerprint = search_ppa_and_version("somerville", None, codename, pkg_name, "somerville")
+            ppa_archive, ppa_version, fingerprint = search_ppa_and_version(
+                "somerville", None, codename, pkg_name, "somerville"
+            )
         if ppa_archive is None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
         bootstrap_version, real_version = get_debian_version_from_git(pkg_name)
         if ppa_version != real_version:
-            warning(f"{pkg_name}'s version in Git is {real_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}.")
+            warning(
+                f"{pkg_name}'s version in Git is {real_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}."
+            )
         info(f"{pkg_name} {ppa_version} exists in ppa:oem-archive/{ppa_archive}.")
 
-        ubuntu_version, proposed_version, oem_version, oem_archive = search_public_archive(pkg_name, "somerville", codename)
+        ubuntu_version, proposed_version, oem_version, oem_archive = search_public_archive(
+            pkg_name, "somerville", codename
+        )
 
-        pkgInfo[pkg_name] = PkgInfo(ppa_archive=ppa_archive, ppa_version=ppa_version,
-                                    bootstrap_version=bootstrap_version, real_version=real_version, git_version=real_version,
-                                    old_desc="", new_desc="", fingerprint=fingerprint,
-                                    staging_archive="", staging_version="",
-                                    devel_archive="", devel_version="",
-                                    oem_archive=oem_archive, oem_version=oem_version,
-                                    ubuntu_version=ubuntu_version, proposed_version=proposed_version)
+        pkgInfo[pkg_name] = PkgInfo(
+            ppa_archive=ppa_archive,
+            ppa_version=ppa_version,
+            bootstrap_version=bootstrap_version,
+            real_version=real_version,
+            git_version=real_version,
+            old_desc="",
+            new_desc="",
+            fingerprint=fingerprint,
+            staging_archive="",
+            staging_version="",
+            devel_archive="",
+            devel_version="",
+            oem_archive=oem_archive,
+            oem_version=oem_version,
+            ubuntu_version=ubuntu_version,
+            proposed_version=proposed_version,
+        )
 
         if check_private:
-            staging_archive, staging_version = search_private_archive(pkg_name, "somerville", codename, index, config, branch="staging")
+            staging_archive, staging_version = search_private_archive(
+                pkg_name, "somerville", codename, index, config, branch="staging"
+            )
             pkgInfo[pkg_name].staging_archive = staging_archive
             if staging_version:
                 info(f"{pkg_name} {staging_version} exists in {staging_archive}.")
@@ -1013,7 +1212,9 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             else:
                 debug(f"{pkg_name} doesn't exist in {staging_archive} yet.")
 
-            devel_archive, devel_version = search_private_archive(pkg_name, "somerville", codename, index, config, branch="devel")
+            devel_archive, devel_version = search_private_archive(
+                pkg_name, "somerville", codename, index, config, branch="devel"
+            )
             pkgInfo[pkg_name].devel_archive = devel_archive
             if devel_version:
                 info(f"{pkg_name} {devel_version} exists in {devel_archive}.")
@@ -1021,7 +1222,7 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             else:
                 debug(f"{pkg_name} doesn't exist in {devel_archive} yet.")
 
-        if pkg_name in pkgNamesInArchive and ''.join(v):
+        if pkg_name in pkgNamesInArchive and "".join(v):
             new_desc = _grouping_market_names(v)
             if "Dell" not in new_desc:
                 new_desc = "Dell " + new_desc
@@ -1029,37 +1230,56 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             pkgInfo[pkg_name].new_desc = new_desc
 
     for k, v in stella.items():
-        pkg_name = 'oem-stella.' + k + '-meta'
+        pkg_name = "oem-stella." + k + "-meta"
         if args.only and pkg_name != args.only:
             warning(f"Skip {pkg_name}")
             continue
         if pkg_name in args.skip:
             warning(f"Skip {pkg_name}")
             continue
-        group, codename = k.split('-', 1)
+        group, codename = k.split("-", 1)
 
-        ppa_archive, ppa_version, fingerprint = search_ppa_and_version("stella", group, codename, pkg_name)
+        ppa_archive, ppa_version, fingerprint = search_ppa_and_version(
+            "stella", group, codename, pkg_name
+        )
         if ppa_archive is None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
         bootstrap_version, real_version = get_debian_version_from_git(pkg_name)
         if ppa_version != real_version:
-            warning(f"{pkg_name}'s version in Git is {real_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}.")
+            warning(
+                f"{pkg_name}'s version in Git is {real_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}."
+            )
         info(f"{pkg_name} {ppa_version} exists in ppa:oem-archive/{ppa_archive}")
 
-        ubuntu_version, proposed_version, oem_version, oem_archive = search_public_archive(pkg_name, "stella", group)
+        ubuntu_version, proposed_version, oem_version, oem_archive = search_public_archive(
+            pkg_name, "stella", group
+        )
 
-        pkgInfo[pkg_name] = PkgInfo(ppa_archive=ppa_archive, ppa_version=ppa_version,
-                                    bootstrap_version=bootstrap_version, real_version=real_version, git_version=real_version,
-                                    old_desc="", new_desc="", fingerprint=fingerprint,
-                                    staging_archive="", staging_version="",
-                                    devel_archive="", devel_version="",
-                                    oem_archive=oem_archive, oem_version=oem_version,
-                                    ubuntu_version=ubuntu_version, proposed_version=proposed_version)
+        pkgInfo[pkg_name] = PkgInfo(
+            ppa_archive=ppa_archive,
+            ppa_version=ppa_version,
+            bootstrap_version=bootstrap_version,
+            real_version=real_version,
+            git_version=real_version,
+            old_desc="",
+            new_desc="",
+            fingerprint=fingerprint,
+            staging_archive="",
+            staging_version="",
+            devel_archive="",
+            devel_version="",
+            oem_archive=oem_archive,
+            oem_version=oem_version,
+            ubuntu_version=ubuntu_version,
+            proposed_version=proposed_version,
+        )
 
         if check_private:
-            staging_archive, staging_version = search_private_archive(pkg_name, "stella", group, index, config, branch="staging")
+            staging_archive, staging_version = search_private_archive(
+                pkg_name, "stella", group, index, config, branch="staging"
+            )
             pkgInfo[pkg_name].staging_archive = staging_archive
             if staging_version:
                 info(f"{pkg_name} {staging_version} exists in {staging_archive}.")
@@ -1067,7 +1287,9 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             else:
                 debug(f"{pkg_name} doesn't exist in {staging_archive} yet.")
 
-            devel_archive, devel_version = search_private_archive(pkg_name, "stella", group, index, config, branch="devel")
+            devel_archive, devel_version = search_private_archive(
+                pkg_name, "stella", group, index, config, branch="devel"
+            )
             pkgInfo[pkg_name].devel_archive = devel_archive
             if devel_version:
                 info(f"{pkg_name} {devel_version} exists in {devel_archive}.")
@@ -1075,45 +1297,66 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             else:
                 debug(f"{pkg_name} doesn't exist in {devel_archive} yet.")
 
-        if pkg_name in pkgNamesInArchive and ''.join(v):
+        if pkg_name in pkgNamesInArchive and "".join(v):
             new_desc = _grouping_market_names(v, maxsplit=2)
             if "HP" not in new_desc:
                 new_desc = "HP " + new_desc
-            pkgInfo[pkg_name].old_desc = f"Stella {group.title()} {codename.title()} platform"
+            pkgInfo[
+                pkg_name
+            ].old_desc = f"Stella {group.title()} {codename.title()} platform"
             pkgInfo[pkg_name].new_desc = new_desc
 
     for k, v in sutton.items():
-        pkg_name = 'oem-sutton.' + k + '-meta'
+        pkg_name = "oem-sutton." + k + "-meta"
         if args.only and pkg_name != args.only:
             warning(f"Skip {pkg_name}")
             continue
         if pkg_name in args.skip:
             warning(f"Skip {pkg_name}")
             continue
-        group, codename = k.split('-', 1)
+        group, codename = k.split("-", 1)
 
-        ppa_archive, ppa_version, fingerprint = search_ppa_and_version("sutton", group, codename, pkg_name)
+        ppa_archive, ppa_version, fingerprint = search_ppa_and_version(
+            "sutton", group, codename, pkg_name
+        )
         if ppa_archive is None:
             critical(f"It can not find any private PPA that contains {pkg_name}.")
             exit(1)
 
         bootstrap_version, real_version = get_debian_version_from_git(pkg_name)
         if ppa_version != real_version:
-            warning(f"{pkg_name}'s version in Git is {real_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}.")
+            warning(
+                f"{pkg_name}'s version in Git is {real_version}, but the version in ppa:oem-archive/{ppa_archive} is {ppa_version}."
+            )
         info(f"{pkg_name} {ppa_version} exists in ppa:oem-archive/{ppa_archive}")
 
-        ubuntu_version, proposed_version, oem_version, oem_archive = search_public_archive(pkg_name, "sutton", group)
+        ubuntu_version, proposed_version, oem_version, oem_archive = search_public_archive(
+            pkg_name, "sutton", group
+        )
 
-        pkgInfo[pkg_name] = PkgInfo(ppa_archive=ppa_archive, ppa_version=ppa_version,
-                                    bootstrap_version=bootstrap_version, real_version=real_version, git_version=real_version,
-                                    old_desc="", new_desc="", fingerprint=fingerprint,
-                                    staging_archive="", staging_version="",
-                                    devel_archive="", devel_version="",
-                                    oem_archive=oem_archive, oem_version=oem_version,
-                                    ubuntu_version=ubuntu_version, proposed_version=proposed_version)
+        pkgInfo[pkg_name] = PkgInfo(
+            ppa_archive=ppa_archive,
+            ppa_version=ppa_version,
+            bootstrap_version=bootstrap_version,
+            real_version=real_version,
+            git_version=real_version,
+            old_desc="",
+            new_desc="",
+            fingerprint=fingerprint,
+            staging_archive="",
+            staging_version="",
+            devel_archive="",
+            devel_version="",
+            oem_archive=oem_archive,
+            oem_version=oem_version,
+            ubuntu_version=ubuntu_version,
+            proposed_version=proposed_version,
+        )
 
         if check_private:
-            staging_archive, staging_version = search_private_archive(pkg_name, "sutton", group, index, config, branch="staging")
+            staging_archive, staging_version = search_private_archive(
+                pkg_name, "sutton", group, index, config, branch="staging"
+            )
             pkgInfo[pkg_name].staging_archive = staging_archive
             if staging_version:
                 info(f"{pkg_name} {staging_version} exists in {staging_archive}.")
@@ -1121,7 +1364,9 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             else:
                 debug(f"{pkg_name} doesn't exist in {staging_archive} yet.")
 
-            devel_archive, devel_version = search_private_archive(pkg_name, "sutton", group, index, config, branch="devel")
+            devel_archive, devel_version = search_private_archive(
+                pkg_name, "sutton", group, index, config, branch="devel"
+            )
             pkgInfo[pkg_name].devel_archive = devel_archive
             if devel_version:
                 info(f"{pkg_name} {devel_version} exists in {devel_archive}.")
@@ -1129,11 +1374,13 @@ def collect_pkg_info(data, check_private: bool = False, index=None, config=None)
             else:
                 debug(f"{pkg_name} doesn't exist in {devel_archive} yet.")
 
-        if pkg_name in pkgNamesInArchive and ''.join(v):
+        if pkg_name in pkgNamesInArchive and "".join(v):
             new_desc = _grouping_market_names(v)
             if "Lenovo" not in new_desc:
                 new_desc = "Lenovo " + new_desc
-            pkgInfo[pkg_name].old_desc = f"Sutton {group.title()} {codename.title()} platform"
+            pkgInfo[
+                pkg_name
+            ].old_desc = f"Sutton {group.title()} {codename.title()} platform"
             pkgInfo[pkg_name].new_desc = new_desc
 
     debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
@@ -1145,22 +1392,24 @@ def load_pkg_info(data) -> dict:
     pkgInfo = dict()
     data = json.load(data)
     for meta in data.keys():
-        pkgInfo[meta] = PkgInfo(ppa_archive=data[meta]['ppa_archive'],
-                                ppa_version=data[meta]['ppa_version'],
-                                git_version=data[meta]['git_version'],
-                                bootstrap_version=data[meta]['bootstrap_version'],
-                                real_version=data[meta]['real_version'],
-                                old_desc=data[meta]['old_desc'],
-                                new_desc=data[meta]['new_desc'],
-                                fingerprint=data[meta]['fingerprint'],
-                                staging_archive=data[meta]['staging_archive'],
-                                staging_version=data[meta]['staging_version'],
-                                devel_archive=data[meta]['devel_archive'],
-                                devel_version=data[meta]['devel_version'],
-                                oem_archive=data[meta]['oem_archive'],
-                                oem_version=data[meta]['oem_version'],
-                                ubuntu_version=data[meta]['ubuntu_version'],
-                                proposed_version=data[meta]['proposed_version'])
+        pkgInfo[meta] = PkgInfo(
+            ppa_archive=data[meta]["ppa_archive"],
+            ppa_version=data[meta]["ppa_version"],
+            git_version=data[meta]["git_version"],
+            bootstrap_version=data[meta]["bootstrap_version"],
+            real_version=data[meta]["real_version"],
+            old_desc=data[meta]["old_desc"],
+            new_desc=data[meta]["new_desc"],
+            fingerprint=data[meta]["fingerprint"],
+            staging_archive=data[meta]["staging_archive"],
+            staging_version=data[meta]["staging_version"],
+            devel_archive=data[meta]["devel_archive"],
+            devel_version=data[meta]["devel_version"],
+            oem_archive=data[meta]["oem_archive"],
+            oem_version=data[meta]["oem_version"],
+            ubuntu_version=data[meta]["ubuntu_version"],
+            proposed_version=data[meta]["proposed_version"],
+        )
 
     debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
     return pkgInfo
@@ -1184,8 +1433,8 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> boo
     if not result:
         return
 
-    if '.' in result.group(1):
-        project, group = result.group(1).split('.')
+    if "." in result.group(1):
+        project, group = result.group(1).split(".")
     else:
         project = result.group(1)
         group = None
@@ -1203,15 +1452,34 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> boo
         else:
             branch = f"{platform}-focal-oem"
 
-    git_command = ("git", "clone", "--depth", "1", "-b", branch, f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta", pkg_name)
+    git_command = (
+        "git",
+        "clone",
+        "--depth",
+        "1",
+        "-b",
+        branch,
+        f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta",
+        pkg_name,
+    )
 
     with TemporaryDirectory() as tmpdir:
         messages = list()
         os.chdir(tmpdir)
         _run_command(git_command)
-        git_version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"{pkg_name}/debian/changelog"])
+        git_version, _, _ = _run_command(
+            [
+                "dpkg-parsechangelog",
+                "--show-field",
+                "Version",
+                "-l",
+                f"{pkg_name}/debian/changelog",
+            ]
+        )
         if git_version != pkg_info.ppa_version:
-            critical(f"{pkg_name}'s version is {pkg_info.ppa_version} in ppa:oem-archive/{pkg_info.ppa_archive} but the version in Git repository is {git_version}.")
+            critical(
+                f"{pkg_name}'s version is {pkg_info.ppa_version} in ppa:oem-archive/{pkg_info.ppa_archive} but the version in Git repository is {git_version}."
+            )
             exit(1)
         git_dir = os.path.join(tmpdir, pkg_name)
 
@@ -1240,29 +1508,41 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> boo
             return False
 
         # Prepare the changelog and commit the changes.
-        commit_message = 'Update the ' + ' and'.join(', '.join(messages).rsplit(',', 1)) + f' for {args.kernel}.'
-        _run_command(['dch', '--increment', commit_message])
+        commit_message = (
+            "Update the "
+            + " and".join(", ".join(messages).rsplit(",", 1))
+            + f" for {args.kernel}."
+        )
+        _run_command(["dch", "--increment", commit_message])
         _run_command(["git", "add", "debian/changelog"])
-        _run_command(['git', 'commit', '-a', '-m', f"{commit_message}\n\nUpdated by oem-scripts {oem_scripts.__version__:.2f}."])
+        _run_command(
+            [
+                "git",
+                "commit",
+                "-a",
+                "-m",
+                f"{commit_message}\n\nUpdated by oem-scripts {oem_scripts.__version__:.2f}.",
+            ]
+        )
 
-        out, _, _ = _run_command(['git', 'show', '--color=always'])
-        if out != b'':
+        out, _, _ = _run_command(["git", "show", "--color=always"])
+        if out != b"":
             debug(f"({pkg_name}:{branch}) $ git show")
             debug(out)
 
         # Run autopkgtest
         if args.autopkgtest:
-            with open(f'{pkg_name}.list', 'r') as f:
+            with open(f"{pkg_name}.list", "r") as f:
                 source_list = f.read().strip()
 
             archives = set()
             archives.add(pkg_info.ppa_archive)
 
-            if project == 'somerville':
+            if project == "somerville":
                 common_archive = oem_archive.getPPAByName(name=project)
                 fingerprint = common_archive.signing_key_fingerprint
                 archives.add(f"{project}")
-            elif project == 'stella' or project == 'sutton':
+            elif project == "stella" or project == "sutton":
                 common_archive = oem_archive.getPPAByName(name=f"{project}-ouagadougou")
                 fingerprint = common_archive.signing_key_fingerprint
                 archives.add(f"{project}-ouagadougou")
@@ -1286,8 +1566,9 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> boo
                     if f"oem-archive/{ppa}/ubuntu" in url:
                         source_list += "\ndeb " + url + " focal main"
 
-            with open(f'autopkgtest-{pkg_name}-auto', 'w') as f:
-                f.write(f'''#!/bin/bash
+            with open(f"autopkgtest-{pkg_name}-auto", "w") as f:
+                f.write(
+                    f"""#!/bin/bash
 
 set -euo pipefail
 IFS=$'\n\t'
@@ -1319,54 +1600,83 @@ true
 ENDLINE
 chmod 755 "\\$root/usr/sbin/update-grub"
 END
-''')
+"""
+                )
             if args.debug:
-                _run_command(['cat', f'autopkgtest-{pkg_name}-auto'])
-            os.chmod(f'autopkgtest-{pkg_name}-auto', 0o755)
+                _run_command(["cat", f"autopkgtest-{pkg_name}-auto"])
+            os.chmod(f"autopkgtest-{pkg_name}-auto", 0o755)
             info(f"({pkg_name}:{branch}) $ run-autopkgtest lxc focal -C")
-            _run_command(['run-autopkgtest', 'lxc', 'focal', '-C'])
-            _run_command(['git', 'reset', '--hard', 'HEAD'])
-            _run_command(['git', 'clean', '-x', '-d', '-f'])
+            _run_command(["run-autopkgtest", "lxc", "focal", "-C"])
+            _run_command(["git", "reset", "--hard", "HEAD"])
+            _run_command(["git", "clean", "-x", "-d", "-f"])
 
         # Don't use UNRELEASED in the real meta.
         if not bootstrap:
-            _run_command(['sed', '-i', 's/UNRELEASED/focal/', 'debian/changelog'])
-            _run_command(['git', 'commit', '-a', '--amend', '--no-edit'])
+            _run_command(["sed", "-i", "s/UNRELEASED/focal/", "debian/changelog"])
+            _run_command(["git", "commit", "-a", "--amend", "--no-edit"])
 
         # Tag and find it out.
-        out, _, _ = _run_command(['gbp', 'tag'])
-        if out != b'':
+        out, _, _ = _run_command(["gbp", "tag"])
+        if out != b"":
             info(out)
-        out, _, _ = _run_command(['git', 'describe'])
-        if out != b'':
+        out, _, _ = _run_command(["git", "describe"])
+        if out != b"":
             tag = out.strip()
         info(tag)
 
         # Build Debian binary packages
-        _run_command(['gbp', 'buildpackage', '-us', '-uc'])
-        _run_command(['git', 'reset', '--hard', 'HEAD'])
-        _run_command(['git', 'clean', '-x', '-d', '-f'])
+        _run_command(["gbp", "buildpackage", "-us", "-uc"])
+        _run_command(["git", "reset", "--hard", "HEAD"])
+        _run_command(["git", "clean", "-x", "-d", "-f"])
 
         # Build Debian source packages
-        _run_command(['gbp', 'buildpackage', '-S', '-us', '-uc'])
-        _run_command(['git', 'reset', '--hard', 'HEAD'])
-        _run_command(['git', 'clean', '-x', '-d', '-f'])
+        _run_command(["gbp", "buildpackage", "-S", "-us", "-uc"])
+        _run_command(["git", "reset", "--hard", "HEAD"])
+        _run_command(["git", "clean", "-x", "-d", "-f"])
 
         # Show the commit
-        out, _, _ = _run_command(['git', 'show', '--color=always'])
-        if out != b'':
+        out, _, _ = _run_command(["git", "show", "--color=always"])
+        if out != b"":
             warning(f"({pkg_name}:{branch}) $ git show")
             print(out)
-            version, _, _ = _run_command(["dpkg-parsechangelog", "--show-field", "Version", "-l", f"debian/changelog"])
-            if not args.dry_run and yes_or_ask(args.yes, f"Would you like to commit and push the changes of {version} into {pkg_name}'s git {branch} branch?"):
+            version, _, _ = _run_command(
+                [
+                    "dpkg-parsechangelog",
+                    "--show-field",
+                    "Version",
+                    "-l",
+                    f"debian/changelog",
+                ]
+            )
+            if not args.dry_run and yes_or_ask(
+                args.yes,
+                f"Would you like to commit and push the changes of {version} into {pkg_name}'s git {branch} branch?",
+            ):
                 os.chdir(git_dir)
-                _run_command(['git', 'remote', 'add', 'oem-solutions-engineers', f"git+ssh://{lp.me.name}@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta"])
-                _run_command(['git', 'push', 'oem-solutions-engineers'])
-                _run_command(['git', 'push', 'oem-solutions-engineers', tag])
-                if not args.dry_run and yes_or_ask(args.yes, f"Would you like to dput Debian source package into ppa:oem-archive/{pkg_info.ppa_archive}?"):
-                    os.chdir(os.path.join(git_dir, '..'))
-                    _run_command(['debsign', f'{pkg_name}_{version}_source.changes'])
-                    _run_command(['dput', f'ppa:oem-archive/{pkg_info.ppa_archive}', f'{pkg_name}_{version}_source.changes'])
+                _run_command(
+                    [
+                        "git",
+                        "remote",
+                        "add",
+                        "oem-solutions-engineers",
+                        f"git+ssh://{lp.me.name}@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta",
+                    ]
+                )
+                _run_command(["git", "push", "oem-solutions-engineers"])
+                _run_command(["git", "push", "oem-solutions-engineers", tag])
+                if not args.dry_run and yes_or_ask(
+                    args.yes,
+                    f"Would you like to dput Debian source package into ppa:oem-archive/{pkg_info.ppa_archive}?",
+                ):
+                    os.chdir(os.path.join(git_dir, ".."))
+                    _run_command(["debsign", f"{pkg_name}_{version}_source.changes"])
+                    _run_command(
+                        [
+                            "dput",
+                            f"ppa:oem-archive/{pkg_info.ppa_archive}",
+                            f"{pkg_name}_{version}_source.changes",
+                        ]
+                    )
 
 
 def check_meta_git(pkg_name: str, pkg_info: PkgInfo, skip_bootstrap: False) -> None:
@@ -1383,84 +1693,119 @@ def check_meta_git(pkg_name: str, pkg_info: PkgInfo, skip_bootstrap: False) -> N
 
 cache = apt_pkg.Cache(progress=None)
 
-if args.subcommand == 'list':
+if args.subcommand == "list":
     for name in get_oem_meta_packages(cache):
         print(name)
-elif args.subcommand == 'subscribe':
+elif args.subcommand == "subscribe":
     for name in get_oem_meta_packages(cache):
         info(f"Checking the subscriptions for {name}...")
-        source = lp.distributions['ubuntu'].getSourcePackage(name=name)
-        if 'oem-solutions-engineers' in map(lambda x: x.subscriber.name, source.getSubscriptions()):
+        source = lp.distributions["ubuntu"].getSourcePackage(name=name)
+        if "oem-solutions-engineers" in map(
+            lambda x: x.subscriber.name, source.getSubscriptions()
+        ):
             info(f"ubuntu/{name} has subscribed oem-solutions-engineers.")
             continue
         warning(f"ubuntu/{name} didn't subscribe oem-solutions-engineers yet.")
-        if yes_or_ask(args.yes, f"Would you like to subscribe 'oem-solutions-engineers' for ubuntu/{name}?"):
+        if yes_or_ask(
+            args.yes,
+            f"Would you like to subscribe 'oem-solutions-engineers' for ubuntu/{name}?",
+        ):
             try:
                 # When a person is subscribed to a source package, one actually subscribe all bugs for it.
-                source.addBugSubscription(subscriber=lp.people['oem-solutions-engineers'])
+                source.addBugSubscription(
+                    subscriber=lp.people["oem-solutions-engineers"]
+                )
             except lazr.restfulclient.errors.Unauthorized as e:
-                error(f"{lp.me.name} does not have permission to subscribe oem-solutions-engineers.")
+                error(
+                    f"{lp.me.name} does not have permission to subscribe oem-solutions-engineers."
+                )
                 if args.verbose:
                     print(e)
                 exit(1)
-elif args.subcommand == 'unsubscribe':
-    source = lp.distributions['ubuntu'].getSourcePackage(name=args.pkgName)
+elif args.subcommand == "unsubscribe":
+    source = lp.distributions["ubuntu"].getSourcePackage(name=args.pkgName)
     subscriptions = source.getSubscriptions()
     for subscription in subscriptions:
-        if subscription.subscriber.name == 'oem-solutions-engineers':
+        if subscription.subscriber.name == "oem-solutions-engineers":
             info(f"ubuntu/{args.pkgName} has subscribed oem-solutions-engineers.")
-            if yes_or_ask(args.yes, f"Would you like to unsubscribe 'oem-solutions-engineers' for ubuntu/{args.pkgName}?"):
+            if yes_or_ask(
+                args.yes,
+                f"Would you like to unsubscribe 'oem-solutions-engineers' for ubuntu/{args.pkgName}?",
+            ):
                 try:
-                    source.removeBugSubscription(subscriber=lp.people['oem-solutions-engineers'])
+                    source.removeBugSubscription(
+                        subscriber=lp.people["oem-solutions-engineers"]
+                    )
                 except lazr.restfulclient.errors.Unauthorized as e:
-                    error(f"{lp.me.name} does not have permission to unsubscribe oem-solutions-engineers.")
+                    error(
+                        f"{lp.me.name} does not have permission to unsubscribe oem-solutions-engineers."
+                    )
                     if args.verbose:
                         print(e)
                     exit(1)
             exit(0)
-elif args.subcommand == 'update':
-    oem_scripts_config_ini = os.path.join(os.environ["HOME"],
-                                          ".config/oem-scripts/config.ini")
+elif args.subcommand == "update":
+    oem_scripts_config_ini = os.path.join(
+        os.environ["HOME"], ".config/oem-scripts/config.ini"
+    )
     oem_scripts_config = ConfigParser()
     oem_scripts_config.read(oem_scripts_config_ini)
-    config = oem_scripts_config['private']
+    config = oem_scripts_config["private"]
     if args.json:
         pkgInfo = load_pkg_info(args.json)
     elif args.meta:
-        r = requests.get(config['archive'] + "/dists/", auth=(config['username'], config['password']))
-        pkgInfo = collect_pkg_info(args.meta, check_private=True, index=r.text, config=config)
+        r = requests.get(
+            config["archive"] + "/dists/", auth=(config["username"], config["password"])
+        )
+        pkgInfo = collect_pkg_info(
+            args.meta, check_private=True, index=r.text, config=config
+        )
     else:
         print("You needto use --json or --meta.")
         exit(1)
     process_update_task(pkgInfo)
-elif args.subcommand == 'collect':
-    oem_scripts_config_ini = os.path.join(os.environ["HOME"],
-                                          ".config/oem-scripts/config.ini")
+elif args.subcommand == "collect":
+    oem_scripts_config_ini = os.path.join(
+        os.environ["HOME"], ".config/oem-scripts/config.ini"
+    )
     oem_scripts_config = ConfigParser()
     oem_scripts_config.read(oem_scripts_config_ini)
-    config = oem_scripts_config['private']
-    r = requests.get(config['archive'] + "/dists/", auth=(config['username'], config['password']))
+    config = oem_scripts_config["private"]
+    r = requests.get(
+        config["archive"] + "/dists/", auth=(config["username"], config["password"])
+    )
     if args.json:
-        pkgInfo = collect_pkg_info(args.json, check_private=True, index=r.text, config=config)
+        pkgInfo = collect_pkg_info(
+            args.json, check_private=True, index=r.text, config=config
+        )
     elif args.meta:
-        pkgInfo = collect_pkg_info(args.meta, check_private=True, index=r.text, config=config)
+        pkgInfo = collect_pkg_info(
+            args.meta, check_private=True, index=r.text, config=config
+        )
     else:
         print("You need to use --json or --meta.")
         exit(1)
-    args.output.write(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
+    args.output.write(
+        json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder)
+    )
     args.output.write("\n")
-elif args.subcommand == 'staging-copy':
-    oem_scripts_config_ini = os.path.join(os.environ["HOME"],
-                                          ".config/oem-scripts/config.ini")
+elif args.subcommand == "staging-copy":
+    oem_scripts_config_ini = os.path.join(
+        os.environ["HOME"], ".config/oem-scripts/config.ini"
+    )
     oem_scripts_config = ConfigParser()
     oem_scripts_config.read(oem_scripts_config_ini)
-    config = oem_scripts_config['private']
+    config = oem_scripts_config["private"]
 
     if args.json:
         pkgInfo = load_pkg_info(args.json)
     elif args.meta:
-        r = requests.get(config['archive'] + "/dists/", auth=(config['username'], config['password']))
-        pkgInfo = collect_pkg_info(args.meta, check_private=True, index=r.text, config=config)
+        r = requests.get(
+            config["archive"] + "/dists/", auth=(config["username"], config["password"])
+        )
+        pkgInfo = collect_pkg_info(
+            args.meta, check_private=True, index=r.text, config=config
+        )
     else:
         print("You need to use --json or --meta.")
         exit(1)
@@ -1470,12 +1815,21 @@ elif args.subcommand == 'staging-copy':
     staging_locked = set()
     for pkg_name in sorted(pkgInfo.keys()):
         pkg_info = pkgInfo[pkg_name]
-        debug(f"{pkg_name} ppa: {pkg_info.ppa_version}, devel: {pkg_info.devel_version}, staging: {pkg_info.staging_version}.")
+        debug(
+            f"{pkg_name} ppa: {pkg_info.ppa_version}, devel: {pkg_info.devel_version}, staging: {pkg_info.staging_version}."
+        )
         if pkg_info.ppa_version != pkg_info.devel_version:
-            warning(f"{pkg_name} versions are not synced between ppa:oem-archive/{pkg_info.ppa_archive} and {pkg_info.devel_archive}.")
+            warning(
+                f"{pkg_name} versions are not synced between ppa:oem-archive/{pkg_info.ppa_archive} and {pkg_info.devel_archive}."
+            )
         elif pkg_info.staging_version == pkg_info.devel_version:
-            info(f"{pkg_name} {pkg_info.devel_version} (devel) == {pkg_info.staging_version} (staging) so it doesn't need to copy.")
-        elif apt_pkg.version_compare(pkg_info.staging_version, pkg_info.devel_version) > 0:
+            info(
+                f"{pkg_name} {pkg_info.devel_version} (devel) == {pkg_info.staging_version} (staging) so it doesn't need to copy."
+            )
+        elif (
+            apt_pkg.version_compare(pkg_info.staging_version, pkg_info.devel_version)
+            > 0
+        ):
             critical(f"This should never happen.")
             exit(1)
         else:
@@ -1485,65 +1839,90 @@ elif args.subcommand == 'staging-copy':
                 jobs[identity] = list()
             jobs[identity].append(pkg_name)
     debug(json.dumps(jobs, indent=4, sort_keys=True))
-    cloudberry = lp.projects['cloudberry']
-    assignee = lp.people['oem-archive']
+    cloudberry = lp.projects["cloudberry"]
+    assignee = lp.people["oem-archive"]
     tasks = cloudberry.searchTasks(
-        status=['New', 'Triaged', 'Confirmed', 'In Progress', 'Fix Committed'],
-        search_text='request of')
+        status=["New", "Triaged", "Confirmed", "In Progress", "Fix Committed"],
+        search_text="request of",
+    )
     for task in tasks:
         bug = task.bug
         for staging in sorted(dest):
-            if staging in bug.description and 'staging-lock' in bug.tags and 'cqa-verified-staging' not in bug.tags:
+            if (
+                staging in bug.description
+                and "staging-lock" in bug.tags
+                and "cqa-verified-staging" not in bug.tags
+            ):
                 debug(bug.description)
                 tags = ",".join(bug.tags)
-                for line in bug.description.split('\n'):
-                    if line.startswith('Package: '):
+                for line in bug.description.split("\n"):
+                    if line.startswith("Package: "):
                         package = line
-                warning(f"https://bugs.launchpad.net/bugs/{bug.id}\n\t({staging})\n\t[{tags}]\n\t{bug.title}\n\t{package}")
+                warning(
+                    f"https://bugs.launchpad.net/bugs/{bug.id}\n\t({staging})\n\t[{tags}]\n\t{bug.title}\n\t{package}"
+                )
                 staging_locked.add(staging)
     for job in jobs:
-        source, dest = job.split(':')
+        source, dest = job.split(":")
         if dest and dest in staging_locked and not args.ignore_staging_lock:
-            warning(f"The following OEM metapackages will be skipped due to the staging-lock of {dest}.\n" + '\n'.join(jobs[job]))
+            warning(
+                f"The following OEM metapackages will be skipped due to the staging-lock of {dest}.\n"
+                + "\n".join(jobs[job])
+            )
         else:
             title = f"request of copy_package [{source}]"
-            tags = ["archive-request", "via-request-script", f"oem-scripts-{oem_scripts.__version__:.2f}", "oem-metapackages"]
+            tags = [
+                "archive-request",
+                "via-request-script",
+                f"oem-scripts-{oem_scripts.__version__:.2f}",
+                "oem-metapackages",
+            ]
             if args.dry_run:
                 info(f"TITLE: {title}")
-                info("TAGS: " + ','.join(tags))
+                info("TAGS: " + ",".join(tags))
             else:
                 debug(f"TITLE: {title}")
-                debug("TAGS: " + ','.join(tags))
+                debug("TAGS: " + ",".join(tags))
             packages = list()
             for pkg_name in jobs[job]:
                 pkg_info = pkgInfo[pkg_name]
                 packages.append(f"{pkg_name} (=={pkg_info.devel_version})")
-            packages = ', '.join(packages)
+            packages = ", ".join(packages)
             distribution = "focal"
-            if dest.startswith('somerville'):
-                component = remove_suffix(dest, f"-{distribution}-staging").replace('-fossa', '')
+            if dest.startswith("somerville"):
+                component = remove_suffix(dest, f"-{distribution}-staging").replace(
+                    "-fossa", ""
+                )
             else:
                 debug(dest)
-                project, group, _ = dest.split('-', 2)
+                project, group, _ = dest.split("-", 2)
                 component = f"{project}.{group}"
-            production = distribution + '-' + component
+            production = distribution + "-" + component
             description = staging_copy_template.substitute(
                 source=source,
                 destination=dest,
                 packages=packages,
                 production=production,
-                username=config['username'],
-                url=config['url'],
+                username=config["username"],
+                url=config["url"],
                 distribution=distribution,
-                component=component)
+                component=component,
+            )
             print(description)
-            if not args.dry_run and yes_or_ask(args.yes, f"Would you like to create a cloudberry bug to copy the {packages} from {source} to {dest}?"):
-                bug = lp.bugs.createBug(description=description, target=cloudberry, title=title, tags=tags)
+            if not args.dry_run and yes_or_ask(
+                args.yes,
+                f"Would you like to create a cloudberry bug to copy the {packages} from {source} to {dest}?",
+            ):
+                bug = lp.bugs.createBug(
+                    description=description, target=cloudberry, title=title, tags=tags
+                )
                 for task in bug.bug_tasks:
-                    task.importance = 'High'
+                    task.importance = "High"
                     task.assignee = assignee
                     task.lp_save()
                 bug.lp_save()
-                print(f"The cloudberry staging copy bug has been created on {bug.web_link}.\n")
+                print(
+                    f"The cloudberry staging copy bug has been created on {bug.web_link}.\n"
+                )
 else:
     parser.print_help()
