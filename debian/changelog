@@ -9,6 +9,11 @@ oem-scripts (0.98) UNRELEASED; urgency=medium
   * debian/rules,
     tests/test_black: Move the black check script out of debian/rules so
     people can use it to test Python files directly.
+  * debian/control,
+    debian/rules,
+    tests/test_flake8,
+    tests/test_pep8: Remove the pep8 check because flake8 will use
+    pycodestyle (formerly called pep8) to check.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 09 Jun 2021 20:55:21 +0800
 
