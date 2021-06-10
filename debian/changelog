@@ -6,6 +6,9 @@ oem-scripts (0.98) UNRELEASED; urgency=medium
   * tests/test_flake8: Ignore W503 because it is incompatible with PEP 8.
   * tests/test_flake8: Ignore E203 because flake8 doesn't deal with it well
     and black will cover it.
+  * debian/rules,
+    tests/test_black: Move the black check script out of debian/rules so
+    people can use it to test Python files directly.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 09 Jun 2021 20:55:21 +0800
 

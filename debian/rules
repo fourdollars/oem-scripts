@@ -5,7 +5,7 @@
 	dh $@ --with python3 --buildsystem=pybuild
 
 override_dh_auto_test:
-	find -type f -exec file {} \; | grep Python | cut -d ':' -f 1 | xargs black --check --diff
+	./tests/test_black
 	./tests/test_flake8
 	./tests/test_pep8
 	./tests/test_shellcheck
