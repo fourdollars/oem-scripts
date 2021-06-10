@@ -1,6 +1,6 @@
 #!/bin/sh
 
-flake8 --ignore E501 \
+flake8 --ignore E501,W503 \
     lp-bug \
     mir-bug \
     oem-meta-packages \

@@ -3,6 +3,7 @@ oem-scripts (0.98) UNRELEASED; urgency=medium
   * Black all Python files.
   * debian/control,
     debian/rules: Use black to check all Python files.
+  * tests/test_flake8: Ignore W503 because it is incompatible with PEP 8.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 09 Jun 2021 20:55:21 +0800
 
