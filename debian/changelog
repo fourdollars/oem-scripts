@@ -1,4 +1,4 @@
-oem-scripts (0.98) UNRELEASED; urgency=medium
+oem-scripts (0.98) focal; urgency=medium
 
   * Black all Python files.
   * debian/control,
@@ -15,7 +15,7 @@ oem-scripts (0.98) UNRELEASED; urgency=medium
     tests/test_pep8: Remove the pep8 check because flake8 will use
     pycodestyle (formerly called pep8) to check.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 09 Jun 2021 20:55:21 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 11 Jun 2021 06:37:37 +0000
 
 oem-scripts (0.97) focal; urgency=medium
 
