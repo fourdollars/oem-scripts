@@ -2,10 +2,10 @@ Source: oem-scripts
 Section: admin
 Priority: optional
 Build-Depends:
+ black,
  debhelper (>=11),
  dh-python,
  flake8,
- pep8,
  python3-all,
  python3-debian,
  python3-launchpadlib,

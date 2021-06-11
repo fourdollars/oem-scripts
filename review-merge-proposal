@@ -21,8 +21,14 @@ import argparse
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
 
 parser = argparse.ArgumentParser()
-parser.add_argument("link", help="Specify the link of the merge proposal on Launchpad.", type=str)
-parser.add_argument("--minimal-approved-number", help="Specify the minimal approved number that the merge proposal needs.", type=int)
+parser.add_argument(
+    "link", help="Specify the link of the merge proposal on Launchpad.", type=str
+)
+parser.add_argument(
+    "--minimal-approved-number",
+    help="Specify the minimal approved number that the merge proposal needs.",
+    type=int,
+)
 args = parser.parse_args()
 
 link = args.link.replace("code.launchpad.net", "api.launchpad.net/devel")
@@ -33,16 +39,24 @@ if not link.startswith("https://api.launchpad.net/devel/"):
 login = LaunchpadLogin()
 lp = login.lp
 proposal = lp.load(link)
-if proposal.resource_type_link != 'https://api.launchpad.net/devel/#branch_merge_proposal':
+if (
+    proposal.resource_type_link
+    != "https://api.launchpad.net/devel/#branch_merge_proposal"
+):
     print(f"{link} is not a https://api.launchpad.net/devel/#branch_merge_proposal.")
     exit(1)
 
-if proposal.queue_status != 'Needs review':
+if proposal.queue_status != "Needs review":
     print(f"{link} is not in 'Needs review' status yet.")
     exit(1)
 
-if proposal.source_git_repository.owner not in proposal.target_git_repository.owner.members:
-    print(f"The owner of {link} doesn't belong to the target git repo's owner's members.")
+if (
+    proposal.source_git_repository.owner
+    not in proposal.target_git_repository.owner.members
+):
+    print(
+        f"The owner of {link} doesn't belong to the target git repo's owner's members."
+    )
     exit(1)
 
 all_approved = True

@@ -22,29 +22,36 @@ import sys
 
 
 def setup_logging(debug=False, quiet=False):
-    logging.addLevelName(logging.DEBUG,
-                         "\033[1;96m%s\033[1;0m" %
-                         logging.getLevelName(logging.DEBUG))
-    logging.addLevelName(logging.INFO,
-                         "\033[1;32m%s\033[1;0m" %
-                         logging.getLevelName(logging.INFO))
-    logging.addLevelName(logging.WARNING,
-                         "\033[1;33m%s\033[1;0m" %
-                         logging.getLevelName(logging.WARNING))
-    logging.addLevelName(logging.ERROR,
-                         "\033[1;31m%s\033[1;0m" %
-                         logging.getLevelName(logging.ERROR))
-    logging.addLevelName(logging.CRITICAL,
-                         "\033[1;41m%s\033[1;0m" %
-                         logging.getLevelName(logging.CRITICAL))
+    logging.addLevelName(
+        logging.DEBUG, "\033[1;96m%s\033[1;0m" % logging.getLevelName(logging.DEBUG)
+    )
+    logging.addLevelName(
+        logging.INFO, "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.INFO)
+    )
+    logging.addLevelName(
+        logging.WARNING, "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING)
+    )
+    logging.addLevelName(
+        logging.ERROR, "\033[1;31m%s\033[1;0m" % logging.getLevelName(logging.ERROR)
+    )
+    logging.addLevelName(
+        logging.CRITICAL,
+        "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.CRITICAL),
+    )
     if debug:
-        logging.basicConfig(format='<%(levelname)s> %(message)s',
-                            level=logging.DEBUG,
-                            handlers=[logging.StreamHandler(sys.stdout)])
+        logging.basicConfig(
+            format="<%(levelname)s> %(message)s",
+            level=logging.DEBUG,
+            handlers=[logging.StreamHandler(sys.stdout)],
+        )
     elif not quiet:
-        logging.basicConfig(format='<%(levelname)s> %(message)s',
-                            level=logging.INFO,
-                            handlers=[logging.StreamHandler(sys.stdout)])
+        logging.basicConfig(
+            format="<%(levelname)s> %(message)s",
+            level=logging.INFO,
+            handlers=[logging.StreamHandler(sys.stdout)],
+        )
     else:
-        logging.basicConfig(format='<%(levelname)s> %(message)s',
-                            handlers=[logging.StreamHandler(sys.stdout)])
+        logging.basicConfig(
+            format="<%(levelname)s> %(message)s",
+            handlers=[logging.StreamHandler(sys.stdout)],
+        )

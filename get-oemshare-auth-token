@@ -18,7 +18,7 @@ def prompt_for_credentials():
     """
     Return username and password collected from stdin.
     """
-    print("\rEmail: ", file=sys.stderr, end='')
+    print("\rEmail: ", file=sys.stderr, end="")
     username = input()
     password = getpass.getpass(stream=sys.stderr)
     return username, password
@@ -28,7 +28,7 @@ def prompt_for_code():
     """
     Return code collected from stdin.
     """
-    print("\r2FA Code: ", file=sys.stderr, end='')
+    print("\r2FA Code: ", file=sys.stderr, end="")
     return input()
 
 

@@ -16,155 +16,164 @@ program_name = os.path.basename(sys.argv[0])
 
 setup_logging()
 
-if program_name == 'pkg-somerville-meta':
-    codename = 'somerville'
+if program_name == "pkg-somerville-meta":
+    codename = "somerville"
     Codename = codename.title()
-    brand = 'dell'
+    brand = "dell"
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
         epilog=f"Ex. {program_name} --public-bug 1868254 -s focal -k"
-        " oem -p three-eyed-raven 0962")
-elif program_name == 'pkg-stella-meta':
-    codename = 'stella'
+        " oem -p three-eyed-raven 0962",
+    )
+elif program_name == "pkg-stella-meta":
+    codename = "stella"
     Codename = codename.title()
-    brand = 'hp'
+    brand = "hp"
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
-        epilog=f"Ex. {program_name} -s focal -k oem"
-        " -g cmit -p beedrill 8594")
-elif program_name == 'pkg-sutton-meta':
-    codename = 'sutton'
+        epilog=f"Ex. {program_name} -s focal -k oem" " -g cmit -p beedrill 8594",
+    )
+elif program_name == "pkg-sutton-meta":
+    codename = "sutton"
     Codename = codename.title()
-    brand = 'lenovo'
+    brand = "lenovo"
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
-        epilog=f"Ex. {program_name} -s focal -k oem"
-        " -g bachman -p banaing S08")
+        epilog=f"Ex. {program_name} -s focal -k oem" " -g bachman -p banaing S08",
+    )
 else:
-    error('This program can not be executed.')
+    error("This program can not be executed.")
     exit(1)
 
-parser.add_argument('-k', '--kernel',
-                    choices=['linux-oem-20.04', 'linux-oem-20.04b', 'linux-oem-20.04c', 'linux-generic-hwe-20.04'],
-                    default='linux-oem-20.04',
-                    help="Specify the kernel meta. [linux-oem-20.04|linux-oem-20.04b|linux-oem-20.04c|linux-generic-hwe-20.04]")
+parser.add_argument(
+    "-k",
+    "--kernel",
+    choices=[
+        "linux-oem-20.04",
+        "linux-oem-20.04b",
+        "linux-oem-20.04c",
+        "linux-generic-hwe-20.04",
+    ],
+    default="linux-oem-20.04",
+    help="Specify the kernel meta. [linux-oem-20.04|linux-oem-20.04b|linux-oem-20.04c|linux-generic-hwe-20.04]",
+)
 info = UbuntuDistroInfo()
 try:
     # for bionic
-    series = lsb_release.get_lsb_information()['CODENAME']
+    series = lsb_release.get_lsb_information()["CODENAME"]
 except AttributeError:
     # for focal
-    series = lsb_release.get_os_release()['CODENAME']
+    series = lsb_release.get_os_release()["CODENAME"]
 
-parser.add_argument('-s', '--series', choices=info.supported(), default=series,
-                    help=f"Ubuntu series, such as {series} by default.")
-parser.add_argument('--public-bug',
-                    help="Launchpad public bug number.",
-                    type=int)
-parser.add_argument('--private-bug',
-                    help="Launchpad private bug number.",
-                    type=int)
+parser.add_argument(
+    "-s",
+    "--series",
+    choices=info.supported(),
+    default=series,
+    help=f"Ubuntu series, such as {series} by default.",
+)
+parser.add_argument("--public-bug", help="Launchpad public bug number.", type=int)
+parser.add_argument("--private-bug", help="Launchpad private bug number.", type=int)
 
-if codename == 'somerville':
-    parser.add_argument('bios_id', nargs='+', help="BIOS ID")
-    parser.add_argument('-p', '--platform', help="platform tag", required=True)
-elif codename == 'stella':
-    parser.add_argument('-g', '--group', help="OEM-group", required=True)
-    parser.add_argument('-p', '--platform', help="platform-codename",
-                        required=True)
-    parser.add_argument('sd_id', nargs='+',
-                        help="subsystem device ID, such as 0962")
-elif codename == 'sutton':
-    parser.add_argument('-g', '--group', help="OEM-group", required=True)
-    parser.add_argument('-p', '--platform', help="platform-codename",
-                        required=True)
-    parser.add_argument('bios_ver', nargs='+',
-                        help="First three chars in bios version, "
-                        + "such as S08 or bvnLENOVO:bvrS08")
+if codename == "somerville":
+    parser.add_argument("bios_id", nargs="+", help="BIOS ID")
+    parser.add_argument("-p", "--platform", help="platform tag", required=True)
+elif codename == "stella":
+    parser.add_argument("-g", "--group", help="OEM-group", required=True)
+    parser.add_argument("-p", "--platform", help="platform-codename", required=True)
+    parser.add_argument("sd_id", nargs="+", help="subsystem device ID, such as 0962")
+elif codename == "sutton":
+    parser.add_argument("-g", "--group", help="OEM-group", required=True)
+    parser.add_argument("-p", "--platform", help="platform-codename", required=True)
+    parser.add_argument(
+        "bios_ver",
+        nargs="+",
+        help="First three chars in bios version, " + "such as S08 or bvnLENOVO:bvrS08",
+    )
 args = parser.parse_args()
 
 platform = args.platform.lower()
 Platform = platform.title()
 series = args.series
-versions = dict(zip(info.get_all(result='codename'),
-                    info.get_all(result='release')))
-version = versions[series].split(' ')[0]
+versions = dict(zip(info.get_all(result="codename"), info.get_all(result="release")))
+version = versions[series].split(" ")[0]
 
 # Sanity check
-if codename == 'somerville':
-    group = ''
+if codename == "somerville":
+    group = ""
     if args.platform.startswith("fossa-"):
-        error('Please remove fossa- prefix from the platform name.')
+        error("Please remove fossa- prefix from the platform name.")
         exit(1)
     for bios_id in args.bios_id:
-        if not re.match('[0-9a-fA-F]{4}$', bios_id):
-            error('Invalid BIOS ID: {%s}' % bios_id)
+        if not re.match("[0-9a-fA-F]{4}$", bios_id):
+            error("Invalid BIOS ID: {%s}" % bios_id)
             exit(1)
-    meta = 'oem-' + codename + '-' + platform + '-meta'
-elif codename == 'stella':
+    meta = "oem-" + codename + "-" + platform + "-meta"
+elif codename == "stella":
     group = args.group.lower()
     for sd_id in args.sd_id:
-        if not re.match('[0-9a-fA-F]{4}$', sd_id):
-            error('Invalid subsystem device ID: {%s}' % sd_id)
+        if not re.match("[0-9a-fA-F]{4}$", sd_id):
+            error("Invalid subsystem device ID: {%s}" % sd_id)
             exit(1)
-    meta = 'oem-' + codename + '.' + group + '-' + platform + '-meta'
-    Codename = Codename + ' ' + group.title()
-elif codename == 'sutton':
+    meta = "oem-" + codename + "." + group + "-" + platform + "-meta"
+    Codename = Codename + " " + group.title()
+elif codename == "sutton":
     group = args.group.lower()
     for bios_ver in args.bios_ver:
-        if (not re.match('[0-9a-zA-Z]{3}$', bios_ver)) and \
-           (not re.match('bvn[0-9a-zA-Z]+:bvr[0-9a-zA-Z]{3}$', bios_ver)):
-            error('Invalid BIOS version: {%s}' % bios_ver)
+        if (not re.match("[0-9a-zA-Z]{3}$", bios_ver)) and (
+            not re.match("bvn[0-9a-zA-Z]+:bvr[0-9a-zA-Z]{3}$", bios_ver)
+        ):
+            error("Invalid BIOS version: {%s}" % bios_ver)
             exit(1)
-    meta = 'oem-' + codename + '.' + group + '-' + platform + '-meta'
-    Codename = Codename + ' ' + group.title()
+    meta = "oem-" + codename + "." + group + "-" + platform + "-meta"
+    Codename = Codename + " " + group.title()
 
 if os.path.exists(meta):
-    error(meta + ' already exists. Please remove or rename it.')
+    error(meta + " already exists. Please remove or rename it.")
     exit(1)
 
 os.mkdir(meta)
 os.chdir(meta)
 
-PREFIX = '~oem-solutions-engineers'
-git_repo = PREFIX + '/pc-enablement/+git/oem-' + codename + '-projects-meta'
+PREFIX = "~oem-solutions-engineers"
+git_repo = PREFIX + "/pc-enablement/+git/oem-" + codename + "-projects-meta"
 
 
 def generate_debian_package(version, bootstrap=False, real=False):
-    extra = ''
-    if args.kernel == 'linux-generic-hwe-20.04':
+    extra = ""
+    if args.kernel == "linux-generic-hwe-20.04":
         if real:
-            extra = ', linux-generic-hwe-20.04'
-        flavour = 'default'
-    elif args.kernel == 'linux-oem-20.04':
+            extra = ", linux-generic-hwe-20.04"
+        flavour = "default"
+    elif args.kernel == "linux-oem-20.04":
         if real:
-            extra = ', linux-oem-20.04'
-        flavour = 'oem'
-    elif args.kernel == 'linux-oem-20.04b':
+            extra = ", linux-oem-20.04"
+        flavour = "oem"
+    elif args.kernel == "linux-oem-20.04b":
         if real:
-            extra = ', linux-oem-20.04b | linux-oem-20.04'
-        flavour = 'oem'
-    elif args.kernel == 'linux-oem-20.04c':
+            extra = ", linux-oem-20.04b | linux-oem-20.04"
+        flavour = "oem"
+    elif args.kernel == "linux-oem-20.04c":
         if real:
-            extra = ', linux-oem-20.04c'
-        flavour = 'oem'
+            extra = ", linux-oem-20.04c"
+        flavour = "oem"
 
     if group:
-        prefix = group + '.'
-        infix = '.' + group
+        prefix = group + "."
+        infix = "." + group
         platform_archive = codename + infix
     else:
-        prefix = ''
-        infix = ''
-        platform_archive = codename + '-' + platform
+        prefix = ""
+        infix = ""
+        platform_archive = codename + "-" + platform
 
     if bootstrap:
         release = "UNRELEASED"
         version = version + "~ubuntu1"
-        branch = prefix + platform + '-' + series + '-ubuntu'
+        branch = prefix + platform + "-" + series + "-ubuntu"
         if args.public_bug:
             lp_bug = f" (LP: #{args.public_bug})"
         else:
@@ -173,32 +182,34 @@ def generate_debian_package(version, bootstrap=False, real=False):
     if real:
         release = series
         version = version + "ubuntu1"
-        factory = 'oem-' + codename + infix + '-factory-' + platform + '-meta'
-        factory_depends = ''
-        branch = prefix + platform + '-' + series + '-oem'
+        factory = "oem-" + codename + infix + "-factory-" + platform + "-meta"
+        factory_depends = ""
+        branch = prefix + platform + "-" + series + "-oem"
         if args.private_bug:
             lp_bug = f" (LP: #{args.private_bug})"
         else:
             lp_bug = ""
-        if codename == 'somerville':
-            extra = extra + ', oem-somerville-meta'
-            factory_depends = factory_depends + ', oem-somerville-factory-meta'
-        if codename == 'sutton':
-            extra = extra + ', oem-' + platform_archive + '-meta'
-            factory_depends = factory_depends + ', oem-' + platform_archive + \
-                '-factory-meta'
-        if codename == 'stella':
-            extra = extra + ', oem-' + platform_archive + '-meta'
-            factory_depends = factory_depends + ', oem-' + platform_archive + \
-                '-factory-meta'
+        if codename == "somerville":
+            extra = extra + ", oem-somerville-meta"
+            factory_depends = factory_depends + ", oem-somerville-factory-meta"
+        if codename == "sutton":
+            extra = extra + ", oem-" + platform_archive + "-meta"
+            factory_depends = (
+                factory_depends + ", oem-" + platform_archive + "-factory-meta"
+            )
+        if codename == "stella":
+            extra = extra + ", oem-" + platform_archive + "-meta"
+            factory_depends = (
+                factory_depends + ", oem-" + platform_archive + "-factory-meta"
+            )
 
     git_abbr = f"https://git.launchpad.net/{git_repo} -b {branch}"
     git_browser = f"https://code.launchpad.net/{git_repo}/+ref/{branch}"
 
-    subprocess.run(['git', 'checkout', '--orphan', branch])
+    subprocess.run(["git", "checkout", "--orphan", branch])
 
     source_file = "oem-%s-%s-meta.list" % (codename + infix, platform)
-    archive = 'archive.canonical.com'
+    archive = "archive.canonical.com"
     source_list = f"""\
 deb http://{brand}.{archive}/ {series} {codename}
 # deb-src http://{brand}.{archive}/ {series} {codename}
@@ -206,26 +217,29 @@ deb http://{brand}.{archive}/ {series} {platform_archive}
 # deb-src http://{brand}.{archive}/ {series} {platform_archive}
 """
 
-    with open(source_file, 'w') as f:
+    with open(source_file, "w") as f:
         f.write(source_list)
 
     if real:
-        with open("oem-flavour.cfg", 'w') as f:
-            if flavour == 'default':
-                grub_flavour = 'generic'
-            elif flavour == 'oem':
-                grub_flavour = 'oem'
-            f.write(f"""# This file is automatically generated by {meta}, and changes will be overriden
+        with open("oem-flavour.cfg", "w") as f:
+            if flavour == "default":
+                grub_flavour = "generic"
+            elif flavour == "oem":
+                grub_flavour = "oem"
+            f.write(
+                f"""# This file is automatically generated by {meta}, and changes will be overriden
 GRUB_FLAVOUR_ORDER={grub_flavour}
-""")
+"""
+            )
 
-    if not os.path.exists('debian'):
-        os.mkdir('debian')
-    os.chdir('debian')
+    if not os.path.exists("debian"):
+        os.mkdir("debian")
+    os.chdir("debian")
 
     if real:
-        with open("postinst", 'w') as f:
-            f.write(f'''#!/bin/sh
+        with open("postinst", "w") as f:
+            f.write(
+                f"""#!/bin/sh
 
 set -e
 
@@ -242,9 +256,11 @@ case "$1" in
 esac
 
 #DEBHELPER#
-''')
-        with open("postrm", 'w') as f:
-            f.write('''#!/bin/sh
+"""
+            )
+        with open("postrm", "w") as f:
+            f.write(
+                """#!/bin/sh
 
 set -e
 
@@ -260,34 +276,42 @@ case "$1" in
 esac
 
 #DEBHELPER#
-''')
+"""
+            )
 
     gbp_conf = f"""[DEFAULT]
 pristine-tar = False
 debian-branch = {branch}
 debian-tag = {branch}_%(version)s
 """
-    with open('gbp.conf', 'w') as f:
+    with open("gbp.conf", "w") as f:
         f.write(gbp_conf)
 
-    fullname = os.getenv('DEBFULLNAME', 'Commercial Engineering')
-    email = os.getenv('DEBEMAIL', 'commercial-engineering@canonical.com')
-    if fullname == 'Commercial Engineering':
-        warning("DEBFULLNAME shall not be 'Commercial Engineering'. Please use your own fullname.")
-    if email == 'commercial-engineering@canonical.com':
-        warning("DEBEMAIL shall not be 'commercial-engineering@canonical.com'. Please use your own email.")
+    fullname = os.getenv("DEBFULLNAME", "Commercial Engineering")
+    email = os.getenv("DEBEMAIL", "commercial-engineering@canonical.com")
+    if fullname == "Commercial Engineering":
+        warning(
+            "DEBFULLNAME shall not be 'Commercial Engineering'. Please use your own fullname."
+        )
+    if email == "commercial-engineering@canonical.com":
+        warning(
+            "DEBEMAIL shall not be 'commercial-engineering@canonical.com'. Please use your own email."
+        )
     timestamp = strftime("%a, %d %b %Y %H:%M:%S %z", localtime())
 
-    with open('changelog', 'w') as f:
-        f.write(f"""{meta} ({version}) {release}; urgency=medium
+    with open("changelog", "w") as f:
+        f.write(
+            f"""{meta} ({version}) {release}; urgency=medium
 
   * Meta package for {Codename} {Platform}.{lp_bug}
 
  -- {fullname} <{email}>  {timestamp}
-""")
+"""
+        )
 
-    with open('control', 'w') as f:
-        f.write(f"""Source: {meta}
+    with open("control", "w") as f:
+        f.write(
+            f"""Source: {meta}
 Section: misc
 Priority: optional
 Maintainer: Commercial Engineering <commercial-engineering@canonical.com>
@@ -303,24 +327,28 @@ XB-Modaliases: ${{modaliases}}
 XB-Ubuntu-OEM-Kernel-Flavour: {flavour}
 Description: hardware support for {Codename} {Platform} platform
  This is a metapackage for {Codename} {Platform} platform. It installs\n"""
-                + " packages needed to support this hardware fully.\n")
+            + " packages needed to support this hardware fully.\n"
+        )
         if real:
-            f.write(f"""\nPackage: {factory}
+            f.write(
+                f"""\nPackage: {factory}
 Architecture: all
 Depends: ${{misc:Depends}}{factory_depends}
 Description: hardware support for {Codename} {Platform} platform (factory)
  This is a factory metapackage for {Codename} {Platform} platform.\n"""
-                    + " It installs packages needed to support this hardware "
-                    + "fully. (factory)\n")
+                + " It installs packages needed to support this hardware "
+                + "fully. (factory)\n"
+            )
 
     timestamp = strftime("%Y", localtime())
 
-    with open('copyright', 'w') as f:
-        f.write('Format: https://www.debian.org/doc/packaging-manuals/'
-                'copyright-format/1.0/\n'
-                f'Upstream-Name: {meta}\n'
-                f'Source: {git_browser}\n\n'
-                f"""Files: *
+    with open("copyright", "w") as f:
+        f.write(
+            "Format: https://www.debian.org/doc/packaging-manuals/"
+            "copyright-format/1.0/\n"
+            f"Upstream-Name: {meta}\n"
+            f"Source: {git_browser}\n\n"
+            f"""Files: *
 Copyright: {timestamp} Canonical Limited
 License: GPL-3
  This package is free software; you can redistribute it and/or modify
@@ -337,28 +365,36 @@ License: GPL-3
  .
  On Debian systems, the complete text of the GNU General
  Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
-""")
+"""
+        )
 
-    with open('install', 'w') as f:
+    with open("install", "w") as f:
         if real:
             f.write(f"oem-flavour.cfg /usr/share/{meta}/\n")
         f.write(f"{source_file} /etc/apt/sources.list.d/\n")
 
-    with open('modaliases', 'w') as f:
-        if 'bios_id' in vars(args).keys():
+    with open("modaliases", "w") as f:
+        if "bios_id" in vars(args).keys():
             for bios_id in args.bios_id:
-                f.write("alias pci:*sv00001028sd0000{0}bc0Csc05* meta {1}\n"
-                        .format(bios_id.upper(), meta))
-        elif 'sd_id' in vars(args).keys():
+                f.write(
+                    "alias pci:*sv00001028sd0000{0}bc0Csc05* meta {1}\n".format(
+                        bios_id.upper(), meta
+                    )
+                )
+        elif "sd_id" in vars(args).keys():
             for sd_id in args.sd_id:
-                f.write("alias pci:*sv0000103Csd0000{0}bc0Csc05* meta {1}\n"
-                        .format(sd_id.upper(), meta))
-        elif 'bios_ver' in vars(args).keys():
+                f.write(
+                    "alias pci:*sv0000103Csd0000{0}bc0Csc05* meta {1}\n".format(
+                        sd_id.upper(), meta
+                    )
+                )
+        elif "bios_ver" in vars(args).keys():
             for bios_ver in args.bios_ver:
-                result = re.match('([0-9a-zA-Z]{3})$', bios_ver)
+                result = re.match("([0-9a-zA-Z]{3})$", bios_ver)
                 if result is None:
-                    result = re.match('bvn([0-9a-zA-Z]+):bvr([0-9a-zA-Z]{3})$',
-                                      bios_ver)
+                    result = re.match(
+                        "bvn([0-9a-zA-Z]+):bvr([0-9a-zA-Z]{3})$", bios_ver
+                    )
                     if result is None:
                         continue
                     else:
@@ -366,42 +402,50 @@ License: GPL-3
                         bios_ids = result.group(2).upper()
                 else:
                     # Set the default bios vendor for Lenovo
-                    bios_vendor = 'LENOVO'
+                    bios_vendor = "LENOVO"
                     bios_ids = result.group().upper()
 
-                f.write("alias dmi:*bvn{0}:bvr{1}* meta {2}\n"
-                        .format(bios_vendor, bios_ids, meta))
+                f.write(
+                    "alias dmi:*bvn{0}:bvr{1}* meta {2}\n".format(
+                        bios_vendor, bios_ids, meta
+                    )
+                )
 
-    with open('rules', 'w') as f:
-        f.write("""#!/usr/bin/make -f
+    with open("rules", "w") as f:
+        f.write(
+            """#!/usr/bin/make -f
 # -*- makefile -*-
 
 export DH_VERBOSE=1
 
 %:
-\tdh $@ --with modaliases\n""")
+\tdh $@ --with modaliases\n"""
+        )
 
-    os.chmod('rules', 0o755)
+    os.chmod("rules", 0o755)
 
-    if not os.path.exists('source'):
-        os.mkdir('source')
-    os.chdir('source')
+    if not os.path.exists("source"):
+        os.mkdir("source")
+    os.chdir("source")
 
-    with open('format', 'w') as f:
+    with open("format", "w") as f:
         f.write("3.0 (native)\n")
 
-    os.chdir('..')
+    os.chdir("..")
 
-    if not os.path.exists('tests'):
-        os.mkdir('tests')
-    os.chdir('tests')
-    with open('control', 'w') as f:
-        f.write(f"""Tests: meta
+    if not os.path.exists("tests"):
+        os.mkdir("tests")
+    os.chdir("tests")
+    with open("control", "w") as f:
+        f.write(
+            f"""Tests: meta
 Depends: @
 Restrictions: needs-root
-""")
-    with open('meta', 'w') as f:
-        f.write("""#!/bin/bash
+"""
+        )
+    with open("meta", "w") as f:
+        f.write(
+            """#!/bin/bash
 
 exec 2>&1
 set -euo pipefail
@@ -412,28 +456,30 @@ apt-get full-upgrade --yes
 
 apt-get update
 apt-get full-upgrade --yes
-""")
+"""
+        )
         if real:
-            f.write(f"\ngrep ^GRUB_FLAVOUR_ORDER= /etc/default/grub.d/oem-flavour.cfg\n")
+            f.write(
+                f"\ngrep ^GRUB_FLAVOUR_ORDER= /etc/default/grub.d/oem-flavour.cfg\n"
+            )
 
         f.write(f"\napt-get autoremove --purge --yes {meta}\n")
-    os.chdir('..')
+    os.chdir("..")
 
-    os.chdir('..')
-    subprocess.run(['git', 'add', '.'])
-    subprocess.run(['git', 'config', 'user.name', fullname])
-    subprocess.run(['git', 'config', 'user.email', email])
+    os.chdir("..")
+    subprocess.run(["git", "add", "."])
+    subprocess.run(["git", "config", "user.name", fullname])
+    subprocess.run(["git", "config", "user.email", email])
     if bootstrap:
-        subprocess.run(['debcommit', '-a', '-R'])
+        subprocess.run(["debcommit", "-a", "-R"])
     else:
-        subprocess.run(['debcommit', '-a', '-R', '-r'])
+        subprocess.run(["debcommit", "-a", "-R", "-r"])
 
 
-subprocess.run(['git', 'init'])
+subprocess.run(["git", "init"])
 generate_debian_package(version, bootstrap=True)
 generate_debian_package(version, real=True)
 
-subprocess.run(['git', 'remote', 'add', 'origin',
-                f'lp:{git_repo}'])
+subprocess.run(["git", "remote", "add", "origin", f"lp:{git_repo}"])
 
 print(f"'{meta}' is ready.")
