@@ -25,23 +25,29 @@ LAUNCHPAD_API="${LAUNCHPAD_API:=https://api.launchpad.net/}"
 
 usage_auth_failed()
 {
-	>&2 echo === Failure as accessing the web service.
-	>&2 echo
-	>&2 echo It\'s likely your authentication token is removed or expired.
-	>&2 echo Please backup/remove the config.ini, get authentication token and try again.
-	>&2 echo
-	>&2 echo Ex:
-	>&2 echo
-	>&2 echo $ mv ~/.config/oem-scripts/config.ini ~/.config/oem-scripts/config.ini.backup
-	>&2 echo $ launchpad-api get devel/people/+me
-	>&2 echo $ \# try your command after reset token by using above commands.
+    >&2 cat <<EOF
+=== Failure as accessing the web service.
+
+It could be command error OR your authentication token is removed or expired.
+If you think it's the authentication issue, you can try to backup/remove
+the config.ini, get authentication token and try again.
+
+Ex:
+
+  $ mv ~/.config/oem-scripts/config.ini ~/.config/oem-scripts/config.ini.backup
+  $ launchpad-api get devel/people/+me
+  $ # try your command after reset token by using above commands.
+
+EOF
 }
 
 usage()
 {
-	>&2 echo === Useage:
-	>&2 echo   \$ launchpad-api get devel/people/+me \# same as \$ launchpad-api test
-	>&2 echo   \$ launchpad-api get devel/people/+me ws.op==getArchiveSubscriptionURLs
+    >&2 cat <<EOF
+=== Useage:
+  $ launchpad-api get devel/people/+me # same as "launchpad-api test"
+  $ launchpad-api get devel/people/+me ws.op==getArchiveSubscriptionURLs
+EOF
 }
 
 get_token()
