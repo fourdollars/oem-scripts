@@ -207,7 +207,7 @@ do_recovery() {
     if [ "${ubr}" == "yes" ]; then
         echo GRUB_DEFAULT=3 | $SSH "$user_on_target"@"$target_ip" -T "sudo tee -a /etc/default/grub.d/automatic-oem-config.cfg"
         $SSH "$user_on_target"@"$target_ip" sudo update-grub
-        $SSH "$user_on_target"@"$target_ip" sudo reboot
+        $SSH "$user_on_target"@"$target_ip" sudo reboot &
     else
         ssh -o StrictHostKeyChecking=no "$user_on_target"@"$target_ip" sudo dell-restore-system -y &
     fi
