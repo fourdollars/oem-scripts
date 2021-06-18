@@ -211,7 +211,6 @@ do_recovery() {
     else
         ssh -o StrictHostKeyChecking=no "$user_on_target"@"$target_ip" sudo dell-restore-system -y &
     fi
-    exit 0
     sleep 300 # sleep to make sure the target system has been rebooted to recovery mode.
     poll_recovery_status
 }
