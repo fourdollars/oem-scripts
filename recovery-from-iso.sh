@@ -110,10 +110,10 @@ apt-get install -fy
         $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-skip-storage-selecting --depth 1
         $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/pack-fish.openssh-fossa --depth 1
         $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-skip-oobe --depth 1
-
-        # get pkgs for ssh key and skip disk checking.
-        $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-misc-for-automation --depth 1 misc_for_automation
     fi
+
+    # get pkgs for ssh key and skip disk checking.
+    $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-misc-for-automation --depth 1 misc_for_automation
 
     return 0
 }
@@ -129,12 +129,18 @@ push_preseed() {
             $SCP -r "$temp_folder/$folder" "$user_on_target"@"$target_ip":~/push_preseed || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
         done
     else
-        for folder in pack-fish.openssh-fossa misc_for_automation oem-fix-misc-cnl-no-secureboot oem-fix-misc-cnl-skip-oobe oem-fix-misc-cnl-skip-storage-selecting; do
+        for folder in pack-fish.openssh-fossa oem-fix-misc-cnl-no-secureboot oem-fix-misc-cnl-skip-oobe oem-fix-misc-cnl-skip-storage-selecting; do
             tar -C "$temp_folder"/$folder -zcvf "$temp_folder"/$folder.tar.gz .
             $SCP "$temp_folder/$folder".tar.gz "$user_on_target"@"$target_ip":~
             $SSH "$user_on_target"@"$target_ip" tar -C push_preseed -zxvf $folder.tar.gz || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
         done
     fi
+
+    for folder in misc_for_automation; do
+        tar -C "$temp_folder"/$folder -zcvf "$temp_folder"/$folder.tar.gz .
+        $SCP "$temp_folder/$folder".tar.gz "$user_on_target"@"$target_ip":~
+        $SSH "$user_on_target"@"$target_ip" tar -C push_preseed -zxvf $folder.tar.gz || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
+    done
 
     $SSH "$user_on_target"@"$target_ip" sudo cp -r push_preseed/* /cdrom/
     return 0
