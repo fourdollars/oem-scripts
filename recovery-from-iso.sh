@@ -95,6 +95,7 @@ ubiquity ubuntu-recovery/recovery_type string dev
         cp -r maas_deps/maas-pkgs/*.deb .
         find .
         popd
+        # TODO: share this with MaaS to use a same source. (e.g. debian package)
         echo "#!/bin/bash
 . /usr/share/volatile/common.sh
 set -x
