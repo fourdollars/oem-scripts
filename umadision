@@ -1,0 +1,61 @@
+#!/usr/bin/python3
+
+# https://qa.debian.org/madison.php?package=fwupd&table=ubuntu&a=&c=&s=#
+# https://qa.debian.org/madison.php?package=fwupd&table=debian&a=&c=&s=#
+
+import requests
+from html.parser import HTMLParser
+import sys
+
+
+def usage():
+    print("umadision DEB_PKG_NAME")
+    print("Query qa.debian.org for ubuntu pkg version")
+    print()
+    print("dmadision DEB_PKG_NAME")
+    print("Query qa.debian.org for debian pkg version")
+
+
+if len(sys.argv) != 2:
+    usage()
+    sys.exit(0)
+
+pkg = sys.argv[1]
+dist = "ubuntu"
+
+if "dmadision" in sys.argv[0]:
+    dist = "debian"
+
+url = f"https://qa.debian.org/madison.php?package={pkg}&table={dist}&a=&c=&s=#"
+
+r = requests.get(url)
+
+if r.status_code == requests.codes.ok:
+    pass
+else:
+    print("Download page failed")
+    sys.exit(-1)
+
+count = 0
+
+
+class MyHTMLParser(HTMLParser):
+    def handle_starttag(self, tag, attrs):
+        if tag == "pre":
+            self.in_pre = True
+        else:
+            self.in_pre = False
+
+    def handle_endtag(self, tag):
+        if tag == "pre":
+            self.in_pre = False
+
+    def handle_data(self, data):
+        global count
+        if self.in_pre and count == 0:
+            print(data)
+            count += 1
+
+
+parser = MyHTMLParser()
+parser.feed(r.text)
