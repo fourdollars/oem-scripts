@@ -61,6 +61,7 @@ Also there is a meta package oem-dev-tools that installs all scripts""",
         "bug-bind.py",
         "mir-bug",
         "check-ssid-duplicated.sh",
+        "umadision"
     ],
     packages=find_packages(),
     data_files=[("share/oem-scripts", ["config.sh"])],

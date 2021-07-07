@@ -1,8 +1,19 @@
 oem-scripts (0.99) UNRELEASED; urgency=medium
 
+  [ Yuan-Chen Cheng]
   * launchpad-api: refine message and add handy test.
+  * umadision, debian/links, setup.py, tests/test_flake8: add script to
+    query qa.debian for ubuntu pkg because it response faster.
 
- -- Yuan-Chen Cheng <yc.cheng@canonical.com>  Fri, 04 Jun 2021 13:00:53 +0800
+  [ Jeremy Szu ]
+  * recovery-from-iso.sh: with stella image support.
+    Need to use the image build after pc-stella-cmit-focal-amd64-X00-20210617-1562.iso
+    because the ubuntu recovery needs to support recovery_type=dev.
+    This patch is just for supporting re-deploy, the auto sanity check
+    will be supported in the future.
+    Inject ssh key, nopasswd for automation
+
+ -- Yuan-Chen Cheng <yc.cheng@canonical.com>  Wed, 07 Jul 2021 11:37:50 +0800
 
 oem-scripts (0.98) focal; urgency=medium
 

@@ -1,0 +1,34 @@
+#!/usr/bin/python3
+
+import requests
+import sys
+
+
+def usage():
+    print("umadision DEB_PKG_NAME")
+    print("Query qa.debian.org for ubuntu pkg version")
+    print()
+    print("dmadision DEB_PKG_NAME")
+    print("Query qa.debian.org for debian pkg version")
+
+
+if len(sys.argv) != 2:
+    usage()
+    sys.exit(0)
+
+pkg = sys.argv[1]
+dist = "ubuntu"
+if "dmadision" in sys.argv[0]:
+    dist = "debian"
+
+url = f"https://qa.debian.org/madison.php?package={pkg}&table={dist}&text=on"
+
+r = requests.get(url)
+
+if r.status_code == requests.codes.ok:
+    pass
+else:
+    print("Get f{url} failed")
+    sys.exit(-1)
+
+print(r.text)
