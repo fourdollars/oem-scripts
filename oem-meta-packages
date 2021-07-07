@@ -39,6 +39,12 @@ from oem_scripts.logging import setup_logging
 from string import Template
 from tempfile import TemporaryDirectory
 
+ALLOWED_KERNEL_META_LIST = (
+    "linux-oem-20.04c",
+    "linux-oem-20.04b",
+    "linux-oem-20.04",
+    "linux-generic-hwe-20.04",
+)
 
 staging_copy_template = Template(
     f'''Operation: copy_package
@@ -833,7 +839,7 @@ def search_ppa_and_version(
         return None, None, None
 
 
-def get_debian_version_from_git(pkg_name: str) -> str:
+def get_debian_version_from_git(pkg_name: str) -> (str, str):
     result = pattern.match(pkg_name)
 
     if not result:
@@ -887,6 +893,94 @@ def get_debian_version_from_git(pkg_name: str) -> str:
         )
 
     return bootstrap_version, oem_version
+
+
+def get_kernel_flavour_meta_from_git(pkg_name: str) -> (str, str, str):
+    result = pattern.match(pkg_name)
+
+    if not result:
+        return None
+
+    if "." in result.group(1):
+        project, group = result.group(1).split(".")
+    else:
+        project = result.group(1)
+        group = None
+
+    platform = result.group(2)
+
+    if group:
+        ubuntu_branch = f"{group}.{platform}-focal-ubuntu"
+        oem_branch = f"{group}.{platform}-focal-oem"
+    else:
+        ubuntu_branch = f"{platform}-focal-ubuntu"
+        oem_branch = f"{platform}-focal-oem"
+
+    wget_control_command = (
+        "wget",
+        "-q",
+        "-O",
+        "control",
+        f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta/plain/debian/control?h={ubuntu_branch}",
+    )
+
+    bootstrap_kernel_flavour = ""
+    with TemporaryDirectory() as tmpdir:
+        os.chdir(tmpdir)
+        _run_command(wget_control_command)
+        bootstrap_kernel_flavour, _, _ = _run_command(
+            ["grep", "^XB-Ubuntu-OEM-Kernel-Flavour", "control"]
+        )
+        for kernel_meta in ALLOWED_KERNEL_META_LIST:
+            kernel_flavour, _, returncode = _run_command(
+                ["grep", f"\b{kernel_meta}\b", "control"],
+                returncode=(0, 1),
+                silent=True,
+            )
+            if returncode == 0:
+                error(f"{project} {ubuntu_branch} debian/control should not contain {kernel_flavour}.")
+    if bootstrap_kernel_flavour == "XB-Ubuntu-OEM-Kernel-Flavour: oem":
+        bootstrap_kernel_flavour = "oem"
+    elif bootstrap_kernel_flavour == "XB-Ubuntu-OEM-Kernel-Flavour: default":
+        bootstrap_kernel_flavour = "hwe"
+    else:
+        error(f"XB-Ubuntu-OEM-Kernel-Flavour in invalid for {ubuntu_branch} of {project}")
+
+    wget_control_command = (
+        "wget",
+        "-q",
+        "-O",
+        "control",
+        f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta/plain/debian/control?h={oem_branch}",
+    )
+
+    oem_kernel_flavour = ""
+    oem_kernel_meta = ""
+    with TemporaryDirectory() as tmpdir:
+        os.chdir(tmpdir)
+        _run_command(wget_control_command)
+        oem_kernel_flavour, _, _ = _run_command(
+            ["grep", "^XB-Ubuntu-OEM-Kernel-Flavour", "control"]
+        )
+        for kernel_meta in ALLOWED_KERNEL_META_LIST:
+            _, _, returncode = _run_command(
+                ["grep", f"\\b{kernel_meta}\\b", "control"],
+                returncode=(0, 1),
+            )
+            if returncode == 0:
+                oem_kernel_meta = kernel_meta
+                break
+        else:
+            error(f"{project} {oem_branch} The kernel meta doesn't exist or it is not in the allowed list.")
+
+    if oem_kernel_flavour == "XB-Ubuntu-OEM-Kernel-Flavour: oem":
+        oem_kernel_flavour = "oem"
+    elif oem_kernel_flavour == "XB-Ubuntu-OEM-Kernel-Flavour: default":
+        oem_kernel_flavour = "hwe"
+    else:
+        error(f"XB-Ubuntu-OEM-Kernel-Flavour is invalid for {oem_branch} of {project}")
+
+    return bootstrap_kernel_flavour, oem_kernel_flavour, oem_kernel_meta
 
 
 def search_public_archive(pkg_name: str, project: str, codename: str) -> tuple:
@@ -1154,12 +1248,18 @@ def collect_pkg_info(
 
     for codename, v in somerville.items():
         pkg_name = "oem-somerville-" + codename + "-meta"
+
         if args.only and pkg_name != args.only:
             warning(f"Skip {pkg_name}")
             continue
+
         if pkg_name in args.skip:
             warning(f"Skip {pkg_name}")
             continue
+
+        bootstrap_kernel_flavour, oem_kernel_flavour, oem_kernel_meta = get_kernel_flavour_meta_from_git(pkg_name)
+        info(f"{bootstrap_kernel_flavour} {oem_kernel_flavour} {oem_kernel_meta} in git branch.")
+
         ppa_archive, ppa_version, fingerprint = search_ppa_and_version(
             "somerville", None, codename, pkg_name
         )
