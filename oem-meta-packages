@@ -101,7 +101,6 @@ class PkgInfo:
 
 
 pattern = re.compile(r"oem-([^-]*)-(.*)-meta")
-staging_pattern = re.compile(r".*>(.*)/</a>")
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
     epilog="""
@@ -1130,6 +1129,8 @@ class OemFromPPA(OemMetaPkgInfo):
 
 
 class OemFromPrivateArchive(OemMetaPkgInfo):
+    staging_pattern = re.compile(r".*>(.*)/</a>")
+
     def __init__(self, meta, index, config):
         self._index = index
         self._config = config
@@ -1144,13 +1145,13 @@ class OemFromPrivateArchive(OemMetaPkgInfo):
         domain = config["archive"].split("://")[1].split("/")[0]
         archive = ""
         version = ""
+        if self.project == "somerville":
+            codename = self.platform
+        else:
+            codename = self.group
         for line in index.split("\n"):
-            if (
-                self.project in line
-                and self.platform in line
-                and f"focal-{branch}" in line
-            ):
-                result = staging_pattern.match(line)
+            if self.project in line and codename in line and f"focal-{branch}" in line:
+                result = self.staging_pattern.match(line)
                 if result:
                     archive = result.group(1)
         with TemporaryDirectory() as tmpdir:
@@ -1408,11 +1409,6 @@ def collect_pkg_info(
     pkgNamesInArchive = get_oem_meta_packages(cache)
 
     pkgInfo = dict()
-
-    if check_private:
-        info("Finding the corresponding PPAs and private archives...")
-    else:
-        info("Finding the corresponding PPAs...")
 
     for codename, v in somerville.items():
         pkg_name = "oem-somerville-" + codename + "-meta"
