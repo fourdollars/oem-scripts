@@ -19,7 +19,6 @@
 
 import argparse
 import collections
-import dataclasses
 import difflib
 import json
 import lazr
@@ -33,10 +32,10 @@ import types
 from abc import ABCMeta, abstractmethod
 from apt import apt_pkg
 from configparser import ConfigParser
-from dataclasses import dataclass
 from logging import debug, info, warning, error, critical
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
 from oem_scripts.logging import setup_logging
+from pydantic import BaseModel
 from string import Template
 from tempfile import TemporaryDirectory
 
@@ -73,15 +72,39 @@ deb-src http://oem.archive.canonical.com $distribution $component
 )
 
 
-class DataJSONEncoder(json.JSONEncoder):
-    def default(self, o):
-        if dataclasses.is_dataclass(o):
-            return dataclasses.asdict(o)
-        return super().default(o)
+class CustomEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, BaseModel):
+            return obj.dict()
+        return super().default(obj)
 
 
-@dataclass
-class PkgInfo:
+class PkgData(BaseModel):
+    version: str
+    archive: str
+    kernel_flavour: str
+    kernel_meta: str
+    fingerprint: str
+
+
+class BootstrapGroup(BaseModel):
+    git: PkgData
+    ppa: PkgData
+    proposed: PkgData
+    ubuntu: PkgData
+
+
+class OemGroup(BaseModel):
+    git: PkgData
+    ppa: PkgData
+    devel: PkgData
+    staging: PkgData
+    public: PkgData
+
+
+class PkgInfo(BaseModel):
+    bootstrap: BootstrapGroup
+    oem: OemGroup
     ppa_archive: str
     ppa_version: str
     git_version: str
@@ -798,18 +821,33 @@ def remove_prefix_suffix(s, prefix, suffix):
 
 
 class OemMetaPkgInfo(metaclass=ABCMeta):
-    pattern = re.compile(r"oem-([^-]*)-(.*)-meta")
-
     def __init__(self, meta):
         self.meta = meta
         self.project = None
         self.group = None
         self.platform = None
+        self.pkg_data = None
+        self.version = ""
+        self.archive = ""
+        self.kernel_flavour = ""
+        self.kernel_meta = ""
+        self.fingerprint = ""
         self.parse_meta_name()
         self.get_info()
         info(
             f"({self.__class__.__name__}) version:{self.version}, flavour:{self.kernel_flavour}, meta:{self.kernel_meta}, archive:{self.archive}"
         )
+
+    def get_data(self):
+        if self.pkg_data is None:
+            self.pkg_data = PkgData(
+                version=self.version,
+                archive=self.archive,
+                kernel_flavour=self.kernel_flavour,
+                kernel_meta=self.kernel_meta,
+                fingerprint=self.fingerprint,
+            )
+        return self.pkg_data
 
     def parse_meta_name(self):
         result = pattern.match(self.meta)
@@ -902,7 +940,7 @@ class BootstrapFromPPA(OemMetaPkgInfo):
         OemMetaPkgInfo.__init__(self, meta)
 
     def get_info(self):
-        raise NotImplementedError("Must override get_version_archive()")
+        pass
 
     def get_version_archive(self):
         pass
@@ -1312,15 +1350,19 @@ class OemMetaPkg(object):
 
     def __init__(self, meta, index, config):
         info(f"Checking {meta}...")
-        self.bootstrapGit = BootstrapFromGit(meta)
-        #         self.bootstrapPPA = BootstrapFromPPA(meta)
-        self.bootstrapProposed = BootstrapFromProposedArchive(meta)
-        self.bootstrapUbuntu = BootstrapFromUbuntuArchive(meta)
-        self.oemGit = OemFromGit(meta)
-        self.oemPPA = OemFromPPA(meta)
-        self.oemDevel = OemFromDevelArchive(meta, index, config)
-        self.oemStaging = OemFromStagingArchive(meta, index, config)
-        self.oemPublic = OemFromOEMArchive(meta)
+        self.bootstrap = BootstrapGroup(
+            git=BootstrapFromGit(meta).get_data(),
+            ppa=BootstrapFromPPA(meta).get_data(),
+            proposed=BootstrapFromProposedArchive(meta).get_data(),
+            ubuntu=BootstrapFromUbuntuArchive(meta).get_data(),
+        )
+        self.oem = OemGroup(
+            git=OemFromGit(meta).get_data(),
+            ppa=OemFromPPA(meta).get_data(),
+            devel=OemFromDevelArchive(meta, index, config).get_data(),
+            staging=OemFromStagingArchive(meta, index, config).get_data(),
+            public=OemFromOEMArchive(meta).get_data(),
+        )
 
 
 def collect_pkg_info(
@@ -1424,22 +1466,24 @@ def collect_pkg_info(
         meta = OemMetaPkg(pkg_name, index, config)
 
         pkgInfo[pkg_name] = PkgInfo(
-            ppa_archive=meta.oemPPA.archive,
-            ppa_version=meta.oemPPA.version,
-            fingerprint=meta.oemPPA.fingerprint,
-            bootstrap_version=meta.bootstrapGit.version,
-            real_version=meta.oemGit.version,
-            git_version=meta.oemGit.version,
+            bootstrap=meta.bootstrap,
+            oem=meta.oem,
+            ppa_archive=meta.oem.ppa.archive,
+            ppa_version=meta.oem.ppa.version,
+            fingerprint=meta.oem.ppa.fingerprint,
+            bootstrap_version=meta.bootstrap.git.version,
+            real_version=meta.oem.git.version,
+            git_version=meta.oem.git.version,
             old_desc="",
             new_desc="",
-            staging_archive=meta.oemStaging.archive,
-            staging_version=meta.oemStaging.version,
-            devel_archive=meta.oemDevel.archive,
-            devel_version=meta.oemDevel.version,
-            oem_archive=meta.oemPublic.archive,
-            oem_version=meta.oemPublic.version,
-            ubuntu_version=meta.bootstrapUbuntu.version,
-            proposed_version=meta.bootstrapProposed.version,
+            staging_archive=meta.oem.staging.archive,
+            staging_version=meta.oem.staging.version,
+            devel_archive=meta.oem.devel.archive,
+            devel_version=meta.oem.devel.version,
+            oem_archive=meta.oem.public.archive,
+            oem_version=meta.oem.public.version,
+            ubuntu_version=meta.bootstrap.ubuntu.version,
+            proposed_version=meta.bootstrap.proposed.version,
         )
 
         if pkg_name in pkgNamesInArchive and "".join(v):
@@ -1462,22 +1506,24 @@ def collect_pkg_info(
         meta = OemMetaPkg(pkg_name, index, config)
 
         pkgInfo[pkg_name] = PkgInfo(
-            ppa_archive=meta.oemPPA.archive,
-            ppa_version=meta.oemPPA.version,
-            fingerprint=meta.oemPPA.fingerprint,
-            bootstrap_version=meta.bootstrapGit.version,
-            real_version=meta.oemGit.version,
-            git_version=meta.oemGit.version,
+            bootstrap=meta.bootstrap,
+            oem=meta.oem,
+            ppa_archive=meta.oem.ppa.archive,
+            ppa_version=meta.oem.ppa.version,
+            fingerprint=meta.oem.ppa.fingerprint,
+            bootstrap_version=meta.bootstrap.git.version,
+            real_version=meta.oem.git.version,
+            git_version=meta.oem.git.version,
             old_desc="",
             new_desc="",
-            staging_archive=meta.oemStaging.archive,
-            staging_version=meta.oemStaging.version,
-            devel_archive=meta.oemDevel.archive,
-            devel_version=meta.oemDevel.version,
-            oem_archive=meta.oemPublic.archive,
-            oem_version=meta.oemPublic.version,
-            ubuntu_version=meta.bootstrapUbuntu.version,
-            proposed_version=meta.bootstrapProposed.version,
+            staging_archive=meta.oem.staging.archive,
+            staging_version=meta.oem.staging.version,
+            devel_archive=meta.oem.devel.archive,
+            devel_version=meta.oem.devel.version,
+            oem_archive=meta.oem.public.archive,
+            oem_version=meta.oem.public.version,
+            ubuntu_version=meta.bootstrap.ubuntu.version,
+            proposed_version=meta.bootstrap.proposed.version,
         )
 
         if pkg_name in pkgNamesInArchive and "".join(v):
@@ -1502,22 +1548,24 @@ def collect_pkg_info(
         meta = OemMetaPkg(pkg_name, index, config)
 
         pkgInfo[pkg_name] = PkgInfo(
-            ppa_archive=meta.oemPPA.archive,
-            ppa_version=meta.oemPPA.version,
-            fingerprint=meta.oemPPA.fingerprint,
-            bootstrap_version=meta.bootstrapGit.version,
-            real_version=meta.oemGit.version,
-            git_version=meta.oemGit.version,
+            bootstrap=meta.bootstrap,
+            oem=meta.oem,
+            ppa_archive=meta.oem.ppa.archive,
+            ppa_version=meta.oem.ppa.version,
+            fingerprint=meta.oem.ppa.fingerprint,
+            bootstrap_version=meta.bootstrap.git.version,
+            real_version=meta.oem.git.version,
+            git_version=meta.oem.git.version,
             old_desc="",
             new_desc="",
-            staging_archive=meta.oemStaging.archive,
-            staging_version=meta.oemStaging.version,
-            devel_archive=meta.oemDevel.archive,
-            devel_version=meta.oemDevel.version,
-            oem_archive=meta.oemPublic.archive,
-            oem_version=meta.oemPublic.version,
-            ubuntu_version=meta.bootstrapUbuntu.version,
-            proposed_version=meta.bootstrapProposed.version,
+            staging_archive=meta.oem.staging.archive,
+            staging_version=meta.oem.staging.version,
+            devel_archive=meta.oem.devel.archive,
+            devel_version=meta.oem.devel.version,
+            oem_archive=meta.oem.public.archive,
+            oem_version=meta.oem.public.version,
+            ubuntu_version=meta.bootstrap.ubuntu.version,
+            proposed_version=meta.bootstrap.proposed.version,
         )
 
         if pkg_name in pkgNamesInArchive and "".join(v):
@@ -1529,7 +1577,7 @@ def collect_pkg_info(
             ].old_desc = f"Sutton {group.title()} {codename.title()} platform"
             pkgInfo[pkg_name].new_desc = new_desc
 
-    debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
+    debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=CustomEncoder))
 
     return pkgInfo
 
@@ -1539,6 +1587,8 @@ def load_pkg_info(data) -> dict:
     data = json.load(data)
     for meta in data.keys():
         pkgInfo[meta] = PkgInfo(
+            bootstrap=BootstrapGroup(**data[meta]["bootstrap"]),
+            oem=OemGroup(**data[meta]["oem"]),
             ppa_archive=data[meta]["ppa_archive"],
             ppa_version=data[meta]["ppa_version"],
             git_version=data[meta]["git_version"],
@@ -1557,7 +1607,7 @@ def load_pkg_info(data) -> dict:
             proposed_version=data[meta]["proposed_version"],
         )
 
-    debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder))
+    debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=CustomEncoder))
     return pkgInfo
 
 
@@ -1931,9 +1981,7 @@ elif args.subcommand == "collect":
     else:
         print("You need to use --json or --meta.")
         exit(1)
-    args.output.write(
-        json.dumps(pkgInfo, indent=4, sort_keys=True, cls=DataJSONEncoder)
-    )
+    args.output.write(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=CustomEncoder))
     args.output.write("\n")
 elif args.subcommand == "staging-copy":
     oem_scripts_config_ini = os.path.join(
