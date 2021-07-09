@@ -835,7 +835,7 @@ class OemMetaPkgInfo(metaclass=ABCMeta):
         self.parse_meta_name()
         self.get_info()
         info(
-            f"({self.__class__.__name__}) version:{self.version}, flavour:{self.kernel_flavour}, meta:{self.kernel_meta}, archive:{self.archive}"
+            f"({self.__class__.__name__})\nversion: {self.version}\nflavour: {self.kernel_flavour}\nmeta:    {self.kernel_meta}\narchive: {self.archive}"
         )
 
     def get_data(self):
@@ -923,6 +923,7 @@ class BootstrapFromGit(OemMetaPkgInfo):
                     error(
                         f"{self.project} {self.ubuntu_branch} debian/control should not contain {kernel_flavour}."
                     )
+                    exit(1)
             else:
                 self.kernel_meta = ""
         if bootstrap_kernel_flavour == "XB-Ubuntu-OEM-Kernel-Flavour: oem":
@@ -940,7 +941,10 @@ class BootstrapFromPPA(OemMetaPkgInfo):
         OemMetaPkgInfo.__init__(self, meta)
 
     def get_info(self):
-        pass
+        self.archive = "ppa:canonical-oem-metapackage-uploaders/oem-metapackage-staging"
+        self.version = "WIP"
+        self.kernel_flavour = "WIP"
+        self.kernel_meta = "WIP"
 
     def get_version_archive(self):
         pass
@@ -954,12 +958,7 @@ class BootstrapFromProposedArchive(OemMetaPkgInfo):
         OemMetaPkgInfo.__init__(self, meta)
 
     def get_info(self):
-        self.get_version()
         self.archive = "focal-proposed"
-        self.get_kernel_flavour_meta()
-
-    def get_version(self):
-        proposed_version = ""
         with TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
             _run_command(
@@ -976,21 +975,48 @@ class BootstrapFromProposedArchive(OemMetaPkgInfo):
                 ],
                 silent=True,
             )
-            output, _, _ = _run_command(
-                ["pkg-list", "--long", "--apt-dir", tmpdir, self.meta],
-                returncode=(0, 1),
-                silent=True,
-            )
-            for line in output.split("\n"):
-                if self.meta in line and "http://archive.ubuntu.com/ubuntu" in line:
-                    proposed_version = line.split(" ")[1]
-                    info(f"{self.meta} {proposed_version} exists in focal-proposed.")
-                    break
+            self.get_version(tmpdir)
+            self.get_kernel_flavour_meta(tmpdir)
+
+    def get_version(self, tmpdir):
+        proposed_version = ""
+        output, _, _ = _run_command(
+            ["pkg-list", "--long", "--apt-dir", tmpdir, self.meta],
+            returncode=(0, 1),
+            silent=True,
+        )
+        for line in output.split("\n"):
+            if self.meta in line and "http://archive.ubuntu.com/ubuntu" in line:
+                proposed_version = line.split(" ")[1]
+                break
         self.version = proposed_version
 
-    def get_kernel_flavour_meta(self):
-        self.kernel_flavour = ""
-        self.kernel_meta = ""
+    def get_kernel_flavour_meta(self, tmpdir):
+        output, _, returncode = _run_command(
+            [
+                "apt-cache",
+                "-o",
+                f"Dir={tmpdir}",
+                "-o",
+                f"Dir::State::status={tmpdir}/var/lib/dpkg/status",
+                "show",
+                f"{self.meta}={self.version}",
+            ],
+            returncode=(0, 100),
+            silent=True,
+        )
+        if returncode == 100:
+            return
+        for line in output.split("\n"):
+            if line.startswith("Ubuntu-Oem-Kernel-Flavour:"):
+                self.kernel_flavour = line.split(" ")[1]
+            if line.startswith("Depends:"):
+                for kernel_meta in ALLOWED_KERNEL_META_LIST:
+                    if kernel_meta in line:
+                        error(
+                            f"{self.meta}'s debian/control in Ubuntu archive should not depend on {kernel_meta}."
+                        )
+                        exit(1)
 
 
 class BootstrapFromUbuntuArchive(OemMetaPkgInfo):
@@ -998,14 +1024,8 @@ class BootstrapFromUbuntuArchive(OemMetaPkgInfo):
         OemMetaPkgInfo.__init__(self, meta)
 
     def get_info(self):
-        self.get_version()
-        self.archive = "focal or focal-updates"
-        self.get_kernel_flavour_meta()
-
-    def get_version(self):
-        ubuntu_version = ""
+        self.archive = "focal|focal-updates"
         with TemporaryDirectory() as tmpdir:
-            os.chdir(tmpdir)
             _run_command(
                 [
                     "setup-apt-dir.sh",
@@ -1017,20 +1037,48 @@ class BootstrapFromUbuntuArchive(OemMetaPkgInfo):
                 ],
                 silent=True,
             )
-            output, _, _ = _run_command(
-                ["pkg-list", "--long", "--apt-dir", tmpdir, self.meta],
-                returncode=(0, 1),
-                silent=True,
-            )
-            for line in output.split("\n"):
-                if self.meta in line and "http://archive.ubuntu.com/ubuntu" in line:
-                    ubuntu_version = line.split(" ")[1]
-                    break
+            self.get_version(tmpdir)
+            self.get_kernel_flavour_meta(tmpdir)
+
+    def get_version(self, tmpdir):
+        ubuntu_version = ""
+        output, _, _ = _run_command(
+            ["pkg-list", "--long", "--apt-dir", tmpdir, self.meta],
+            returncode=(0, 1),
+            silent=True,
+        )
+        for line in output.split("\n"):
+            if self.meta in line and "http://archive.ubuntu.com/ubuntu" in line:
+                ubuntu_version = line.split(" ")[1]
+                break
         self.version = ubuntu_version
 
-    def get_kernel_flavour_meta(self):
-        self.kernel_flavour = ""
-        self.kernel_meta = ""
+    def get_kernel_flavour_meta(self, tmpdir):
+        output, _, returncode = _run_command(
+            [
+                "apt-cache",
+                "-o",
+                f"Dir={tmpdir}",
+                "-o",
+                f"Dir::State::status={tmpdir}/var/lib/dpkg/status",
+                "show",
+                f"{self.meta}={self.version}",
+            ],
+            returncode=(0, 100),
+            silent=True,
+        )
+        if returncode == 100:
+            return
+        for line in output.split("\n"):
+            if line.startswith("Ubuntu-Oem-Kernel-Flavour:"):
+                self.kernel_flavour = line.split(" ")[1]
+            if line.startswith("Depends:"):
+                for kernel_meta in ALLOWED_KERNEL_META_LIST:
+                    if kernel_meta in line:
+                        error(
+                            f"{self.meta}'s debian/control in Ubuntu archive should not depend on {kernel_meta}."
+                        )
+                        exit(1)
 
 
 class OemFromGit(OemMetaPkgInfo):
