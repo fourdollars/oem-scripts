@@ -1,11 +1,11 @@
-oem-scripts (1) UNRELEASED; urgency=medium
+oem-scripts (1) focal; urgency=medium
 
   * debian/control,
     oem-meta-packages: Refactor the collect subcommand to collect all of the
     kernel flavour and the kernel meta in every stages.
   * oem-meta-packages: Fix the regression in the staging-copy subcommand.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 09 Jul 2021 17:33:01 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 09 Jul 2021 10:11:23 +0000
 
 oem-scripts (0.99) focal; urgency=medium
 
