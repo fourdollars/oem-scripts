@@ -958,7 +958,7 @@ class BootstrapFromProposedArchive(OemMetaPkgInfo):
         OemMetaPkgInfo.__init__(self, meta)
 
     def get_info(self):
-        self.archive = "focal-proposed"
+        self.archive = "ubuntu:focal-proposed"
         with TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
             _run_command(
@@ -1024,7 +1024,7 @@ class BootstrapFromUbuntuArchive(OemMetaPkgInfo):
         OemMetaPkgInfo.__init__(self, meta)
 
     def get_info(self):
-        self.archive = "focal|focal-updates"
+        self.archive = "ubuntu:focal|focal-updates"
         with TemporaryDirectory() as tmpdir:
             _run_command(
                 [
@@ -1398,10 +1398,11 @@ class OemFromOEMArchive(OemMetaPkgInfo):
 
     def get_info(self):
         self.fingerprint = "59AC787C2A8C78BA5ECA0B2ED4D1EAED36962F69"
-        self.get_version_archive()
-        self.get_kernel_flavour_meta()
+        with TemporaryDirectory() as tmpdir:
+            self.get_version_archive(tmpdir)
+            self.get_kernel_flavour_meta(tmpdir)
 
-    def get_version_archive(self):
+    def get_version_archive(self, tmpdir):
         if self.project == "somerville":
             source_line = "http://dell.archive.canonical.com/"
             archive = f"somerville-{self.platform}"
@@ -1412,40 +1413,64 @@ class OemFromOEMArchive(OemMetaPkgInfo):
             source_line = "http://lenovo.archive.canonical.com/"
             archive = f"sutton.{self.group}"
         oem_version = ""
-        with TemporaryDirectory() as tmpdir:
-            os.chdir(tmpdir)
-            _run_command(
-                [
-                    "setup-apt-dir.sh",
-                    "-c",
-                    "focal",
-                    "--disable-base",
-                    "--disable-updates",
-                    "--disable-backports",
-                    "--apt-dir",
-                    tmpdir,
-                    "--extra-key",
-                    self.fingerprint,
-                    "--extra-repo",
-                    f"deb [signed-by={tmpdir}/{self.fingerprint}.pub arch=amd64] {source_line} focal {archive}",
-                ],
-                silent=True,
-            )
-            output, _, _ = _run_command(
-                ["pkg-list", "--long", "--apt-dir", tmpdir, self.meta],
-                returncode=(0, 1),
-                silent=True,
-            )
-            for line in output.split("\n"):
-                if self.meta in line and source_line in line:
-                    oem_version = line.split(" ")[1]
-                    break
+        _run_command(
+            [
+                "setup-apt-dir.sh",
+                "-c",
+                "focal",
+                "--disable-base",
+                "--disable-updates",
+                "--disable-backports",
+                "--apt-dir",
+                tmpdir,
+                "--extra-key",
+                self.fingerprint,
+                "--extra-repo",
+                f"deb [signed-by={tmpdir}/{self.fingerprint}.pub arch=amd64] {source_line} focal {archive}",
+            ],
+            silent=True,
+        )
+        output, _, _ = _run_command(
+            ["pkg-list", "--long", "--apt-dir", tmpdir, self.meta],
+            returncode=(0, 1),
+            silent=True,
+        )
+        for line in output.split("\n"):
+            if self.meta in line and source_line in line:
+                oem_version = line.split(" ")[1]
+                break
         self.version = oem_version
-        self.archive = archive
+        self.archive = f"oem:{archive}"
 
-    def get_kernel_flavour_meta(self):
-        self.kernel_flavour = ""
-        self.kernel_meta = ""
+    def get_kernel_flavour_meta(self, tmpdir):
+        output, _, returncode = _run_command(
+            [
+                "apt-cache",
+                "-o",
+                f"Dir={tmpdir}",
+                "-o",
+                f"Dir::State::status={tmpdir}/var/lib/dpkg/status",
+                "show",
+                f"{self.meta}={self.version}",
+            ],
+            returncode=(0, 100),
+            silent=True,
+        )
+        if returncode == 100:
+            return
+        for line in output.split("\n"):
+            if line.startswith("Ubuntu-Oem-Kernel-Flavour:"):
+                self.kernel_flavour = line.split(" ")[1]
+            if line.startswith("Depends:"):
+                for kernel_meta in ALLOWED_KERNEL_META_LIST:
+                    if kernel_meta in line:
+                        self.kernel_meta = kernel_meta
+                        break
+                else:
+                    error(
+                        f"It can not find the kernel meta matched to ALLOWED_KERNEL_META_LIST in {self.meta}'s debian/control in {self.archive}."
+                    )
+                    exit(1)
 
 
 class OemMetaPkg(object):
