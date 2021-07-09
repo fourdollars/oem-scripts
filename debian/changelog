@@ -1,3 +1,11 @@
+oem-scripts (1) UNRELEASED; urgency=medium
+
+  * debian/control,
+    oem-meta-packages: Refactor the collect subcommand to collect all of the
+    kernel flavour and the kernel meta in every stages.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 09 Jul 2021 16:29:08 +0800
+
 oem-scripts (0.99) focal; urgency=medium
 
   [ Yuan-Chen Cheng]
