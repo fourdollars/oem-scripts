@@ -1392,7 +1392,7 @@ class OemFromStagingArchive(OemFromPrivateArchive):
         OemFromPrivateArchive.__init__(self, meta, index, config, "staging")
 
 
-class OemFromOEMArchive(OemMetaPkgInfo):
+class OemFromPublicArchive(OemMetaPkgInfo):
     def __init__(self, meta):
         OemMetaPkgInfo.__init__(self, meta)
 
@@ -1483,7 +1483,7 @@ class OemMetaPkg(object):
             ppa=OemFromPPA(meta).get_data(),
             devel=OemFromDevelArchive(meta, index, config).get_data(),
             staging=OemFromStagingArchive(meta, index, config).get_data(),
-            public=OemFromOEMArchive(meta).get_data(),
+            public=OemFromPublicArchive(meta).get_data(),
         )
         self.bootstrap = BootstrapGroup(
             git=BootstrapFromGit(meta).get_data(),
