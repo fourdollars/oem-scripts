@@ -105,22 +105,8 @@ class OemGroup(BaseModel):
 class PkgInfo(BaseModel):
     bootstrap: BootstrapGroup
     oem: OemGroup
-    ppa_archive: str
-    ppa_version: str
-    git_version: str
-    bootstrap_version: str
-    real_version: str
     old_desc: str
     new_desc: str
-    fingerprint: str
-    staging_archive: str
-    staging_version: str
-    devel_archive: str
-    devel_version: str
-    oem_archive: str
-    oem_version: str
-    ubuntu_version: str
-    proposed_version: str
 
 
 pattern = re.compile(r"oem-([^-]*)-(.*)-meta")
@@ -873,9 +859,6 @@ class OemMetaPkgInfo(metaclass=ABCMeta):
 
 
 class BootstrapFromGit(OemMetaPkgInfo):
-    def __init__(self, meta):
-        OemMetaPkgInfo.__init__(self, meta)
-
     def get_info(self):
         self.get_version()
         self.archive = ""
@@ -929,7 +912,7 @@ class BootstrapFromGit(OemMetaPkgInfo):
         if bootstrap_kernel_flavour == "XB-Ubuntu-OEM-Kernel-Flavour: oem":
             self.kernel_flavour = "oem"
         elif bootstrap_kernel_flavour == "XB-Ubuntu-OEM-Kernel-Flavour: default":
-            self.kernel_flavour = "hwe"
+            self.kernel_flavour = "default"
         else:
             raise Exception(
                 f"XB-Ubuntu-OEM-Kernel-Flavour in invalid for {self.ubuntu_branch} of {self.project}"
@@ -937,9 +920,6 @@ class BootstrapFromGit(OemMetaPkgInfo):
 
 
 class BootstrapFromPPA(OemMetaPkgInfo):
-    def __init__(self, meta):
-        OemMetaPkgInfo.__init__(self, meta)
-
     def get_info(self):
         self.archive = "ppa:canonical-oem-metapackage-uploaders/oem-metapackage-staging"
         self.version = "WIP"
@@ -954,9 +934,6 @@ class BootstrapFromPPA(OemMetaPkgInfo):
 
 
 class BootstrapFromProposedArchive(OemMetaPkgInfo):
-    def __init__(self, meta):
-        OemMetaPkgInfo.__init__(self, meta)
-
     def get_info(self):
         self.archive = "ubuntu:focal-proposed"
         with TemporaryDirectory() as tmpdir:
@@ -1020,9 +997,6 @@ class BootstrapFromProposedArchive(OemMetaPkgInfo):
 
 
 class BootstrapFromUbuntuArchive(OemMetaPkgInfo):
-    def __init__(self, meta):
-        OemMetaPkgInfo.__init__(self, meta)
-
     def get_info(self):
         self.archive = "ubuntu:focal|focal-updates"
         with TemporaryDirectory() as tmpdir:
@@ -1082,9 +1056,6 @@ class BootstrapFromUbuntuArchive(OemMetaPkgInfo):
 
 
 class OemFromGit(OemMetaPkgInfo):
-    def __init__(self, meta):
-        OemMetaPkgInfo.__init__(self, meta)
-
     def get_info(self):
         self.get_version()
         self.archive = ""
@@ -1136,7 +1107,7 @@ class OemFromGit(OemMetaPkgInfo):
         if oem_kernel_flavour == "XB-Ubuntu-OEM-Kernel-Flavour: oem":
             self.kernel_flavour = "oem"
         elif oem_kernel_flavour == "XB-Ubuntu-OEM-Kernel-Flavour: default":
-            self.kernel_flavour = "hwe"
+            self.kernel_flavour = "default"
         else:
             raise Exception(
                 f"XB-Ubuntu-OEM-Kernel-Flavour is invalid for {self.oem_branch} of {self.project}"
@@ -1144,9 +1115,6 @@ class OemFromGit(OemMetaPkgInfo):
 
 
 class OemFromPPA(OemMetaPkgInfo):
-    def __init__(self, meta):
-        OemMetaPkgInfo.__init__(self, meta)
-
     def get_info(self):
         self.get_version_archive()
         self.get_kernel_flavour_meta()
@@ -1264,13 +1232,14 @@ class OemFromPrivateArchive(OemMetaPkgInfo):
         self._index = index
         self._config = config
         self._branch = branch
-        OemMetaPkgInfo.__init__(self, meta)
+        super().__init__(meta)
 
     def get_info(self):
         self.fingerprint = self._config["fingerprint"]
         with TemporaryDirectory() as tmpdir:
             self.get_version_archive(tmpdir)
-            self.get_kernel_flavour_meta(tmpdir)
+            if self.version:
+                self.get_kernel_flavour_meta(tmpdir)
 
     def get_version_archive(self, tmpdir):
         index = self._index
@@ -1342,14 +1311,17 @@ class OemFromPrivateArchive(OemMetaPkgInfo):
                 silent=True,
             )
             output, _, _ = _run_command(
-                ["pkg-list", "--long", "--apt-dir", tmpdir, self.meta], silent=True
+                ["pkg-list", "--long", "--apt-dir", tmpdir, self.meta],
+                returncode=(0, 1),
+                silent=True,
             )
             for line in output.split("\n"):
                 if self.meta in line and domain in line:
                     version = line.split(" ")[1]
                     break
-        self.archive = f"cesg:{archive}"
-        self.version = version
+        if version:
+            self.archive = f"cesg:{archive}"
+            self.version = version
 
     def get_kernel_flavour_meta(self, tmpdir):
         output, _, returncode = _run_command(
@@ -1384,18 +1356,15 @@ class OemFromPrivateArchive(OemMetaPkgInfo):
 
 class OemFromDevelArchive(OemFromPrivateArchive):
     def __init__(self, meta, index, config):
-        OemFromPrivateArchive.__init__(self, meta, index, config, "devel")
+        super().__init__(meta, index, config, "devel")
 
 
 class OemFromStagingArchive(OemFromPrivateArchive):
     def __init__(self, meta, index, config):
-        OemFromPrivateArchive.__init__(self, meta, index, config, "staging")
+        super().__init__(meta, index, config, "staging")
 
 
 class OemFromPublicArchive(OemMetaPkgInfo):
-    def __init__(self, meta):
-        OemMetaPkgInfo.__init__(self, meta)
-
     def get_info(self):
         self.fingerprint = "59AC787C2A8C78BA5ECA0B2ED4D1EAED36962F69"
         with TemporaryDirectory() as tmpdir:
@@ -1594,24 +1563,7 @@ def collect_pkg_info(
         meta = OemMetaPkg(pkg_name, index, config)
 
         pkgInfo[pkg_name] = PkgInfo(
-            bootstrap=meta.bootstrap,
-            oem=meta.oem,
-            ppa_archive=meta.oem.ppa.archive,
-            ppa_version=meta.oem.ppa.version,
-            fingerprint=meta.oem.ppa.fingerprint,
-            bootstrap_version=meta.bootstrap.git.version,
-            real_version=meta.oem.git.version,
-            git_version=meta.oem.git.version,
-            old_desc="",
-            new_desc="",
-            staging_archive=meta.oem.staging.archive,
-            staging_version=meta.oem.staging.version,
-            devel_archive=meta.oem.devel.archive,
-            devel_version=meta.oem.devel.version,
-            oem_archive=meta.oem.public.archive,
-            oem_version=meta.oem.public.version,
-            ubuntu_version=meta.bootstrap.ubuntu.version,
-            proposed_version=meta.bootstrap.proposed.version,
+            bootstrap=meta.bootstrap, oem=meta.oem, old_desc="", new_desc=""
         )
 
         if pkg_name in pkgNamesInArchive and "".join(v):
@@ -1634,24 +1586,7 @@ def collect_pkg_info(
         meta = OemMetaPkg(pkg_name, index, config)
 
         pkgInfo[pkg_name] = PkgInfo(
-            bootstrap=meta.bootstrap,
-            oem=meta.oem,
-            ppa_archive=meta.oem.ppa.archive,
-            ppa_version=meta.oem.ppa.version,
-            fingerprint=meta.oem.ppa.fingerprint,
-            bootstrap_version=meta.bootstrap.git.version,
-            real_version=meta.oem.git.version,
-            git_version=meta.oem.git.version,
-            old_desc="",
-            new_desc="",
-            staging_archive=meta.oem.staging.archive,
-            staging_version=meta.oem.staging.version,
-            devel_archive=meta.oem.devel.archive,
-            devel_version=meta.oem.devel.version,
-            oem_archive=meta.oem.public.archive,
-            oem_version=meta.oem.public.version,
-            ubuntu_version=meta.bootstrap.ubuntu.version,
-            proposed_version=meta.bootstrap.proposed.version,
+            bootstrap=meta.bootstrap, oem=meta.oem, old_desc="", new_desc=""
         )
 
         if pkg_name in pkgNamesInArchive and "".join(v):
@@ -1676,24 +1611,7 @@ def collect_pkg_info(
         meta = OemMetaPkg(pkg_name, index, config)
 
         pkgInfo[pkg_name] = PkgInfo(
-            bootstrap=meta.bootstrap,
-            oem=meta.oem,
-            ppa_archive=meta.oem.ppa.archive,
-            ppa_version=meta.oem.ppa.version,
-            fingerprint=meta.oem.ppa.fingerprint,
-            bootstrap_version=meta.bootstrap.git.version,
-            real_version=meta.oem.git.version,
-            git_version=meta.oem.git.version,
-            old_desc="",
-            new_desc="",
-            staging_archive=meta.oem.staging.archive,
-            staging_version=meta.oem.staging.version,
-            devel_archive=meta.oem.devel.archive,
-            devel_version=meta.oem.devel.version,
-            oem_archive=meta.oem.public.archive,
-            oem_version=meta.oem.public.version,
-            ubuntu_version=meta.bootstrap.ubuntu.version,
-            proposed_version=meta.bootstrap.proposed.version,
+            bootstrap=meta.bootstrap, oem=meta.oem, old_desc="", new_desc=""
         )
 
         if pkg_name in pkgNamesInArchive and "".join(v):
@@ -1717,22 +1635,8 @@ def load_pkg_info(data) -> dict:
         pkgInfo[meta] = PkgInfo(
             bootstrap=BootstrapGroup(**data[meta]["bootstrap"]),
             oem=OemGroup(**data[meta]["oem"]),
-            ppa_archive=data[meta]["ppa_archive"],
-            ppa_version=data[meta]["ppa_version"],
-            git_version=data[meta]["git_version"],
-            bootstrap_version=data[meta]["bootstrap_version"],
-            real_version=data[meta]["real_version"],
             old_desc=data[meta]["old_desc"],
             new_desc=data[meta]["new_desc"],
-            fingerprint=data[meta]["fingerprint"],
-            staging_archive=data[meta]["staging_archive"],
-            staging_version=data[meta]["staging_version"],
-            devel_archive=data[meta]["devel_archive"],
-            devel_version=data[meta]["devel_version"],
-            oem_archive=data[meta]["oem_archive"],
-            oem_version=data[meta]["oem_version"],
-            ubuntu_version=data[meta]["ubuntu_version"],
-            proposed_version=data[meta]["proposed_version"],
         )
 
     debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=CustomEncoder))
@@ -1800,9 +1704,9 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> boo
                 f"{pkg_name}/debian/changelog",
             ]
         )
-        if git_version != pkg_info.ppa_version:
+        if git_version != pkg_info.oem.ppa.version:
             critical(
-                f"{pkg_name}'s version is {pkg_info.ppa_version} in ppa:oem-archive/{pkg_info.ppa_archive} but the version in Git repository is {git_version}."
+                f"{pkg_name}'s version is {pkg_info.oem.ppa.version} in {pkg_info.oem.ppa.archive} but the version in Git repository is {git_version}."
             )
             exit(1)
         git_dir = os.path.join(tmpdir, pkg_name)
@@ -1860,7 +1764,7 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> boo
                 source_list = f.read().strip()
 
             archives = set()
-            archives.add(pkg_info.ppa_archive)
+            archives.add(pkg_info.oem.ppa.archive)
 
             if project == "somerville":
                 common_archive = oem_archive.getPPAByName(name=project)
@@ -1871,11 +1775,13 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> boo
                 fingerprint = common_archive.signing_key_fingerprint
                 archives.add(f"{project}-ouagadougou")
 
-            if fingerprint != pkg_info.fingerprint:
-                fingerprint += " " + pkg_info.fingerprint
+            if fingerprint != pkg_info.oem.ppa.fingerprint:
+                fingerprint += " " + pkg_info.oem.ppa.fingerprint
 
             for ppa in archives:
                 lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
+                ppa = ppa.replace("oem-archive/", "ppa:oem-archive/")
+                ppa = ppa.replace("/ubuntu", "")
                 while f"oem-archive/{ppa}/ubuntu" not in lists:
                     archive = oem_archive.getPPAByName(name=ppa)
                     if archive is None:
@@ -1990,14 +1896,14 @@ END
                 _run_command(["git", "push", "oem-solutions-engineers", tag])
                 if not args.dry_run and yes_or_ask(
                     args.yes,
-                    f"Would you like to dput Debian source package into ppa:oem-archive/{pkg_info.ppa_archive}?",
+                    f"Would you like to dput Debian source package into {pkg_info.oem.ppa.archive}?",
                 ):
                     os.chdir(os.path.join(git_dir, ".."))
                     _run_command(["debsign", f"{pkg_name}_{version}_source.changes"])
                     _run_command(
                         [
                             "dput",
-                            f"ppa:oem-archive/{pkg_info.ppa_archive}",
+                            pkg_info.oem.ppa.archive,
                             f"{pkg_name}_{version}_source.changes",
                         ]
                     )
@@ -2138,25 +2044,27 @@ elif args.subcommand == "staging-copy":
     for pkg_name in sorted(pkgInfo.keys()):
         pkg_info = pkgInfo[pkg_name]
         debug(
-            f"{pkg_name} ppa: {pkg_info.ppa_version}, devel: {pkg_info.devel_version}, staging: {pkg_info.staging_version}."
+            f"{pkg_name} ppa: {pkg_info.oem.ppa.version}, devel: {pkg_info.oem.devel.version}, staging: {pkg_info.oem.staging.version}."
         )
-        if pkg_info.ppa_version != pkg_info.devel_version:
+        if pkg_info.oem.ppa.version != pkg_info.oem.devel.version:
             warning(
-                f"{pkg_name} versions are not synced between ppa:oem-archive/{pkg_info.ppa_archive} and {pkg_info.devel_archive}."
+                f"{pkg_name} versions are not synced between {pkg_info.oem.ppa.archive} and {pkg_info.oem.devel.archive}."
             )
-        elif pkg_info.staging_version == pkg_info.devel_version:
+        elif pkg_info.oem.staging.version == pkg_info.oem.devel.version:
             info(
-                f"{pkg_name} {pkg_info.devel_version} (devel) == {pkg_info.staging_version} (staging) so it doesn't need to copy."
+                f"{pkg_name} {pkg_info.oem.devel.version} (devel) == {pkg_info.oem.staging.version} (staging) so it doesn't need to copy."
             )
         elif (
-            apt_pkg.version_compare(pkg_info.staging_version, pkg_info.devel_version)
+            apt_pkg.version_compare(
+                pkg_info.oem.staging.version, pkg_info.oem.devel.version
+            )
             > 0
         ):
             critical(f"This should never happen.")
             exit(1)
         else:
-            dest.add(pkg_info.staging_archive)
-            identity = f"{pkg_info.devel_archive}:{pkg_info.staging_archive}"
+            dest.add(pkg_info.oem.staging.archive)
+            identity = f"{pkg_info.oem.devel.archive}:{pkg_info.oem.staging.archive}"
             if identity not in jobs:
                 jobs[identity] = list()
             jobs[identity].append(pkg_name)
@@ -2208,7 +2116,7 @@ elif args.subcommand == "staging-copy":
             packages = list()
             for pkg_name in jobs[job]:
                 pkg_info = pkgInfo[pkg_name]
-                packages.append(f"{pkg_name} (=={pkg_info.devel_version})")
+                packages.append(f"{pkg_name} (=={pkg_info.oem.devel.version})")
             packages = ", ".join(packages)
             distribution = "focal"
             if dest.startswith("somerville"):

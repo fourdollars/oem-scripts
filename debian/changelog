@@ -1,3 +1,11 @@
+oem-scripts (1.1) UNRELEASED; urgency=medium
+
+  * oem-meta-packages: Remove the deprecated keys and values in the JSON
+    output of collect subcommand, and fix the problem when there is no
+    corresponding OEM metapackage in the staging archive.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 12 Jul 2021 15:56:54 +0800
+
 oem-scripts (1) focal; urgency=medium
 
   * debian/control,
