@@ -36,11 +36,17 @@ from oem_scripts.logging import setup_logging
 from string import Template
 from tempfile import TemporaryDirectory
 
+ALLOWED_KERNEL_META_LIST = (
+    "linux-oem-20.04c",
+    "linux-oem-20.04b",
+    "linux-oem-20.04",
+    "linux-generic-hwe-20.04",
+)
 SUBSCRIBER_LIST = ("oem-solutions-engineers", "ubuntu-sponsors", "ubuntu-desktop")
 TAG_LIST = (
     "oem-meta-packages",
     "oem-priority",
-    f"oem-scripts-{oem_scripts.__version__:.2f}",
+    f"oem-scripts-{oem_scripts.__version__}",
 )
 
 parser = argparse.ArgumentParser(
@@ -389,7 +395,7 @@ def update_bug(lp, bug_number: int, yes: bool) -> None:
                 tags.append(tag)
         for tag in bug.tags:
             if tag.startswith("oem-scripts-"):
-                if tag[len("oem-scripts-") :] != f"{oem_scripts.__version__:.2f}":
+                if tag[len("oem-scripts-") :] != oem_scripts.__version__:
                     if yes_or_ask(yes, f"Do you want to remove '{tag}' tag?"):
                         tags.remove(tag)
         if tags != bug.tags:
@@ -820,7 +826,7 @@ def check_and_update_bug_attachments(
         bug.addAttachment(
             filename=debdiff,
             data=content.encode("utf-8"),
-            comment=f"Attach {debdiff} by oem-scripts {oem_scripts.__version__:.2f}.",
+            comment=f"Attach {debdiff} by oem-scripts {oem_scripts.__version__}.",
             is_patch=True,
         )
         return True
@@ -879,12 +885,10 @@ def _get_items_from_git(project: str, branch: str, pkg_name: str) -> tuple:
                         len("XB-Ubuntu-OEM-Kernel-Flavour:") :
                     ].strip()
                 elif line.startswith("Depends:"):
-                    if "linux-oem-20.04b" in line:
-                        kernel_meta = "linux-oem-20.04b"
-                    elif "linux-oem-20.04" in line:
-                        kernel_meta = "linux-oem-20.04"
-                    elif "linux-generic-hwe-20.04" in line:
-                        kernel_meta = "linux-generic-hwe-20.04"
+                    for meta in ALLOWED_KERNEL_META_LIST:
+                        if meta in line:
+                            kernel_meta = meta
+                            break
         return kernel_flavour, kernel_meta, ids
 
 
@@ -939,9 +943,7 @@ def check_and_update_git_repo(
     elif kernel_flavour == "oem":
         if kernel_meta is None:
             kernel_meta = "linux-oem-20.04"
-        elif kernel_meta == "linux-oem-20.04b":
-            pass
-        elif kernel_meta == "linux-oem-20.04":
+        elif kernel_meta.startswith("linux-oem-20.04"):
             pass
         else:
             critical(
@@ -1074,7 +1076,7 @@ def check_and_update_git_repo(
                             "commit",
                             "-a",
                             "-m",
-                            f"Updated by oem-scripts {oem_scripts.__version__:.2f}.",
+                            f"Updated by oem-scripts {oem_scripts.__version__}.",
                         ]
                     )
                     _run_command(["git", "push"])
