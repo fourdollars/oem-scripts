@@ -1758,7 +1758,7 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> boo
                 "commit",
                 "-a",
                 "-m",
-                f"{commit_message}\n\nUpdated by oem-scripts {oem_scripts.__version__:.2f}.",
+                f"{commit_message}\n\nUpdated by oem-scripts {oem_scripts.__version__}.",
             ]
         )
 
@@ -2113,7 +2113,7 @@ elif args.subcommand == "staging-copy":
             tags = [
                 "archive-request",
                 "via-request-script",
-                f"oem-scripts-{oem_scripts.__version__:.2f}",
+                f"oem-scripts-{oem_scripts.__version__}",
                 "oem-metapackages",
             ]
             if args.dry_run:

@@ -7,6 +7,7 @@ oem-scripts (1.2) UNRELEASED; urgency=medium
     fix the version string.
   * mir-bug: Detect the market name.
   * pkg-oem-meta: Fix the autopkgtest script for the real OEM metapackage.
+  * oem-meta-packages: Fix the version string.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 12 Jul 2021 23:05:57 +0800
 
