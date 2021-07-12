@@ -160,18 +160,22 @@ def generate_debian_package(version, bootstrap=False, real=False):
         if real:
             extra = ", linux-generic-hwe-20.04"
         flavour = "default"
+        grub_flavour = "generic"
     elif args.kernel == "linux-oem-20.04":
         if real:
             extra = ", linux-oem-20.04"
         flavour = "oem"
+        grub_flavour = "oem"
     elif args.kernel == "linux-oem-20.04b":
         if real:
             extra = ", linux-oem-20.04b | linux-oem-20.04"
         flavour = "oem"
+        grub_flavour = "oem"
     elif args.kernel == "linux-oem-20.04c":
         if real:
             extra = ", linux-oem-20.04c"
         flavour = "oem"
+        grub_flavour = "oem"
 
     if group:
         prefix = group + "."
@@ -472,7 +476,11 @@ apt-get full-upgrade --yes
         )
         if real:
             f.write(
-                f"\ngrep ^GRUB_FLAVOUR_ORDER= /etc/default/grub.d/oem-flavour.cfg\n"
+                f"""
+grep ^GRUB_FLAVOUR_ORDER={grub_flavour}$ /etc/default/grub.d/oem-flavour.cfg
+
+dpkg-query -W -f='${{Status}}' {args.kernel} | grep "install ok installed"
+"""
             )
 
         f.write(f"\napt-get autoremove --purge --yes {meta}\n")
