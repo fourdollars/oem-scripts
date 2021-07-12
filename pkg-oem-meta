@@ -77,6 +77,7 @@ parser.add_argument(
 )
 parser.add_argument("--public-bug", help="Launchpad public bug number.", type=int)
 parser.add_argument("--private-bug", help="Launchpad private bug number.", type=int)
+parser.add_argument("--market-name", help="Specify the market name string.")
 
 if codename == "somerville":
     parser.add_argument("bios_id", nargs="+", help="BIOS ID")
@@ -96,7 +97,10 @@ elif codename == "sutton":
 args = parser.parse_args()
 
 platform = args.platform.lower()
-Platform = platform.title()
+if args.market_name:
+    Platform = args.market_name
+else:
+    Platform = platform.title()
 series = args.series
 versions = dict(zip(info.get_all(result="codename"), info.get_all(result="release")))
 version = versions[series].split(" ")[0]
@@ -130,6 +134,14 @@ elif codename == "sutton":
             exit(1)
     meta = "oem-" + codename + "." + group + "-" + platform + "-meta"
     Codename = Codename + " " + group.title()
+
+if args.market_name:
+    if codename == "somerville":
+        Codename = "Dell"
+    elif codename == "stella":
+        Codename = "HP"
+    elif codename == "sutton":
+        Codename = "Lenovo"
 
 if os.path.exists(meta):
     error(meta + " already exists. Please remove or rename it.")
@@ -325,8 +337,8 @@ Architecture: all
 Depends: ${{misc:Depends}}, ubuntu-oem-keyring{extra}
 XB-Modaliases: ${{modaliases}}
 XB-Ubuntu-OEM-Kernel-Flavour: {flavour}
-Description: hardware support for {Codename} {Platform} platform
- This is a metapackage for {Codename} {Platform} platform. It installs\n"""
+Description: hardware support for {Codename} {Platform}
+ This is a metapackage for {Codename} {Platform}. It installs\n"""
             + " packages needed to support this hardware fully.\n"
         )
         if real:
@@ -334,8 +346,8 @@ Description: hardware support for {Codename} {Platform} platform
                 f"""\nPackage: {factory}
 Architecture: all
 Depends: ${{misc:Depends}}{factory_depends}
-Description: hardware support for {Codename} {Platform} platform (factory)
- This is a factory metapackage for {Codename} {Platform} platform.\n"""
+Description: hardware support for {Codename} {Platform} (factory)
+ This is a factory metapackage for {Codename} {Platform}.\n"""
                 + " It installs packages needed to support this hardware "
                 + "fully. (factory)\n"
             )
