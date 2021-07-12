@@ -5,6 +5,7 @@ oem-scripts (1.2) UNRELEASED; urgency=medium
     subcommand.
   * oem_scripts/__init__.py, mir-bug: Add the linux-oem-20.04c support and
     fix the version string.
+  * mir-bug: Detect the market name.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 12 Jul 2021 23:05:57 +0800
 

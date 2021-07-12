@@ -878,6 +878,7 @@ def _get_items_from_git(project: str, branch: str, pkg_name: str) -> tuple:
                     ids.append(result.group(1))
         kernel_flavour = None
         kernel_meta = None
+        market_name = None
         with open(os.path.join(git_dir, "debian", "control"), "r") as control:
             for line in control:
                 if line.startswith("XB-Ubuntu-OEM-Kernel-Flavour:"):
@@ -889,7 +890,16 @@ def _get_items_from_git(project: str, branch: str, pkg_name: str) -> tuple:
                         if meta in line:
                             kernel_meta = meta
                             break
-        return kernel_flavour, kernel_meta, ids
+                elif line.startswith("Description:"):
+                    if (
+                        "Dell" in line or "HP" in line or "Lenovo" in line
+                    ) and "(factory)" not in line:
+                        prog = re.compile(
+                            r"Description: hardware support for (Dell|HP|Lenovo) (.*)"
+                        )
+                        result = prog.match(line.strip())
+                        market_name = result.group(2)
+        return kernel_flavour, kernel_meta, market_name, ids
 
 
 def check_and_update_git_repo(
@@ -929,7 +939,9 @@ def check_and_update_git_repo(
     else:
         branch = f"{platform}-focal-{suffix}"
 
-    kernel_flavour, kernel_meta, ids = _get_items_from_git(project, branch, pkg_name)
+    kernel_flavour, kernel_meta, market_name, ids = _get_items_from_git(
+        project, branch, pkg_name
+    )
     if kernel_flavour == "default":
         if kernel_meta is None:
             kernel_meta = "linux-generic-hwe-20.04"
@@ -970,6 +982,8 @@ def check_and_update_git_repo(
                 "--public-bug",
                 str(bug.id),
             ]
+            if market_name:
+                command.extend(["--market-name", market_name])
             command.extend(ids)
         elif project == "stella":
             command = [
@@ -985,6 +999,8 @@ def check_and_update_git_repo(
                 "--public-bug",
                 str(bug.id),
             ]
+            if market_name:
+                command.extend(["--market-name", market_name])
             command.extend(ids)
         elif project == "sutton":
             command = [
@@ -1000,6 +1016,8 @@ def check_and_update_git_repo(
                 "--public-bug",
                 str(bug.id),
             ]
+            if market_name:
+                command.extend(["--market-name", market_name])
             for bvn, bvr in ids:
                 command.append(f"bvn{bvn}:bvr{bvr}")
         _run_command(command)
