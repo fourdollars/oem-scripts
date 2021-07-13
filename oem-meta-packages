@@ -308,7 +308,7 @@ update.add_argument(
     "--kernel",
     type=str,
     default="linux-generic-hwe-20.04",
-    help="Specify the kernel meta to update. linux-generic-hwe-20.04|linux-oem-20.04b|linux-oem-20.04",
+    help="Specify the kernel meta to update. linux-generic-hwe-20.04|linux-oem-20.04c|linux-oem-20.04b|linux-oem-20.04",
 )
 update.add_argument(
     "--factory",
@@ -486,11 +486,7 @@ def deal_with_kernel_flavour(pkg_name, branch, git_dir) -> bool:
         if kernel_flavour == "default":
             return False
         kernel_flavour = "default"
-    elif args.kernel == "linux-oem-20.04":
-        if kernel_flavour == "oem":
-            return False
-        kernel_flavour = "oem"
-    elif args.kernel == "linux-oem-20.04b":
+    elif args.kernel.startswith("linux-oem-20.04"):
         if kernel_flavour == "oem":
             return False
         kernel_flavour = "oem"
@@ -534,6 +530,9 @@ def deal_with_kernel_depends(pkg_name, branch, git_dir) -> bool:
         lines[idx] = lines[idx].replace(
             ", linux-oem-20.04b | linux-oem-20.04,", ", linux-generic-hwe-20.04,"
         )
+        lines[idx] = lines[idx].replace(
+            ", linux-oem-20.04c,", ", linux-generic-hwe-20.04,"
+        )
         changed = True
     elif args.kernel == "linux-oem-20.04" and ", linux-oem-20.04," not in lines[idx]:
         lines[idx] = lines[idx].replace(
@@ -542,6 +541,7 @@ def deal_with_kernel_depends(pkg_name, branch, git_dir) -> bool:
         lines[idx] = lines[idx].replace(
             ", linux-oem-20.04b | linux-oem-20.04,", ", linux-oem-20.04,"
         )
+        lines[idx] = lines[idx].replace(", linux-oem-20.04c", ", linux-oem-20.04,")
         changed = True
     elif (
         args.kernel == "linux-oem-20.04b"
@@ -552,6 +552,18 @@ def deal_with_kernel_depends(pkg_name, branch, git_dir) -> bool:
         )
         lines[idx] = lines[idx].replace(
             ", linux-oem-20.04,", ", linux-oem-20.04b | linux-oem-20.04,"
+        )
+        lines[idx] = lines[idx].replace(
+            ", linux-oem-20.04c,", ", linux-oem-20.04b | linux-oem-20.04,"
+        )
+        changed = True
+    elif args.kernel == "linux-oem-20.04c" and ", linux-oem-20.04c," not in lines[idx]:
+        lines[idx] = lines[idx].replace(
+            ", linux-generic-hwe-20.04,", ", linux-oem-20.04c,"
+        )
+        lines[idx] = lines[idx].replace(", linux-oem-20.04,", ", linux-oem-20.04c,")
+        lines[idx] = lines[idx].replace(
+            ", linux-oem-20.04b | linux-oem-20.04,", ", linux-oem-20.04c,"
         )
         changed = True
 
@@ -572,6 +584,7 @@ def deal_with_kernel_depends(pkg_name, branch, git_dir) -> bool:
             "linux-generic-hwe-20.04",
             "linux-oem-20.04",
             "linux-oem-20.04b",
+            "linux-oem-20.04c",
         ):
             if depends_line.endswith(kernel) or f"{kernel}," in depends_line:
                 if kernel != args.kernel:
@@ -764,11 +777,7 @@ def deal_with_grub_flavour(pkg_name, branch, git_dir) -> bool:
         if grub_flavour == "generic":
             return False
         grub_flavour = "generic"
-    elif args.kernel == "linux-oem-20.04":
-        if grub_flavour == "oem":
-            return False
-        grub_flavour = "oem"
-    elif args.kernel == "linux-oem-20.04b":
+    elif args.kernel.startswith("linux-oem-20.04"):
         if grub_flavour == "oem":
             return False
         grub_flavour = "oem"
@@ -1749,7 +1758,7 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> boo
                 "commit",
                 "-a",
                 "-m",
-                f"{commit_message}\n\nUpdated by oem-scripts {oem_scripts.__version__:.2f}.",
+                f"{commit_message}\n\nUpdated by oem-scripts {oem_scripts.__version__}.",
             ]
         )
 
@@ -2104,7 +2113,7 @@ elif args.subcommand == "staging-copy":
             tags = [
                 "archive-request",
                 "via-request-script",
-                f"oem-scripts-{oem_scripts.__version__:.2f}",
+                f"oem-scripts-{oem_scripts.__version__}",
                 "oem-metapackages",
             ]
             if args.dry_run:

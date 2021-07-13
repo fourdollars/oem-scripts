@@ -77,6 +77,7 @@ parser.add_argument(
 )
 parser.add_argument("--public-bug", help="Launchpad public bug number.", type=int)
 parser.add_argument("--private-bug", help="Launchpad private bug number.", type=int)
+parser.add_argument("--market-name", help="Specify the market name string.")
 
 if codename == "somerville":
     parser.add_argument("bios_id", nargs="+", help="BIOS ID")
@@ -96,7 +97,10 @@ elif codename == "sutton":
 args = parser.parse_args()
 
 platform = args.platform.lower()
-Platform = platform.title()
+if args.market_name:
+    Platform = args.market_name
+else:
+    Platform = platform.title()
 series = args.series
 versions = dict(zip(info.get_all(result="codename"), info.get_all(result="release")))
 version = versions[series].split(" ")[0]
@@ -131,6 +135,14 @@ elif codename == "sutton":
     meta = "oem-" + codename + "." + group + "-" + platform + "-meta"
     Codename = Codename + " " + group.title()
 
+if args.market_name:
+    if codename == "somerville":
+        Codename = "Dell"
+    elif codename == "stella":
+        Codename = "HP"
+    elif codename == "sutton":
+        Codename = "Lenovo"
+
 if os.path.exists(meta):
     error(meta + " already exists. Please remove or rename it.")
     exit(1)
@@ -148,18 +160,22 @@ def generate_debian_package(version, bootstrap=False, real=False):
         if real:
             extra = ", linux-generic-hwe-20.04"
         flavour = "default"
+        grub_flavour = "generic"
     elif args.kernel == "linux-oem-20.04":
         if real:
             extra = ", linux-oem-20.04"
         flavour = "oem"
+        grub_flavour = "oem"
     elif args.kernel == "linux-oem-20.04b":
         if real:
             extra = ", linux-oem-20.04b | linux-oem-20.04"
         flavour = "oem"
+        grub_flavour = "oem"
     elif args.kernel == "linux-oem-20.04c":
         if real:
             extra = ", linux-oem-20.04c"
         flavour = "oem"
+        grub_flavour = "oem"
 
     if group:
         prefix = group + "."
@@ -309,6 +325,11 @@ debian-tag = {branch}_%(version)s
 """
         )
 
+    if not args.market_name:
+        platformStr = Platform + " platform"
+    else:
+        platformStr = Platform
+
     with open("control", "w") as f:
         f.write(
             f"""Source: {meta}
@@ -325,8 +346,8 @@ Architecture: all
 Depends: ${{misc:Depends}}, ubuntu-oem-keyring{extra}
 XB-Modaliases: ${{modaliases}}
 XB-Ubuntu-OEM-Kernel-Flavour: {flavour}
-Description: hardware support for {Codename} {Platform} platform
- This is a metapackage for {Codename} {Platform} platform. It installs\n"""
+Description: hardware support for {Codename} {platformStr}
+ This is a metapackage for {Codename} {platformStr}. It installs\n"""
             + " packages needed to support this hardware fully.\n"
         )
         if real:
@@ -334,8 +355,8 @@ Description: hardware support for {Codename} {Platform} platform
                 f"""\nPackage: {factory}
 Architecture: all
 Depends: ${{misc:Depends}}{factory_depends}
-Description: hardware support for {Codename} {Platform} platform (factory)
- This is a factory metapackage for {Codename} {Platform} platform.\n"""
+Description: hardware support for {Codename} {platformStr} (factory)
+ This is a factory metapackage for {Codename} {platformStr}.\n"""
                 + " It installs packages needed to support this hardware "
                 + "fully. (factory)\n"
             )
@@ -460,7 +481,11 @@ apt-get full-upgrade --yes
         )
         if real:
             f.write(
-                f"\ngrep ^GRUB_FLAVOUR_ORDER= /etc/default/grub.d/oem-flavour.cfg\n"
+                f"""
+grep ^GRUB_FLAVOUR_ORDER={grub_flavour}$ /etc/default/grub.d/oem-flavour.cfg
+
+dpkg-query -W -f='${{Status}}' {args.kernel} | grep "install ok installed"
+"""
             )
 
         f.write(f"\napt-get autoremove --purge --yes {meta}\n")
