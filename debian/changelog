@@ -1,4 +1,4 @@
-oem-scripts (1.2) UNRELEASED; urgency=medium
+oem-scripts (1.2) focal; urgency=medium
 
   * pkg-oem-meta: Add the market name support.
   * oem-meta-packages: Add the linux-oem-20.04c support to the update
@@ -10,7 +10,7 @@ oem-scripts (1.2) UNRELEASED; urgency=medium
   * oem-meta-packages: Fix the version string.
   * pkg-oem-meta: Keep the backward compatibility without the market name.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 12 Jul 2021 23:05:57 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 13 Jul 2021 04:15:05 +0000
 
 oem-scripts (1.1) focal; urgency=medium
 
