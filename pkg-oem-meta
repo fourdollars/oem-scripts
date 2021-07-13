@@ -325,6 +325,11 @@ debian-tag = {branch}_%(version)s
 """
         )
 
+    if not args.market_name:
+        platformStr = Platform + " platform"
+    else:
+        platformStr = Platform
+
     with open("control", "w") as f:
         f.write(
             f"""Source: {meta}
@@ -341,8 +346,8 @@ Architecture: all
 Depends: ${{misc:Depends}}, ubuntu-oem-keyring{extra}
 XB-Modaliases: ${{modaliases}}
 XB-Ubuntu-OEM-Kernel-Flavour: {flavour}
-Description: hardware support for {Codename} {Platform}
- This is a metapackage for {Codename} {Platform}. It installs\n"""
+Description: hardware support for {Codename} {platformStr}
+ This is a metapackage for {Codename} {platformStr}. It installs\n"""
             + " packages needed to support this hardware fully.\n"
         )
         if real:
@@ -350,8 +355,8 @@ Description: hardware support for {Codename} {Platform}
                 f"""\nPackage: {factory}
 Architecture: all
 Depends: ${{misc:Depends}}{factory_depends}
-Description: hardware support for {Codename} {Platform} (factory)
- This is a factory metapackage for {Codename} {Platform}.\n"""
+Description: hardware support for {Codename} {platformStr} (factory)
+ This is a factory metapackage for {Codename} {platformStr}.\n"""
                 + " It installs packages needed to support this hardware "
                 + "fully. (factory)\n"
             )
