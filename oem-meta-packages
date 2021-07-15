@@ -85,6 +85,7 @@ class PkgData(BaseModel):
     kernel_flavour: str
     kernel_meta: str
     fingerprint: str
+    market_name: str
 
 
 class BootstrapGroup(BaseModel):
@@ -109,7 +110,11 @@ class PkgInfo(BaseModel):
     new_desc: str
 
 
-pattern = re.compile(r"oem-([^-]*)-(.*)-meta")
+meta_pattern = re.compile(r"oem-([^-]*)-(.*)-meta")
+market_name_pattern = re.compile(
+    r"Description: hardware support for (Dell|HP|Lenovo) (.*)"
+)
+
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
     epilog="""
@@ -827,6 +832,7 @@ class OemMetaPkgInfo(metaclass=ABCMeta):
         self.kernel_flavour = ""
         self.kernel_meta = ""
         self.fingerprint = ""
+        self.market_name = ""
         self.parse_meta_name()
         self.get_info()
         info(
@@ -841,11 +847,12 @@ class OemMetaPkgInfo(metaclass=ABCMeta):
                 kernel_flavour=self.kernel_flavour,
                 kernel_meta=self.kernel_meta,
                 fingerprint=self.fingerprint,
+                market_name=self.market_name,
             )
         return self.pkg_data
 
     def parse_meta_name(self):
-        result = pattern.match(self.meta)
+        result = meta_pattern.match(self.meta)
         if not result:
             raise Exception(f"oem-([^-]*)-(.*)-meta is not matched to {self.meta}")
         if "." in result.group(1):
@@ -861,6 +868,17 @@ class OemMetaPkgInfo(metaclass=ABCMeta):
         else:
             self.ubuntu_branch = f"{self.platform}-focal-ubuntu"
             self.oem_branch = f"{self.platform}-focal-oem"
+
+    @classmethod
+    def get_market_name(cls, control):
+        for line in control:
+            if line.startswith("Description:"):
+                if (
+                    "Dell" in line or "HP" in line or "Lenovo" in line
+                ) and "(factory)" not in line:
+                    result = market_name_pattern.match(line.strip())
+                    return result.group(2)
+        return ""
 
     @abstractmethod
     def get_info(self):
@@ -918,6 +936,10 @@ class BootstrapFromGit(OemMetaPkgInfo):
                     exit(1)
             else:
                 self.kernel_meta = ""
+
+            with open("control") as control:
+                self.market_name = self.get_market_name(control)
+
         if bootstrap_kernel_flavour == "XB-Ubuntu-OEM-Kernel-Flavour: oem":
             self.kernel_flavour = "oem"
         elif bootstrap_kernel_flavour == "XB-Ubuntu-OEM-Kernel-Flavour: default":
@@ -934,6 +956,7 @@ class BootstrapFromPPA(OemMetaPkgInfo):
         self.version = "WIP"
         self.kernel_flavour = "WIP"
         self.kernel_meta = "WIP"
+        self.market_name = "WIP"
 
     def get_version_archive(self):
         pass
@@ -991,8 +1014,12 @@ class BootstrapFromProposedArchive(OemMetaPkgInfo):
             returncode=(0, 100),
             silent=True,
         )
+
         if returncode == 100:
             return
+
+        self.market_name = self.get_market_name(output)
+
         for line in output.split("\n"):
             if line.startswith("Ubuntu-Oem-Kernel-Flavour:"):
                 self.kernel_flavour = line.split(" ")[1]
@@ -1050,8 +1077,12 @@ class BootstrapFromUbuntuArchive(OemMetaPkgInfo):
             returncode=(0, 100),
             silent=True,
         )
+
         if returncode == 100:
             return
+
+        self.market_name = self.get_market_name(output)
+
         for line in output.split("\n"):
             if line.startswith("Ubuntu-Oem-Kernel-Flavour:"):
                 self.kernel_flavour = line.split(" ")[1]
@@ -1112,6 +1143,9 @@ class OemFromGit(OemMetaPkgInfo):
                 error(
                     f"{self.project} {self.oem_branch} The kernel meta doesn't exist or it is not in the allowed list."
                 )
+
+            with open("control") as control:
+                self.market_name = self.get_market_name(control)
 
         if oem_kernel_flavour == "XB-Ubuntu-OEM-Kernel-Flavour: oem":
             self.kernel_flavour = "oem"
@@ -1204,6 +1238,7 @@ class OemFromPPA(OemMetaPkgInfo):
                 ],
                 silent=True,
             )
+
             output, _, returncode = _run_command(
                 [
                     "apt-cache",
@@ -1217,8 +1252,12 @@ class OemFromPPA(OemMetaPkgInfo):
                 returncode=(0, 100),
                 silent=True,
             )
+
             if returncode == 100:
                 return
+
+            self.market_name = self.get_market_name(output)
+
             for line in output.split("\n"):
                 if line.startswith("Ubuntu-Oem-Kernel-Flavour:"):
                     self.kernel_flavour = line.split(" ")[1]
@@ -1346,8 +1385,12 @@ class OemFromPrivateArchive(OemMetaPkgInfo):
             returncode=(0, 100),
             silent=True,
         )
+
         if returncode == 100:
             return
+
+        self.market_name = self.get_market_name(output)
+
         for line in output.split("\n"):
             if line.startswith("Ubuntu-Oem-Kernel-Flavour:"):
                 self.kernel_flavour = line.split(" ")[1]
@@ -1434,8 +1477,12 @@ class OemFromPublicArchive(OemMetaPkgInfo):
             returncode=(0, 100),
             silent=True,
         )
+
         if returncode == 100:
             return
+
+        self.market_name = self.get_market_name(output)
+
         for line in output.split("\n"):
             if line.startswith("Ubuntu-Oem-Kernel-Flavour:"):
                 self.kernel_flavour = line.split(" ")[1]
@@ -1475,7 +1522,7 @@ def collect_pkg_info(
     data, check_private: bool = False, index=None, config=None
 ) -> dict:
     if type(data) is str:
-        result = pattern.match(data)
+        result = meta_pattern.match(data)
 
         if not result:
             print(f"{data} is not supported.")
@@ -1665,7 +1712,7 @@ def process_update_task(pkgInfo) -> None:
 
 
 def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> bool:
-    result = pattern.match(pkg_name)
+    result = meta_pattern.match(pkg_name)
 
     if not result:
         return
