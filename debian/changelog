@@ -2,6 +2,8 @@ oem-scripts (1.3) UNRELEASED; urgency=medium
 
   * oem-meta-packages: Collect the market name in every stage.
   * oem-meta-packages: Get all needed information in BootstrapFromPPA.
+  * mir-bug: Import the words from
+    https://wiki.ubuntu.com/StableReleaseUpdates/OEMMeta.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 15 Jul 2021 17:10:26 +0800
 
