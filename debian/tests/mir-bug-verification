@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if grep 'docker\|lxc\|kubepods\|user.slice' /proc/1/cgroup; then
+    # The workaround for update-grub in Linux container
+    dpkg-divert --package ci --add --rename --divert /usr/sbin/update-grub.orig /usr/sbin/update-grub
+    ln -s /bin/true /usr/sbin/update-grub
+fi
+
 cat >/etc/apt/preferences.d/proposed-updates <<EOF
 # Configure apt to allow selective installs of packages from proposed
 Package: *
