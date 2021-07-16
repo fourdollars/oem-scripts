@@ -1,4 +1,4 @@
-oem-scripts (1.4) UNRELEASED; urgency=medium
+oem-scripts (1.4) focal; urgency=medium
 
   * debian/tests/mir-bug-verification: Workaround for update-grub in Linux
     container. 
