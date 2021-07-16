@@ -1,11 +1,11 @@
-oem-scripts (1.3) UNRELEASED; urgency=medium
+oem-scripts (1.3) focal; urgency=medium
 
   * oem-meta-packages: Collect the market name in every stage.
   * oem-meta-packages: Get all needed information in BootstrapFromPPA.
   * mir-bug: Import the words from
     https://wiki.ubuntu.com/StableReleaseUpdates/OEMMeta.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 15 Jul 2021 17:10:26 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 16 Jul 2021 02:27:52 +0000
 
 oem-scripts (1.2) focal; urgency=medium
 
