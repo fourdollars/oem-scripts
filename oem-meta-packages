@@ -166,11 +166,11 @@ subparsers = parser.add_subparsers(dest="subcommand")
 
 collect = subparsers.add_parser(
     "collect",
-    help="[-h] --json platforms.json | --meta oem-qemu-meta -o|--output meta-info.json",
+    help="[-h] --json platforms.json | --meta oem-qemu-meta [-o|--output meta-info.json]",
     formatter_class=argparse.RawDescriptionHelpFormatter,
     epilog="""
 For example,
-    oem-meta-packages collect --json platforms.json --output meta-info.json
+    oem-meta-packages collect --json platforms.json [--output meta-info.json]
 
 platforms.json:
 
@@ -204,7 +204,7 @@ platforms.json:
   ...
 ]
 
-oem-meta-packages collect --meta oem-qemu-meta --output meta-info.json
+oem-meta-packages collect --meta oem-qemu-meta [--output oem-qemu-meta.json]
 
 Collect the information of OEM metapackages in PPAs and devel/staging archives.""",
 )
@@ -220,7 +220,6 @@ collect.add_argument(
 collect.add_argument(
     "-o",
     "--output",
-    required=True,
     help="Specify a filename to write the meta information.",
     type=argparse.FileType("w", encoding="UTF-8"),
 )
@@ -322,6 +321,7 @@ update.add_argument(
 )
 
 args = parser.parse_args()
+BASEDIR = os.getcwd()
 
 setup_logging(debug=args.debug, quiet=args.quiet)
 
@@ -2126,8 +2126,21 @@ elif args.subcommand == "collect":
     else:
         print("You need to use --json or --meta.")
         exit(1)
-    args.output.write(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=CustomEncoder))
-    args.output.write("\n")
+    if args.output:
+        args.output.write(
+            json.dumps(pkgInfo, indent=4, sort_keys=True, cls=CustomEncoder) + "\n"
+        )
+        args.output.write("\n")
+    elif args.json:
+        with open(f"{BASEDIR}/meta-info.json", "w+") as f:
+            f.write(
+                json.dumps(pkgInfo, indent=4, sort_keys=True, cls=CustomEncoder) + "\n"
+            )
+    elif args.meta:
+        with open(f"{BASEDIR}/{args.meta}.json", "w+") as f:
+            f.write(
+                json.dumps(pkgInfo, indent=4, sort_keys=True, cls=CustomEncoder) + "\n"
+            )
 elif args.subcommand == "staging-copy":
     oem_scripts_config_ini = os.path.join(
         os.environ["HOME"], ".config/oem-scripts/config.ini"

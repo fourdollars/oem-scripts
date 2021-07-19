@@ -24,7 +24,7 @@ cat > platforms.json << ENDLINE
     "Customer": "Dell",
     "Group": "N/A",
     "Codename": "fossa-beric-icl",
-    "Platform": "Bullseye N3 15 ICL-U(SMB0) ",
+    "Platform": "Bullseye N3 15 ICL-U(SMB0)",
     "MarketName": "Inspiron 3501",
     "PlatformLPTag": "fossa-beric-icl"
   }
@@ -35,10 +35,17 @@ export LAUNCHPAD_API="https://api.launchpad.net/"
 
 oem-meta-packages --quiet list
 
-oem-meta-packages --quiet collect --json platforms.json -o meta-info.json
-jq -r < meta-info.json
-oem-meta-packages --quiet collect --meta oem-somerville-beric-icl-meta -o meta-info.json
-jq -r < meta-info.json
+oem-meta-packages --quiet collect --json platforms.json  # --output meta-info.json (by default)
+if [ "x$(jq -r '."oem-somerville-beric-icl-meta".new_desc' < meta-info.json)" != "xDell Inspiron 3501, Vostro 3401/3501" ]; then
+    jq -S -M < meta-info.json
+    exit 1
+fi
+
+oem-meta-packages --quiet collect --meta oem-somerville-beric-icl-meta  # --output oem-somerville-beric-icl-meta.json (by default)
+if [ "x$(jq -r '."oem-somerville-beric-icl-meta".oem.git.market_name' < oem-somerville-beric-icl-meta.json)" != "xInspiron 3501, Vostro 3401/3501" ]; then
+    jq -S -M < oem-somerville-beric-icl-meta.json
+    exit 1
+fi
 
 oem-meta-packages --dry-run update --json meta-info.json
 
