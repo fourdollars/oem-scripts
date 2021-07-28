@@ -1,6 +1,8 @@
 oem-scripts (1.6) UNRELEASED; urgency=medium
 
   * mir-bug: Add the 'ubuntu-certified' tag and the certified hardwares links.
+  * oem-meta-packages: Use the market name in Git branches to provide
+    new_desc and old_desc.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 28 Jul 2021 18:14:39 +0800
 
