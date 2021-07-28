@@ -1,3 +1,9 @@
+oem-scripts (1.6) UNRELEASED; urgency=medium
+
+  * mir-bug: Add the 'ubuntu-certified' tag and the certified hardwares links.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 28 Jul 2021 18:14:39 +0800
+
 oem-scripts (1.5) focal; urgency=medium
 
   * oem-meta-packages: Make the '--output' of the 'collect' subcommand
