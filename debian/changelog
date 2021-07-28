@@ -1,10 +1,10 @@
-oem-scripts (1.5) UNRELEASED; urgency=medium
+oem-scripts (1.5) focal; urgency=medium
 
   * oem-meta-packages: Make the '--output' of the 'collect' subcommand
     unnecessary.
   * mir-bug: Make it able to read the product names from the platform json.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 19 Jul 2021 18:09:17 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 28 Jul 2021 04:05:08 +0000
 
 oem-scripts (1.4) focal; urgency=medium
 
