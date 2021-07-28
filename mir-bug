@@ -19,6 +19,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import argparse
+import collections
 import difflib
 import json
 import lazr
@@ -100,6 +101,11 @@ update.add_argument(
     action="store_true",
     help="Update the bug to Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.",
 )
+update.add_argument(
+    "--json",
+    help="Specify the platform json file to read the information.",
+    type=argparse.FileType("r", encoding="UTF-8"),
+)
 
 check = subparsers.add_parser(
     "check", help="[-h] [--ready] [--skip] [--tz=UTC-8] bugNumber"
@@ -119,6 +125,11 @@ check.add_argument(
     "--ready",
     action="store_true",
     help="Check if the bug is Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.",
+)
+check.add_argument(
+    "--json",
+    help="Specify the platform json file to read the information.",
+    type=argparse.FileType("r", encoding="UTF-8"),
 )
 
 collect = subparsers.add_parser("collect", help="[-h] [--ubuntu-certified] jsonFile")
@@ -195,6 +206,38 @@ Please use "oem-metapackage-mir-check" in lp:ubuntu-archive-tools to verify this
 )
 
 pattern = re.compile(r".*\[MIR\]\W*oem-([^-]*)-(.*)-meta\W*")
+
+
+# Python 3.9 supports this.
+def remove_prefix(s, prefix):
+    return s[len(prefix) :] if s.startswith(prefix) else s
+
+
+def _grouping_market_names(market_names: list, maxsplit=1) -> str:
+    # Remove empty item
+    while "" in market_names:
+        market_names.remove("")
+    tmp = collections.defaultdict(list)
+    space_in_model = False
+    try:
+        for market_name in sorted(market_names):
+            if maxsplit == 1:
+                name, model = market_name.split(maxsplit=maxsplit)
+                tmp[name].append(model)
+                if " " in model:
+                    space_in_model = True
+            elif maxsplit == 2:
+                brand, name, model = market_name.split(maxsplit=maxsplit)
+                tmp[brand + " " + name].append(model)
+                if " " in model:
+                    space_in_model = True
+    except ValueError:
+        return ", ".join(sorted(market_names))
+
+    if space_in_model:
+        return ", ".join(f"{name} {', '.join(models)}" for name, models in tmp.items())
+    else:
+        return ", ".join(f"{name} {'/'.join(models)}" for name, models in tmp.items())
 
 
 def create_bug(lp, oemCodename, platformCodename, deviceName):
@@ -963,6 +1006,28 @@ def check_and_update_git_repo(
     kernel_flavour, kernel_meta, market_name, ids = _get_items_from_git(
         project, branch, pkg_name
     )
+
+    if args.json:
+        if group == "cmit":
+            new_market_name = _grouping_market_names(
+                args.json["productnames"], maxsplit=2
+            )
+            new_market_name = remove_prefix(new_market_name, "HP ")
+        else:
+            new_market_name = _grouping_market_names(args.json["productnames"])
+        if market_name is None:
+            market_name = new_market_name
+        if market_name != new_market_name:
+            if args.skip or not update:
+                warning(
+                    f"You may need to use '{new_market_name}' instead of '{market_name}'?"
+                )
+            elif yes_or_ask(
+                yes,
+                f"Do you want to use '{new_market_name}' instead of '{market_name}'?",
+            ):
+                market_name = new_market_name
+
     if kernel_flavour == "default":
         if kernel_meta is None:
             kernel_meta = "linux-generic-hwe-20.04"
@@ -970,7 +1035,7 @@ def check_and_update_git_repo(
             pass
         else:
             critical(
-                f"{pkg_name}'s {branch} branch has unexpected kernel_flavour=${kernel_flavour}, kernel_meta={kernel_meta}."
+                f"{pkg_name}'s {branch} branch has unexpected kernel_flavour={kernel_flavour}, kernel_meta={kernel_meta}."
             )
             exit(1)
     elif kernel_flavour == "oem":
@@ -980,7 +1045,7 @@ def check_and_update_git_repo(
             pass
         else:
             critical(
-                f"{pkg_name}'s {branch} branch has unexpected kernel_flavour=${kernel_flavour}, kernel_meta={kernel_meta}."
+                f"{pkg_name}'s {branch} branch has unexpected kernel_flavour={kernel_flavour}, kernel_meta={kernel_meta}."
             )
             exit(1)
 
@@ -1142,8 +1207,12 @@ if args.subcommand:
 if args.subcommand == "create":
     create_bug(lp, args.oemCodename, args.platformCodename, args.deviceName)
 elif args.subcommand == "update":
+    if args.json:
+        args.json = json.load(args.json)
     update_bug(lp, args.bugNumber, args.yes)
 elif args.subcommand == "check":
+    if args.json:
+        args.json = json.load(args.json)
     check_bug(lp, args.bugNumber)
 elif args.subcommand == "collect":
     collect_bugs(lp, args.json)
