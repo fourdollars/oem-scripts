@@ -29,6 +29,7 @@ Depends: @
 
 Tests:
  git-url-insteadof-setting,
+ lp-dl-attm,
  recovery-from-iso.sh
 Depends: @
 Restrictions: allow-stderr

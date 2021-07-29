@@ -2,6 +2,7 @@ oem-scripts (1.7) UNRELEASED; urgency=medium
 
   * run-autopkgtest: Fix the syntax errors of the long options of test-name
     and target.
+  * debian/tests/control: Add the missing lp-dl-attm.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 29 Jul 2021 14:22:39 +0800
 
