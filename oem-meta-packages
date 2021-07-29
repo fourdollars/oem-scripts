@@ -1660,6 +1660,7 @@ def collect_pkg_info(
 
     pkgInfo = dict()
 
+    # Somerville
     for codename, v in somerville.items():
         pkg_name = "oem-somerville-" + codename + "-meta"
 
@@ -1684,6 +1685,18 @@ def collect_pkg_info(
             pkgInfo[pkg_name].old_desc = f"Somerville {codename.title()} platform"
             pkgInfo[pkg_name].new_desc = new_desc
 
+        if meta.bootstrap.git.market_name:
+            market_name = meta.bootstrap.git.market_name
+        elif meta.oem.git.market_name:
+            market_name = meta.oem.git.market_name
+        else:
+            market_name = ""
+
+        if not pkgInfo[pkg_name].new_desc and market_name:
+            pkgInfo[pkg_name].new_desc = f"Dell {market_name}"
+            pkgInfo[pkg_name].old_desc = f"Somerville {codename.title()} platform"
+
+    # Stella
     for k, v in stella.items():
         pkg_name = "oem-stella." + k + "-meta"
         if args.only and pkg_name != args.only:
@@ -1709,6 +1722,18 @@ def collect_pkg_info(
             ].old_desc = f"Stella {group.title()} {codename.title()} platform"
             pkgInfo[pkg_name].new_desc = new_desc
 
+        if meta.bootstrap.git.market_name:
+            market_name = meta.bootstrap.git.market_name
+        elif meta.oem.git.market_name:
+            market_name = meta.oem.git.market_name
+        else:
+            market_name = ""
+
+        if not pkgInfo[pkg_name].new_desc and market_name:
+            pkgInfo[pkg_name].new_desc = f"HP {market_name}"
+            pkgInfo[pkg_name].old_desc = f"Stella {group.title()} {codename.title()} platform"
+
+    # Sutton
     for k, v in sutton.items():
         pkg_name = "oem-sutton." + k + "-meta"
         if args.only and pkg_name != args.only:
@@ -1733,6 +1758,17 @@ def collect_pkg_info(
                 pkg_name
             ].old_desc = f"Sutton {group.title()} {codename.title()} platform"
             pkgInfo[pkg_name].new_desc = new_desc
+
+        if meta.bootstrap.git.market_name:
+            market_name = meta.bootstrap.git.market_name
+        elif meta.oem.git.market_name:
+            market_name = meta.oem.git.market_name
+        else:
+            market_name = ""
+
+        if not pkgInfo[pkg_name].new_desc and market_name:
+            pkgInfo[pkg_name].new_desc = f"Lenovo {market_name}"
+            pkgInfo[pkg_name].old_desc = f"Sutton {group.title()} {codename.title()} platform"
 
     debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=CustomEncoder))
 

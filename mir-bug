@@ -44,11 +44,11 @@ ALLOWED_KERNEL_META_LIST = (
     "linux-generic-hwe-20.04",
 )
 SUBSCRIBER_LIST = ("oem-solutions-engineers", "ubuntu-sponsors", "ubuntu-desktop")
-TAG_LIST = (
+TAG_LIST = [
     "oem-meta-packages",
     "oem-priority",
     f"oem-scripts-{oem_scripts.__version__}",
-)
+]
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -176,7 +176,7 @@ Most potential regressions will live in the package set that will be installed v
 [When switching kernel flavour] Check that the new kernel flavour works on the target platform.
 
 [Availability]
-This is another OEM metapackage that means the package doesn't exist in Debian or Ubuntu archive yet.
+This is a meta package for https://wiki.ubuntu.com/MIRTeam/Exceptions/OEM that means the package doesn't exist in Debian or Ubuntu archive yet.
 The source code of the $metaPkgName for focal:
     git clone -b $branchName https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-$oemCodenameNogroup-projects-meta
 
@@ -413,10 +413,16 @@ def yes_or_ask(yes: bool, message: str) -> bool:
             return False
 
 
-def update_bug(lp, bug_number: int, yes: bool) -> None:
+def update_bug(
+    lp,
+    bug_number: int,
+    yes: bool,
+    certified: bool = False,
+    certified_hardwares: list = [],
+) -> None:
     bug = lp.bugs[bug_number]
     info(f'Updating LP: #{bug_number} - "{bug.title}" ...')
-    desc, pkg_name = check_bug_description(bug)
+    desc, pkg_name = check_bug_description(bug, certified_hardwares)
     bug_modified = False
     task_modified = False
 
@@ -449,9 +455,13 @@ def update_bug(lp, bug_number: int, yes: bool) -> None:
 
     check_and_update_bug_subscriptions(lp, bug, update=True, yes=yes)
 
-    if check_bug_tags(bug) is False:
+    if check_bug_tags(bug, certified) is False:
         tags = copy(bug.tags)
-        for tag in TAG_LIST:
+        if certified:
+            taglist = TAG_LIST + ["ubuntu-certified"]
+        else:
+            taglist = TAG_LIST
+        for tag in taglist:
             if tag not in bug.tags and yes_or_ask(
                 yes, f"Do you want to add '{tag}' tag?"
             ):
@@ -478,11 +488,13 @@ def update_bug(lp, bug_number: int, yes: bool) -> None:
         info("Everything looks OK.")
 
 
-def check_bug(lp, bug_number: int) -> None:
+def check_bug(
+    lp, bug_number: int, certified: bool = False, certified_hardwares: list = []
+) -> None:
     bug = lp.bugs[bug_number]
     info(f'Checking LP: #{bug_number} - "{bug.title}" ...')
     need_fixing = False
-    desc, pkg_name = check_bug_description(bug)
+    desc, pkg_name = check_bug_description(bug, certified_hardwares)
     if desc:
         need_fixing = True
     if check_bug_title(bug, pkg_name) is False:
@@ -493,7 +505,7 @@ def check_bug(lp, bug_number: int) -> None:
         need_fixing = True
     if check_and_update_bug_subscriptions(lp, bug) is False:
         need_fixing = True
-    if check_bug_tags(bug) is False:
+    if check_bug_tags(bug, certified) is False:
         need_fixing = True
     if check_and_update_git_repo(bug, pkg_name) is False:
         need_fixing = True
@@ -511,7 +523,7 @@ def check_bug(lp, bug_number: int) -> None:
         exit(1)
 
 
-def check_bug_description(bug) -> (str, str):
+def check_bug_description(bug, certified_hardwares: list) -> (str, str):
     info("Checking bug description...")
     result = pattern.match(bug.title)
     if not result:
@@ -550,6 +562,12 @@ def check_bug_description(bug) -> (str, str):
         oemCodenameNogroup=project,
         deviceName=deviceName,
     )
+
+    if certified_hardwares:
+        desc += "\n"
+
+    for hardware in certified_hardwares:
+        desc += f"\nhttps://ubuntu.com/certified/{hardware}"
 
     if bug.description != desc:
         d = difflib.Differ()
@@ -750,10 +768,14 @@ def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool
     return result
 
 
-def check_bug_tags(bug) -> bool:
+def check_bug_tags(bug, certified: bool = False) -> bool:
     info("Checking bug tags...")
     result = True
-    for tag in TAG_LIST:
+    if certified:
+        taglist = TAG_LIST + ["ubuntu-certified"]
+    else:
+        taglist = TAG_LIST
+    for tag in taglist:
         if tag not in bug.tags:
             error(f"'{tag}' is not in the tags.")
             result = False
@@ -1209,11 +1231,58 @@ if args.subcommand == "create":
 elif args.subcommand == "update":
     if args.json:
         args.json = json.load(args.json)
-    update_bug(lp, args.bugNumber, args.yes)
+    certified = False
+    if (
+        args.ready
+        and args.json
+        and type(args.json) is dict
+        and len(args.json.get("certify-planning", [])) != 0
+    ):
+        certified = True
+        for bug_id in args.json["certify-planning"]:
+            bug = lp.bugs[bug_id]
+            for task in bug.bug_tasks:
+                if task.bug_target_name == "certify-planning":
+                    if task.status != "Fix Released":
+                        certified = False
+    if certified:
+        certified_hardwares = args.json["certification-hardware"]
+    else:
+        certified_hardwares = []
+    update_bug(
+        lp,
+        bug_number=args.bugNumber,
+        yes=args.yes,
+        certified=certified,
+        certified_hardwares=certified_hardwares,
+    )
 elif args.subcommand == "check":
     if args.json:
         args.json = json.load(args.json)
-    check_bug(lp, args.bugNumber)
+    certified = False
+    if (
+        args.ready
+        and args.json
+        and type(args.json) is dict
+        and len(args.json.get("certify-planning", [])) != 0
+    ):
+        certified = True
+        for bug_id in args.json["certify-planning"]:
+            bug = lp.bugs[bug_id]
+            for task in bug.bug_tasks:
+                if task.bug_target_name == "certify-planning":
+                    if task.status != "Fix Released":
+                        certified = False
+    if certified:
+        certified_hardwares = args.json["certification-hardware"]
+    else:
+        certified_hardwares = []
+    check_bug(
+        lp,
+        bug_number=args.bugNumber,
+        certified=certified,
+        certified_hardwares=certified_hardwares,
+    )
 elif args.subcommand == "collect":
     collect_bugs(lp, args.json)
 else:
