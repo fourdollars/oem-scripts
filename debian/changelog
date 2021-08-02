@@ -4,8 +4,12 @@ oem-scripts (1.7) UNRELEASED; urgency=medium
     and target.
   * debian/tests/control: Add the missing lp-dl-attm.
   * oem-meta-packages: Make it able to subscribe the single OEM metapackage.
+  * debian/links,
+    setup.py,
+    tests/test_flake8,
+    umadison: Fix the typo.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 29 Jul 2021 14:22:39 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 02 Aug 2021 17:20:55 +0800
 
 oem-scripts (1.6) focal; urgency=medium
 
