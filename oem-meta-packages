@@ -47,6 +47,8 @@ ALLOWED_KERNEL_META_LIST = (
     "linux-generic",
 )
 
+SUBSCRIBER = "canonical-mainstream"
+
 staging_copy_template = Template(
     f'''Operation: copy_package
 Source: $source
@@ -235,12 +237,12 @@ subscribe = subparsers.add_parser(
     "subscribe",
     help="[-h] [--meta oem-qemu-meta]",
     formatter_class=argparse.RawDescriptionHelpFormatter,
-    epilog="""
-Make all bugs of all oem meta packages be subscribed by oem-solutions-engineers.
+    epilog=f"""
+Make all bugs of all oem meta packages be subscribed by {SUBSCRIBER}.
  (search current apt source for package lists)
 
 Check "To all bugs in oem-qemu-meta in Ubuntu:" on https://launchpad.net/ubuntu/+source/oem-qemu-meta/+subscribe for example.
-Make all bugs of all oem meta packages be subscribed by oem-solutions-engineers.
+Make all bugs of all oem meta packages be subscribed by {SUBSCRIBER}.
  (search current apt source for package lists)
 
 Check "To all bugs in oem-qemu-meta in Ubuntu:" on https://launchpad.net/ubuntu/+source/oem-qemu-meta/+subscribe for example.
@@ -254,8 +256,8 @@ unsubscribe = subparsers.add_parser(
     "unsubscribe",
     help="[-h] pkgName",
     formatter_class=argparse.RawDescriptionHelpFormatter,
-    epilog="""
-Unsubscribe oem-solutions-engineers from oem-qemu-meta
+    epilog=f"""
+Unsubscribe {SUBSCRIBER} from oem-qemu-meta
 
 For example,
     oem-meta-packages unsubscribe oem-qemu-meta
@@ -2085,23 +2087,23 @@ elif args.subcommand == "subscribe":
         name = args.meta
         info(f"Checking the subscriptions for {name}...")
         source = lp.distributions["ubuntu"].getSourcePackage(name=name)
-        if "oem-solutions-engineers" in map(
+        if SUBSCRIBER in map(
             lambda x: x.subscriber.name, source.getSubscriptions()
         ):
-            info(f"ubuntu/{name} has subscribed oem-solutions-engineers.")
-        warning(f"ubuntu/{name} didn't subscribe oem-solutions-engineers yet.")
+            info(f"ubuntu/{name} has subscribed '{SUBSCRIBER}'.")
+        warning(f"ubuntu/{name} didn't subscribe '{SUBSCRIBER}' yet.")
         if yes_or_ask(
             args.yes,
-            f"Would you like to subscribe 'oem-solutions-engineers' for ubuntu/{name}?",
+            f"Would you like to subscribe '{SUBSCRIBER}' for ubuntu/{name}?",
         ):
             try:
                 # When a person is subscribed to a source package, one actually subscribe all bugs for it.
                 source.addBugSubscription(
-                    subscriber=lp.people["oem-solutions-engineers"]
+                    subscriber=lp.people[SUBSCRIBER]
                 )
             except lazr.restfulclient.errors.Unauthorized as e:
                 error(
-                    f"{lp.me.name} does not have permission to subscribe oem-solutions-engineers."
+                    f"{lp.me.name} does not have permission to subscribe '{SUBSCRIBER}'."
                 )
                 if args.verbose:
                     print(e)
@@ -2110,24 +2112,24 @@ elif args.subcommand == "subscribe":
     for name in get_oem_meta_packages(cache):
         info(f"Checking the subscriptions for {name}...")
         source = lp.distributions["ubuntu"].getSourcePackage(name=name)
-        if "oem-solutions-engineers" in map(
+        if SUBSCRIBER in map(
             lambda x: x.subscriber.name, source.getSubscriptions()
         ):
-            info(f"ubuntu/{name} has subscribed oem-solutions-engineers.")
+            info(f"ubuntu/{name} has subscribed '{SUBSCRIBER}'.")
             continue
-        warning(f"ubuntu/{name} didn't subscribe oem-solutions-engineers yet.")
+        warning(f"ubuntu/{name} didn't subscribe '{SUBSCRIBER}' yet.")
         if yes_or_ask(
             args.yes,
-            f"Would you like to subscribe 'oem-solutions-engineers' for ubuntu/{name}?",
+            f"Would you like to subscribe '{SUBSCRIBER}' for ubuntu/{name}?",
         ):
             try:
                 # When a person is subscribed to a source package, one actually subscribe all bugs for it.
                 source.addBugSubscription(
-                    subscriber=lp.people["oem-solutions-engineers"]
+                    subscriber=lp.people[SUBSCRIBER]
                 )
             except lazr.restfulclient.errors.Unauthorized as e:
                 error(
-                    f"{lp.me.name} does not have permission to subscribe oem-solutions-engineers."
+                    f"{lp.me.name} does not have permission to subscribe '{SUBSCRIBER}'."
                 )
                 if args.verbose:
                     print(e)
@@ -2136,19 +2138,19 @@ elif args.subcommand == "unsubscribe":
     source = lp.distributions["ubuntu"].getSourcePackage(name=args.pkgName)
     subscriptions = source.getSubscriptions()
     for subscription in subscriptions:
-        if subscription.subscriber.name == "oem-solutions-engineers":
-            info(f"ubuntu/{args.pkgName} has subscribed oem-solutions-engineers.")
+        if subscription.subscriber.name == SUBSCRIBER:
+            info(f"ubuntu/{args.pkgName} has subscribed '{SUBSCRIBER}'.")
             if yes_or_ask(
                 args.yes,
-                f"Would you like to unsubscribe 'oem-solutions-engineers' for ubuntu/{args.pkgName}?",
+                f"Would you like to unsubscribe '{SUBSCRIBER}' for ubuntu/{args.pkgName}?",
             ):
                 try:
                     source.removeBugSubscription(
-                        subscriber=lp.people["oem-solutions-engineers"]
+                        subscriber=lp.people[SUBSCRIBER]
                     )
                 except lazr.restfulclient.errors.Unauthorized as e:
                     error(
-                        f"{lp.me.name} does not have permission to unsubscribe oem-solutions-engineers."
+                        f"{lp.me.name} does not have permission to unsubscribe '{SUBSCRIBER}'."
                     )
                     if args.verbose:
                         print(e)
