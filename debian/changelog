@@ -8,6 +8,7 @@ oem-scripts (1.7) UNRELEASED; urgency=medium
     setup.py,
     tests/test_flake8,
     umadison: Fix the typo.
+  * debian/tests/control: Add allow-stderr for mir-bug-verification.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 02 Aug 2021 17:20:55 +0800
 
