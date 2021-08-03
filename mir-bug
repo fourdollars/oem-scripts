@@ -953,6 +953,8 @@ def _get_items_from_git(project: str, branch: str, pkg_name: str) -> tuple:
         with open(os.path.join(git_dir, "debian", "modaliases"), "r") as modaliases:
             for line in modaliases:
                 result = prog.match(line.strip())
+                if result is None:
+                    continue
                 if result.group(result.lastindex) != pkg_name:
                     error(
                         "Something wrong in debian/modaliases. Please fix it manually first."
