@@ -12,4 +12,4 @@ flake8 --ignore E501,W503,E203 \
     pkg-oem-meta \
     review-merge-proposal \
     setup.py \
-    umadision
+    umadison

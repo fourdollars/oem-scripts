@@ -5,10 +5,10 @@ import sys
 
 
 def usage():
-    print("umadision DEB_PKG_NAME")
+    print("umadison DEB_PKG_NAME")
     print("Query qa.debian.org for ubuntu pkg version")
     print()
-    print("dmadision DEB_PKG_NAME")
+    print("dmadison DEB_PKG_NAME")
     print("Query qa.debian.org for debian pkg version")
 
 
@@ -18,7 +18,7 @@ if len(sys.argv) != 2:
 
 pkg = sys.argv[1]
 dist = "ubuntu"
-if "dmadision" in sys.argv[0]:
+if "dmadison" in sys.argv[0]:
     dist = "debian"
 
 url = f"https://qa.debian.org/madison.php?package={pkg}&table={dist}&text=on"

@@ -87,7 +87,7 @@ shell_fail=""
 target=""
 test_name=""
 
-OPTS=$(getopt -o A:,B,C,d,F,h,m:,R,S,s:,t:T: --long architecture:,benchmark,credentials,debug,flush-cache,help,mirror:,rebuild-testbed,shell-fail,size:,test-name:target: -n 'run-autopkgtest' -- "$@")
+OPTS=$(getopt -o A:,B,C,d,F,h,m:,R,S,s:,t:T: --long architecture:,benchmark,credentials,debug,flush-cache,help,mirror:,rebuild-testbed,shell-fail,size:,test-name:,target: -n 'run-autopkgtest' -- "$@")
 eval set -- "${OPTS}"
 while :; do
     case "$1" in
