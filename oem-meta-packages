@@ -2091,6 +2091,7 @@ elif args.subcommand == "subscribe":
             lambda x: x.subscriber.name, source.getSubscriptions()
         ):
             info(f"ubuntu/{name} has subscribed '{SUBSCRIBER}'.")
+            exit(0)
         warning(f"ubuntu/{name} didn't subscribe '{SUBSCRIBER}' yet.")
         if yes_or_ask(
             args.yes,
