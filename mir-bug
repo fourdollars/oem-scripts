@@ -55,8 +55,8 @@ parser = argparse.ArgumentParser(
     epilog="""
 examples:
     mir-bug create sutton.newell ace \"ThinkPad X1 Carbon Gen 8\"
-    mir-bug check BUG_NUMBER
-    mir-bug update BUG_NUMBER
+    mir-bug check PLATFORM_JSON
+    mir-bug update PLATFORM_JSON
     mir-bug collect oem-meta-mir-bugs.json""",
 )
 
@@ -82,10 +82,12 @@ create.add_argument(
 )
 
 update = subparsers.add_parser(
-    "update", help="[-h] [--ready] [--skip] [--tz=UTC-8] [--yes] bugNumber"
+    "update", help="[-h] [--ready] [--skip] [--tz=UTC-8] [--yes] PLATFORM_JSON"
 )
 update.add_argument(
-    "bugNumber", help="Specify the bug number on Launchpad to update.", type=int
+    "json",
+    help="Specify the platform json file to read the information.",
+    type=argparse.FileType("r", encoding="UTF-8"),
 )
 update.add_argument("--yes", help="Say yes for all prompts.", action="store_true")
 update.add_argument(
@@ -101,19 +103,14 @@ update.add_argument(
     action="store_true",
     help="Update the bug to Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.",
 )
-update.add_argument(
-    "--json",
-    help="Specify the platform json file to read the information.",
-    type=argparse.FileType("r", encoding="UTF-8"),
-)
 
 check = subparsers.add_parser(
-    "check", help="[-h] [--ready] [--skip] [--tz=UTC-8] bugNumber"
+    "check", help="[-h] [--ready] [--skip] [--tz=UTC-8] PLATFORM_JSON"
 )
 check.add_argument(
-    "bugNumber",
-    help="Specify the bug number on Launchpad to do some sanity checks.",
-    type=int,
+    "json",
+    help="Specify the platform json file to read the information.",
+    type=argparse.FileType("r", encoding="UTF-8"),
 )
 check.add_argument(
     "--skip", help="Skip checking oem branch of Git repository.", action="store_true"
@@ -125,11 +122,6 @@ check.add_argument(
     "--ready",
     action="store_true",
     help="Check if the bug is Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.",
-)
-check.add_argument(
-    "--json",
-    help="Specify the platform json file to read the information.",
-    type=argparse.FileType("r", encoding="UTF-8"),
 )
 
 collect = subparsers.add_parser("collect", help="[-h] [--ubuntu-certified] jsonFile")
@@ -1231,8 +1223,7 @@ if args.subcommand:
 if args.subcommand == "create":
     create_bug(lp, args.oemCodename, args.platformCodename, args.deviceName)
 elif args.subcommand == "update":
-    if args.json:
-        args.json = json.load(args.json)
+    args.json = json.load(args.json)
     certified = False
     if (
         args.ready
@@ -1251,16 +1242,26 @@ elif args.subcommand == "update":
         certified_hardwares = args.json["certification-hardware"]
     else:
         certified_hardwares = []
+
+    bug_number = args.json["mirbug"]
+
+    if type(bug_number) == str:
+        bug_number = int(bug_number)
+    elif type(bug_number) == int:
+        pass
+    else:
+        unexpected = type(bug_number)
+        raise Exception(f"Unexpected '{unexpected}' type")
+
     update_bug(
         lp,
-        bug_number=args.bugNumber,
+        bug_number=bug_number,
         yes=args.yes,
         certified=certified,
         certified_hardwares=certified_hardwares,
     )
 elif args.subcommand == "check":
-    if args.json:
-        args.json = json.load(args.json)
+    args.json = json.load(args.json)
     certified = False
     if (
         args.ready
@@ -1279,9 +1280,20 @@ elif args.subcommand == "check":
         certified_hardwares = args.json["certification-hardware"]
     else:
         certified_hardwares = []
+
+    bug_number = args.json["mirbug"]
+
+    if type(bug_number) == str:
+        bug_number = int(bug_number)
+    elif type(bug_number) == int:
+        pass
+    else:
+        unexpected = type(bug_number)
+        raise Exception(f"Unexpected '{unexpected}' type")
+
     check_bug(
         lp,
-        bug_number=args.bugNumber,
+        bug_number=bug_number,
         certified=certified,
         certified_hardwares=certified_hardwares,
     )

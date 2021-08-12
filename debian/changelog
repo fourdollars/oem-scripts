@@ -1,3 +1,10 @@
+oem-scripts (1.8) UNRELEASED; urgency=medium
+
+  * debian/tests/mir-bug,
+    mir-bug: Make mir-bug use the platform json directly.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 12 Aug 2021 14:48:24 +0800
+
 oem-scripts (1.7) focal; urgency=medium
 
   [ Shih-Yuan Lee (FourDollars) ]
