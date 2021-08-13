@@ -55,8 +55,8 @@ parser = argparse.ArgumentParser(
     epilog="""
 examples:
     mir-bug create sutton.newell ace \"ThinkPad X1 Carbon Gen 8\"
-    mir-bug check BUG_NUMBER
-    mir-bug update BUG_NUMBER
+    mir-bug check PLATFORM_JSON
+    mir-bug update PLATFORM_JSON
     mir-bug collect oem-meta-mir-bugs.json""",
 )
 
@@ -82,10 +82,12 @@ create.add_argument(
 )
 
 update = subparsers.add_parser(
-    "update", help="[-h] [--ready] [--skip] [--tz=UTC-8] [--yes] bugNumber"
+    "update", help="[-h] [--ready] [--skip] [--tz=UTC-8] [--yes] PLATFORM_JSON"
 )
 update.add_argument(
-    "bugNumber", help="Specify the bug number on Launchpad to update.", type=int
+    "json",
+    help="Specify the platform json file to read the information.",
+    type=argparse.FileType("r", encoding="UTF-8"),
 )
 update.add_argument("--yes", help="Say yes for all prompts.", action="store_true")
 update.add_argument(
@@ -102,18 +104,16 @@ update.add_argument(
     help="Update the bug to Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.",
 )
 update.add_argument(
-    "--json",
-    help="Specify the platform json file to read the information.",
-    type=argparse.FileType("r", encoding="UTF-8"),
+    "--release", action="store_true", help="Update the bug for release."
 )
 
 check = subparsers.add_parser(
-    "check", help="[-h] [--ready] [--skip] [--tz=UTC-8] bugNumber"
+    "check", help="[-h] [--ready] [--release] [--skip] [--tz=UTC-8] PLATFORM_JSON"
 )
 check.add_argument(
-    "bugNumber",
-    help="Specify the bug number on Launchpad to do some sanity checks.",
-    type=int,
+    "json",
+    help="Specify the platform json file to read the information.",
+    type=argparse.FileType("r", encoding="UTF-8"),
 )
 check.add_argument(
     "--skip", help="Skip checking oem branch of Git repository.", action="store_true"
@@ -127,9 +127,7 @@ check.add_argument(
     help="Check if the bug is Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.",
 )
 check.add_argument(
-    "--json",
-    help="Specify the platform json file to read the information.",
-    type=argparse.FileType("r", encoding="UTF-8"),
+    "--release", action="store_true", help="Check if the bug is ready to release."
 )
 
 collect = subparsers.add_parser("collect", help="[-h] [--ubuntu-certified] jsonFile")
@@ -451,7 +449,7 @@ def update_bug(
                     task.importance = "Critical"
                     task.lp_save()
 
-    update_bug_status(bug, yes)
+    update_bug_status(bug, pkg_name, yes)
 
     check_and_update_bug_subscriptions(lp, bug, update=True, yes=yes)
 
@@ -630,9 +628,19 @@ def check_bug_status(bug, pkg_name: str) -> bool:
                     is False
                 ):
                     result = False
-        elif task.bug_target_name == "ubuntu":
+        elif (
+            task.bug_target_name == "ubuntu"
+            or f"{pkg_name} (Ubuntu)" in task.bug_target_name
+            or f"{pkg_name} (Ubuntu Focal)" in task.bug_target_name
+        ):
             saw_ubuntu_task = True
-            if args.ready:
+            if args.release:
+                if (
+                    _expected_status(task.bug_target_name, task.status, "In Progress")
+                    is False
+                ):
+                    result = False
+            elif args.ready:
                 if (
                     _expected_status(task.bug_target_name, task.status, "Confirmed")
                     is False
@@ -644,7 +652,7 @@ def check_bug_status(bug, pkg_name: str) -> bool:
                     is False
                 ):
                     result = False
-        elif f"{pkg_name} (Ubuntu)" not in task.bug_target_name:
+        else:
             critical(f"It is unexpected to have '{task.bug_target_name}' task")
     if args.ready and saw_ubuntu_task is False:
         result = False
@@ -675,7 +683,7 @@ def _change_task_status(task, new_status: str, yes: bool) -> bool:
         task.lp_save()
 
 
-def update_bug_status(bug, yes: bool) -> None:
+def update_bug_status(bug, pkg_name: str, yes: bool) -> None:
     info("Updating bug status...")
     saw_ubuntu_task = False
     for bug_task in bug.bug_tasks:
@@ -684,9 +692,15 @@ def update_bug_status(bug, yes: bool) -> None:
                 _change_task_status(bug_task, "Fix Committed", yes)
             else:
                 _change_task_status(bug_task, "In Progress", yes)
-        elif bug_task.bug_target_name == "ubuntu":
+        elif (
+            bug_task.bug_target_name == "ubuntu"
+            or f"{pkg_name} (Ubuntu)" in bug_task.bug_target_name
+            or f"{pkg_name} (Ubuntu Focal)" in bug_task.bug_target_name
+        ):
             saw_ubuntu_task = True
-            if args.ready:
+            if args.release:
+                _change_task_status(bug_task, "In Progress", yes)
+            elif args.ready:
                 _change_task_status(bug_task, "Confirmed", yes)
             elif yes_or_ask(
                 yes,
@@ -1157,7 +1171,10 @@ def check_and_update_git_repo(
             with open(changelog, "r") as f:
                 lines = f.readlines()
 
-            lines[0] = f"{pkg_name} (20.04~ubuntu1) UNRELEASED; urgency=medium\n"
+            if args.release:
+                lines[0] = f"{pkg_name} (20.04~ubuntu1) focal; urgency=medium\n"
+            else:
+                lines[0] = f"{pkg_name} (20.04~ubuntu1) UNRELEASED; urgency=medium\n"
 
             if f"(LP: #{bug.id})" not in lines[2] and lines[2].startswith(
                 "  * Meta package for"
@@ -1231,8 +1248,7 @@ if args.subcommand:
 if args.subcommand == "create":
     create_bug(lp, args.oemCodename, args.platformCodename, args.deviceName)
 elif args.subcommand == "update":
-    if args.json:
-        args.json = json.load(args.json)
+    args.json = json.load(args.json)
     certified = False
     if (
         args.ready
@@ -1251,16 +1267,26 @@ elif args.subcommand == "update":
         certified_hardwares = args.json["certification-hardware"]
     else:
         certified_hardwares = []
+
+    bug_number = args.json["mirbug"]
+
+    if type(bug_number) == str:
+        bug_number = int(bug_number)
+    elif type(bug_number) == int:
+        pass
+    else:
+        unexpected = type(bug_number)
+        raise Exception(f"Unexpected '{unexpected}' type")
+
     update_bug(
         lp,
-        bug_number=args.bugNumber,
+        bug_number=bug_number,
         yes=args.yes,
         certified=certified,
         certified_hardwares=certified_hardwares,
     )
 elif args.subcommand == "check":
-    if args.json:
-        args.json = json.load(args.json)
+    args.json = json.load(args.json)
     certified = False
     if (
         args.ready
@@ -1279,9 +1305,20 @@ elif args.subcommand == "check":
         certified_hardwares = args.json["certification-hardware"]
     else:
         certified_hardwares = []
+
+    bug_number = args.json["mirbug"]
+
+    if type(bug_number) == str:
+        bug_number = int(bug_number)
+    elif type(bug_number) == int:
+        pass
+    else:
+        unexpected = type(bug_number)
+        raise Exception(f"Unexpected '{unexpected}' type")
+
     check_bug(
         lp,
-        bug_number=args.bugNumber,
+        bug_number=bug_number,
         certified=certified,
         certified_hardwares=certified_hardwares,
     )

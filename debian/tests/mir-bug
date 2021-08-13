@@ -16,13 +16,31 @@ mir-bug collect "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs.json
 mir-bug collect --ubuntu-certified "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs-ubuntu-certified.json
 
 # check & update
-BUG_ID="$(basename "$(jq -r '.[] | .bug' < "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs.json | sort | head -n 1)")"
-mir-bug update --yes --skip --ready "$BUG_ID"
+cat > fossa-varys.json <<ENDLINE
+{
+  "certification-hardware": [
+    "202001-27664",
+    "202001-27665",
+    "202001-27666",
+    "202001-27667",
+    "202005-27873",
+    "202005-27874"
+  ],
+  "certify-planning": [
+    1904011
+  ],
+  "mirbug": 1937243,
+  "productnames": [
+    "Precision 5550"
+  ]
+}
+ENDLINE
+mir-bug update --yes --skip --ready --release fossa-varys.json
 
-mir-bug check --skip --ready "$BUG_ID"
+mir-bug check --skip --ready --release fossa-varys.json
 
-mir-bug update --yes --skip --tz=UTC "$BUG_ID"
+mir-bug update --yes --skip --tz=UTC --release fossa-varys.json
 
-mir-bug check --skip --tz=UTC "$BUG_ID"
+mir-bug check --skip --tz=UTC --release fossa-varys.json
 
 exit 77
