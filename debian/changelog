@@ -1,11 +1,11 @@
-oem-scripts (1.8) UNRELEASED; urgency=medium
+oem-scripts (1.8) focal; urgency=medium
 
   * debian/tests/mir-bug,
     mir-bug: Make mir-bug use the platform json directly.
   * debian/tests/mir-bug,
     mir-bug: Add the '--release' option to support the package in queue.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 12 Aug 2021 14:48:24 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 13 Aug 2021 02:57:12 +0000
 
 oem-scripts (1.7) focal; urgency=medium
 
