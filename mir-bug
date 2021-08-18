@@ -456,7 +456,12 @@ def update_bug(
     if check_bug_tags(bug, certified) is False:
         tags = copy(bug.tags)
         if certified:
-            taglist = TAG_LIST + ["ubuntu-certified"]
+            if args.release:
+                taglist = TAG_LIST + ["ubuntu-certified", "oem-done-upload"]
+            elif args.ready:
+                taglist = TAG_LIST + ["ubuntu-certified", "oem-needs-upload"]
+            else:
+                taglist = TAG_LIST + ["ubuntu-certified"]
         else:
             taglist = TAG_LIST
         for tag in taglist:
@@ -470,6 +475,9 @@ def update_bug(
                 if tag[len("oem-scripts-") :] != oem_scripts.__version__:
                     if yes_or_ask(yes, f"Do you want to remove '{tag}' tag?"):
                         tags.remove(tag)
+            elif certified and args.release and tag == "oem-needs-upload":
+                if yes_or_ask(yes, f"Do you want to remove '{tag}' tag?"):
+                    tags.remove(tag)
         if tags != bug.tags:
             bug.tags = tags
 
@@ -786,7 +794,12 @@ def check_bug_tags(bug, certified: bool = False) -> bool:
     info("Checking bug tags...")
     result = True
     if certified:
-        taglist = TAG_LIST + ["ubuntu-certified"]
+        if args.release:
+            taglist = TAG_LIST + ["ubuntu-certified", "oem-done-upload"]
+        elif args.ready:
+            taglist = TAG_LIST + ["ubuntu-certified", "oem-needs-upload"]
+        else:
+            taglist = TAG_LIST + ["ubuntu-certified"]
     else:
         taglist = TAG_LIST
     for tag in taglist:

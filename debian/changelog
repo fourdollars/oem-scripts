@@ -1,3 +1,9 @@
+oem-scripts (1.9) UNRELEASED; urgency=medium
+
+  * mir-bug: Support the oem-needs-upload and oem-done-upload tags.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 18 Aug 2021 12:21:47 +0800
+
 oem-scripts (1.8) focal; urgency=medium
 
   * debian/tests/mir-bug,
