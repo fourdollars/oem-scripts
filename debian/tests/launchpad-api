@@ -2,7 +2,13 @@
 
 export LAUNCHPAD_API="https://api.staging.launchpad.net/"
 
+# LP: #2 doesn't exist so it should return failed.
+if launchpad-api get bugs/2 2>&1; then
+    exit 1
+fi
+
 launchpad-api patch bugs/100 tags:='["focal"]'
+
 if [ "$(launchpad-api get bugs/100 | jq -r '.tags|join(" ")')" != "focal" ]; then
     exit 1
 fi
