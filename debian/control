@@ -6,6 +6,7 @@ Build-Depends:
  debhelper (>=11),
  dh-python,
  flake8,
+ golang-go,
  python3-all,
  python3-debian,
  python3-launchpadlib,

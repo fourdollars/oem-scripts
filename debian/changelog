@@ -1,3 +1,9 @@
+oem-scripts (1.10) UNRELEASED; urgency=medium
+
+  * Add autoISO.go to oem-scripts. 
+
+ -- Shengyao Xue <shengyao.xue@canonical.com>  Fri, 20 Aug 2021 16:04:49 +0800
+
 oem-scripts (1.9) focal; urgency=medium
 
   * mir-bug: Support the oem-needs-upload and oem-done-upload tags.
