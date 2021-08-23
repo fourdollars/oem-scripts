@@ -1,11 +1,11 @@
-oem-scripts (1.9) UNRELEASED; urgency=medium
+oem-scripts (1.9) focal; urgency=medium
 
   * mir-bug: Support the oem-needs-upload and oem-done-upload tags.
   * debian/tests/launchpad-api,
     launchpad-api: Correct the return code when using `launchpad-api get`
     failed.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 18 Aug 2021 14:30:31 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 23 Aug 2021 06:32:20 +0000
 
 oem-scripts (1.8) focal; urgency=medium
 
