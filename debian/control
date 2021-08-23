@@ -3,7 +3,8 @@ Section: admin
 Priority: optional
 Build-Depends:
  black,
- debhelper (>=11),
+ debhelper-compat (= 12),
+ dh-golang,
  dh-python,
  flake8,
  golang-go,
@@ -18,7 +19,7 @@ Vcs-Browser: https://code.launchpad.net/~oem-solutions-engineers/pc-enablement/+
 Vcs-Git: https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-scripts
 
 Package: oem-scripts
-Architecture: all
+Architecture: any
 Depends:
  ${misc:Depends},
  ${python3:Depends},
