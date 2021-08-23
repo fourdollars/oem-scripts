@@ -31,6 +31,9 @@ usage_auth_failed()
 It could be command error OR your authentication token is removed or expired.
 If you think it's the authentication issue, you can try to backup/remove
 the config.ini, get authentication token and try again.
+If it still failed, it could be a server side issue.
+
+launchpad-api is just a shell script wrapper for https://api.launchpad.net/.
 
 Ex:
 
@@ -124,7 +127,7 @@ get_api()
         oauth_timestamp=="$(date +%s)" \
         oauth_token=="${oauth_token}" \
         oauth_version=="1.0" \
-        "$@" || ( usage_auth_failed ; usage )
+        "$@" || ( usage_auth_failed ; usage ; false )
 }
 
 patch_api()
