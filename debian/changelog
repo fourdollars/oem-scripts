@@ -1,4 +1,4 @@
-oem-scripts (1.10) UNRELEASED; urgency=medium
+oem-scripts (1.10) focal; urgency=medium
 
   [ Shengyao Xue ]
   * Add autoISO.go to oem-scripts. 
@@ -6,7 +6,7 @@ oem-scripts (1.10) UNRELEASED; urgency=medium
   [ Shih-Yuan Lee (FourDollars) ]
   * Add the dh-golang support.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 23 Aug 2021 15:07:59 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 24 Aug 2021 05:31:47 +0000
 
 oem-scripts (1.9) focal; urgency=medium
 
