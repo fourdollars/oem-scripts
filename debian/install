@@ -1,0 +1,17 @@
+autopkgtest-collect-credentials /usr/bin
+autopkgtest-oem-scripts-auto /usr/bin
+check-ssid-duplicated.sh /usr/bin
+config.sh /usr/share/oem-scripts
+dkms-helper /usr/bin
+get-private-ppa /usr/bin
+jq-lp /usr/bin
+launchpad-api /usr/bin
+live-build-image-chroot.sh /usr/bin
+lp-dl-attm /usr/bin
+obj-*/bin/autoISO /usr/sbin
+recovery-from-iso.sh /usr/bin
+run-autopkgtest /usr/bin
+setup-apt-dir.sh /usr/bin
+setup4test.sh /usr/bin
+stap-build-mymodule.sh /usr/bin
+stap-dbgsym.sh /usr/bin

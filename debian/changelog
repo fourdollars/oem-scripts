@@ -1,3 +1,13 @@
+oem-scripts (1.10) UNRELEASED; urgency=medium
+
+  [ Shengyao Xue ]
+  * Add autoISO.go to oem-scripts. 
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * Add the dh-golang support.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 23 Aug 2021 15:07:59 +0800
+
 oem-scripts (1.9) focal; urgency=medium
 
   * mir-bug: Support the oem-needs-upload and oem-done-upload tags.
