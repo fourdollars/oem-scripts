@@ -249,7 +249,7 @@ EOF
         img_name="$(wget -q "$img_jenkins_out_url/" -O - | grep -o 'href=.*iso"' | awk -F/ '{print $NF}' | tr -d \")"
         pushd "$temp_folder" || usage
         wget "$img_jenkins_out_url/$img_name".md5sum
-        md5sum -c "$img_name".md5sum || wget "$img_jenkins_out_url"/"$img_name"
+        md5sum -c "$img_name".md5sum || wget "$img_jenkins_out_url"/"$img_name" 2> /dev/null
         md5sum -c "$img_name".md5sum || usage
         local_iso="$PWD/$img_name"
         popd
