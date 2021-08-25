@@ -218,6 +218,9 @@ inject_preseed() {
 inject_recovery_iso() {
     if [ -n "$local_iso" ]; then
         img_name="$(basename "$local_iso")"
+        if [ -z "${img_name##*stella*}" ]; then
+            ubr="yes"
+        fi
         if [ "${ubr}" == "yes" ]; then
             rsync_opts="--exclude=efi --delete --temp-dir=/var/tmp/rsync"
         else
