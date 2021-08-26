@@ -92,6 +92,7 @@ ubiquity ubuntu-recovery/recovery_type string dev
         git clone --depth 1 -b maas-focal lp:~lyoncore-team/lyoncore/+git/somerville-maas-override maas_deps
         cd maas_deps
         git rev-parse --short HEAD
+        rm -f maas-pkgs/oem-fix-misc-cnl-maas-helper*
         cd ..
         cp -r maas_deps/maas-pkgs/*.deb .
         find .
