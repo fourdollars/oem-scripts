@@ -67,6 +67,9 @@ class LaunchpadLogin:
             else:
                 service_root = "production"
 
+        self.service_root = lookup_service_root(service_root)
+        self.service_version = version
+
         oem_scripts_config_ini = os.path.join(
             os.environ["HOME"], ".config/oem-scripts/config.ini"
         )

@@ -33,22 +33,16 @@ import subprocess
 from copy import copy
 from glob import glob
 from logging import debug, info, warning, error, critical
+from oem_scripts import (
+    SUBSCRIBER_LIST,
+    TAG_LIST,
+    ALLOWED_KERNEL_META_LIST,
+    remove_prefix,
+    yes_or_ask,
+)
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
 from oem_scripts.logging import setup_logging
 from tempfile import TemporaryDirectory
-
-ALLOWED_KERNEL_META_LIST = (
-    "linux-oem-20.04c",
-    "linux-oem-20.04b",
-    "linux-oem-20.04",
-    "linux-generic-hwe-20.04",
-)
-SUBSCRIBER_LIST = ("oem-solutions-engineers", "ubuntu-sponsors", "ubuntu-desktop")
-TAG_LIST = [
-    "oem-meta-packages",
-    "oem-priority",
-    f"oem-scripts-{oem_scripts.__version__}",
-]
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -152,11 +146,6 @@ args = parser.parse_args()
 setup_logging(debug=args.debug, quiet=args.quiet)
 
 pattern = re.compile(r".*\[MIR\]\W*oem-([^-]*)-(.*)-meta\W*")
-
-
-# Python 3.9 supports this.
-def remove_prefix(s, prefix):
-    return s[len(prefix) :] if s.startswith(prefix) else s
 
 
 def _grouping_market_names(market_names: list, maxsplit=1) -> str:
@@ -343,20 +332,6 @@ def collect_bugs(lp, output):
     info("total: %d matched" % len(bugs))
     output.write(json.dumps(bugs, sort_keys=True, separators=(",", ":")))
     output.write("\n")
-
-
-def yes_or_ask(yes: bool, message: str) -> bool:
-    if yes:
-        print(f"> \033[1;34m{message}\033[1;0m (y/n) y")
-        return True
-    while True:
-        res = input(f"> \033[1;34m{message}\033[1;0m (y/n) ").lower()
-        if res not in {"y", "n"}:
-            continue
-        if res == "y":
-            return True
-        else:
-            return False
 
 
 def update_bug(
@@ -713,11 +688,7 @@ def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool
                     else:
                         result = False
     if args.ready:
-        for subscriber in (
-            "oem-solutions-engineers",
-            "ubuntu-sponsors",
-            "ubuntu-desktop",
-        ):
+        for subscriber in SUBSCRIBER_LIST:
             if subscriber not in subscriptions:
                 error(f"'{subscriber}' is not in the subscriptions.")
                 if update and yes_or_ask(
