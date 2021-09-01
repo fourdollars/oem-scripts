@@ -9,6 +9,7 @@ launchpad-api /usr/bin
 live-build-image-chroot.sh /usr/bin
 lp-dl-attm /usr/bin
 obj-*/bin/autoISO /usr/sbin
+oem-meta-package.mir.jinja2 /usr/share/oem-scripts
 recovery-from-iso.sh /usr/bin
 run-autopkgtest /usr/bin
 setup-apt-dir.sh /usr/bin
