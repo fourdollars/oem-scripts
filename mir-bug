@@ -830,7 +830,7 @@ def check_and_update_bug_attachments(
         _run_command(
             [
                 "wget",
-                "https://bazaar.launchpad.net/~ubuntu-archive/ubuntu-archive-tools/trunk/download/head:/oem-metapackage-mir-check",
+                "https://git.launchpad.net/ubuntu-archive-tools/plain/oem-metapackage-mir-check",
             ]
         )
         _run_command(git_command)

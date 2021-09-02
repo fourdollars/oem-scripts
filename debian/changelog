@@ -5,6 +5,7 @@ oem-scripts (1.11) UNRELEASED; urgency=medium
     mir-bug,
     oem-meta-package.mir.jinja2: Use the jinja2 template for the bug
     description.
+  * mir-bug: ubuntu-archive-tools has moved from bzr to git.
 
  -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 01 Sep 2021 19:32:27 +0800
 
