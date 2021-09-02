@@ -21,6 +21,7 @@
 import argparse
 import collections
 import difflib
+import jinja2
 import json
 import lazr
 import oem_scripts
@@ -34,7 +35,6 @@ from glob import glob
 from logging import debug, info, warning, error, critical
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
 from oem_scripts.logging import setup_logging
-from string import Template
 from tempfile import TemporaryDirectory
 
 ALLOWED_KERNEL_META_LIST = (
@@ -151,58 +151,6 @@ args = parser.parse_args()
 
 setup_logging(debug=args.debug, quiet=args.quiet)
 
-mir_bug_description_template = Template(
-    f"""[Background]
-
-Please see https://wiki.ubuntu.com/MIRTeam/Exceptions/OEM and https://wiki.ubuntu.com/StableReleaseUpdates/OEMMeta for details.
-
-[Impact]
-
- 1. Upgrade path: Users will be upgrading from a package in the associated OEM archive, not the Ubuntu archive.
- 2. The background and impact of the situation for this change, and it's impact.
-
-[Testing]
-
- 1. Test that `ubuntu-drivers list-oem` lists the meta-package on the relevant hardware
- 2. Test that fully installing the meta-package (upgrading to the OEM archive if relevant) works properly on the  hardware
- 3. Do an offline install. Boot the system. Run update-manager. Check that an upgrade to the OEM package is offered and that it completes successfully and the hardware works properly.
-
-[Regression Potential]
-
-Most potential regressions will live in the package set that will be installed via dependency of this package, which live in OEM archive (outside of Ubuntu) and control by OEM team. OEM team and other corresponding team need take responsibility of those dependency installed.
-
-[When switching kernel flavour] Check that the new kernel flavour works on the target platform.
-
-[Availability]
-This is a meta package for https://wiki.ubuntu.com/MIRTeam/Exceptions/OEM that means the package doesn't exist in Debian or Ubuntu archive yet.
-The source code of the $metaPkgName for focal:
-    git clone -b $branchName https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-$oemCodenameNogroup-projects-meta
-
-[Rationale]
-We want to improve the hardware support for $deviceName.
-
-[Security]
-No CVE/known security issue.
-
-[Quality assurance]
-I have used ppa:oem-solutions-engineers/oem-projects-meta to check this package on $deviceName.
-$metaPkgName will be upgraded to 20.04ubuntu1 or latest version from OEM archive.
-
-[Dependencies]
-It only depends on ubuntu-oem-keyring.
-
-[Standards compliance]
-This package should have met all requirements of https://wiki.ubuntu.com/MIRTeam/Exceptions/OEM.
-
-[Maintenance]
-Canonical OEM Enablement Team will take care of the maintenance.
-
-[Background information]
-Please check https://wiki.ubuntu.com/MIRTeam/Exceptions/OEM for details.
-
-Please use "oem-metapackage-mir-check" in lp:ubuntu-archive-tools to verify this MIR against the reference package in the archive."""
-)
-
 pattern = re.compile(r".*\[MIR\]\W*oem-([^-]*)-(.*)-meta\W*")
 
 
@@ -260,7 +208,7 @@ def create_bug(lp, oemCodename, platformCodename, deviceName):
     project = lp.projects["oem-priority"]
 
     bt = "[DRAFT][MIR] " + metaPkgName
-    bd = "[DRAFT]" + mir_bug_description_template.substitute(
+    bd = "[DRAFT]" + read_from_template(
         metaPkgName=metaPkgName,
         branchName=branchName,
         oemCodenameNogroup=oemCodenameNogroup,
@@ -562,7 +510,7 @@ def check_bug_description(bug, certified_hardwares: list) -> (str, str):
         critical(f"LP: #{bug.id} '{bug.title}' can not find the device name.")
         exit(1)
 
-    desc = mir_bug_description_template.substitute(
+    desc = read_from_template(
         metaPkgName=metaPkgName,
         branchName=branchName,
         oemCodenameNogroup=project,
@@ -882,7 +830,7 @@ def check_and_update_bug_attachments(
         _run_command(
             [
                 "wget",
-                "https://bazaar.launchpad.net/~ubuntu-archive/ubuntu-archive-tools/trunk/download/head:/oem-metapackage-mir-check",
+                "https://git.launchpad.net/ubuntu-archive-tools/plain/oem-metapackage-mir-check",
             ]
         )
         _run_command(git_command)
@@ -1252,6 +1200,19 @@ def check_and_update_git_repo(
         else:
             info(f"The '{branch}' branch of {pkg_name} in Git repository looks fine.")
             return True
+
+
+def read_from_template(metaPkgName, branchName, oemCodenameNogroup, deviceName):
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(["./", "/usr/share/oem-scripts"])
+    )
+    template = env.get_template("oem-meta-package.mir.jinja2")
+    return template.render(
+        metaPkgName=metaPkgName,
+        branchName=branchName,
+        oemCodenameNogroup=oemCodenameNogroup,
+        deviceName=deviceName,
+    )
 
 
 if args.subcommand:
