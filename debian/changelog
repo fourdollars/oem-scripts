@@ -1,4 +1,4 @@
-oem-scripts (1.11) UNRELEASED; urgency=medium
+oem-scripts (1.11) focal; urgency=medium
 
   * debian/control,
     debian/install,
@@ -7,7 +7,7 @@ oem-scripts (1.11) UNRELEASED; urgency=medium
     description.
   * mir-bug: ubuntu-archive-tools has moved from bzr to git.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 01 Sep 2021 19:32:27 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 02 Sep 2021 04:29:09 +0000
 
 oem-scripts (1.10) focal; urgency=medium
 
