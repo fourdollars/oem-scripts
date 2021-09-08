@@ -1,3 +1,17 @@
+oem-scripts (1.12) UNRELEASED; urgency=medium
+
+  * bootstrap-meta,
+    debian/tests/bootstrap-meta,
+    debian/tests/control,
+    mir-bug,
+    oem-meta-package.sru.jinja2,
+    oem_scripts/LaunchpadLogin.py,
+    oem_scripts/__init__.py,
+    setup.py: Add the bootstrap-meta tool to deal with OEM metapackages SRU
+    bugs.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 02 Sep 2021 14:55:10 +0800
+
 oem-scripts (1.11) focal; urgency=medium
 
   * debian/control,

@@ -1,0 +1,24 @@
+[Impact]
+
+ * It should have no impact at all because these changes shall have been applied and verified in the corresponding OEM archive before this SRU process.
+
+[Test Plan]
+
+* Install Ubuntu 20.04.x LTS on {{ marketName }} and remove {{ oemMetaPackage }} manually if any.
+
+ * Enable focal-proposed and execute the update-manager.
+
+ * The update-manager should show "Hardware support for {{ marketName }}". If not, please change "When there are security updates" and "When there are other updates" in the Updates of software-properties-gtk to "Display immediately", install the older firefox by `sudo apt install firefox=75.0+build3-0ubuntu1` and reboot the system to wait for the update-manager pop up automatically.
+
+ * After it installed {{ oemMetaPackage }} by update-manager and reboot the system, you should see the system booting from the {{ kernelMeta }} kernel.
+
+[Where problems could occur]
+
+ * {{ oemMetaPackage }} is installed but it is not updated to the version in the corresponding OEM archive.
+
+ * The update-manager didn't show "Hardware support for {{ marketName }}" at all.
+
+[Other Info]
+
+ * You can see all {{ oemMetaPackage }} versions on https://people.ubuntu.com/~fourdollars/oem-meta-packages/.
+ * I have used ppa:oem-solutions-engineers/oem-projects-meta to verify it before this SRU process.

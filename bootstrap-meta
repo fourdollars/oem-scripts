@@ -1,0 +1,420 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Copyright (C) 2021  Canonical Ltd.
+# Author: Shih-Yuan Lee (FourDollars) <sylee@canonical.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+import argparse
+import collections
+import jinja2
+import json
+import oem_scripts
+import re
+
+from copy import copy
+from logging import info, warning, error
+from oem_scripts import SUBSCRIBER_LIST, TAG_LIST, remove_prefix, yes_or_ask
+from oem_scripts.LaunchpadLogin import LaunchpadLogin
+from oem_scripts.logging import setup_logging
+
+
+class BootstrapMeta(object):
+    def __init__(self, platformJson, lp, kernel_meta):
+        self.kernel_meta = kernel_meta
+        self.lp = lp
+        self.json = json.load(platformJson)
+        self.project = self.json["project"]
+        self.group = self.json["group"]
+        self.platform = self.json["platform"]
+
+        if self.json["project"] == "somerville":
+            self.meta = "oem-somerville-" + self.json["platform"] + "-meta"
+        elif self.json["project"] == "stella":
+            self.meta = (
+                "oem-stella."
+                + self.json["group"]
+                + "."
+                + self.json["platform"]
+                + "-meta"
+            )
+        elif self.json["project"] == "sutton":
+            self.meta = (
+                "oem-sutton."
+                + self.json["group"]
+                + "."
+                + self.json["platform"]
+                + "-meta"
+            )
+        else:
+            raise Exception("Not supported")
+
+    def create_bug(self, title, description, importance, status):
+        project = lp.projects["oem-priority"]
+        bug = self.lp.bugs.createBug(
+            description=description,
+            target=project,
+            title=title,
+            information_type="Public",
+            tags=TAG_LIST,
+        )
+        info("meta package public bug: " + bug.web_link)
+
+        for task in bug.bug_tasks:
+            task.status = status
+            task.importance = importance
+            # Assign to reporter by default
+            task.assignee = lp.me
+            task.lp_save()
+
+        # Subscribe the oem-solutions-engineers
+        bug.subscribe(person=lp.people["oem-solutions-engineers"])
+        bug.lp_save()
+
+        return bug
+
+    def _grouping_market_names(self, market_names: list, maxsplit=1) -> str:
+        # Remove empty item
+        while "" in market_names:
+            market_names.remove("")
+        tmp = collections.defaultdict(list)
+        space_in_model = False
+        try:
+            for market_name in sorted(market_names):
+                if maxsplit == 1:
+                    name, model = market_name.split(maxsplit=maxsplit)
+                    tmp[name].append(model)
+                    if " " in model:
+                        space_in_model = True
+                elif maxsplit == 2:
+                    brand, name, model = market_name.split(maxsplit=maxsplit)
+                    tmp[brand + " " + name].append(model)
+                    if " " in model:
+                        space_in_model = True
+        except ValueError:
+            return ", ".join(sorted(market_names))
+
+        if space_in_model:
+            return ", ".join(
+                f"{name} {', '.join(models)}" for name, models in tmp.items()
+            )
+        else:
+            return ", ".join(
+                f"{name} {'/'.join(models)}" for name, models in tmp.items()
+            )
+
+    def parse_market_name(self):
+        if self.project == "somerville":
+            self.market_name = self._grouping_market_names(self.json["productnames"])
+            if not self.market_name.startswith("Dell "):
+                self.market_name = "Dell " + self.market_name
+        elif self.project == "stella":
+            self.market_name = self._grouping_market_names(
+                self.json["productnames"], maxsplit=2
+            )
+            self.market_name = remove_prefix(self.market_name, "HP ")
+            if not self.market_name.startswith("HP "):
+                self.market_name = "HP " + self.market_name
+        elif self.project == "sutton":
+            self.market_name = self._grouping_market_names(self.json["productnames"])
+            if not self.market_name.startswith("Lenovo "):
+                self.market_name = "Lenovo " + self.market_name
+        else:
+            raise Exception("Not supported")
+
+
+class BootstrapMetaMIR(BootstrapMeta):
+    def __init__(self, platformJson, lp, kernel_meta):
+        super().__init__(platformJson, lp, kernel_meta)
+
+    def _read_from_template(self, marketName, oemMetaPackage, kernelMeta):
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(["./", "/usr/share/oem-scripts"])
+        )
+        template = env.get_template("oem-meta-package.mir.jinja2")
+        return template.render(
+            metaPkgName=self.market_name,
+            branchName=self.branch,
+            oemCodenameNogroup=self.project,
+            deviceName=self.device_name,
+        )
+
+    def create(self):
+        title = f"[DRAFT][MIR] {self.meta}"
+        description = "[DRAFT]" + self._read_from_template()
+        super().create_bug(
+            title, description, importance="Critical", status="Confirmed"
+        )
+
+    def update(self):
+        pass
+
+
+class BootstrapMetaSRU(BootstrapMeta):
+    def __init__(self, platformJson, lp, kernel_meta, output):
+        super().__init__(platformJson, lp, kernel_meta)
+        self.parse_market_name()
+        self.pattern = re.compile(
+            rf".*Update the hardware support for .* in {self.meta}.*"
+        )
+        self.output = output
+
+    def _read_from_template(self):
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(["./", "/usr/share/oem-scripts"])
+        )
+        template = env.get_template("oem-meta-package.sru.jinja2")
+        return template.render(
+            marketName=self.market_name,
+            oemMetaPackage=self.meta,
+            kernelMeta=self.kernel_meta,
+        )
+
+    def create(self, importance="High", status="Confirmed"):
+        project = lp.projects[f"ubuntu/focal/+source/{self.meta}"]
+        tasks = project.searchTasks()
+        for task in tasks:
+            bug = task.bug
+            if self.pattern.match(bug.title):
+                if self.output:
+                    self.output.write(f"{bug.id}\n")
+                if lp.service_root != "https://api.launchpad.net/":
+                    error(f'{bug.web_link} - "{bug.title}" has been created.')
+                else:
+                    error(f'LP: #{bug.id} - "{bug.title}" has been created.')
+                exit(1)
+        title = (
+            f"[DRAFT] Update the hardware support for {self.market_name} in {self.meta}"
+        )
+        description = "[DRAFT]" + self._read_from_template()
+        bug = super().create_bug(
+            title, description, importance=importance, status=status
+        )
+        if self.output:
+            self.output.write(f"{bug.id}\n")
+        task = bug.addTask(target=lp.projects[f"ubuntu/+source/{self.meta}"])
+        task.status = "Won't Fix"
+        task.lp_save()
+        task = bug.addTask(target=lp.projects[f"ubuntu/focal/+source/{self.meta}"])
+        task.status = status
+        task.importance = importance
+        task.assignee = lp.me
+        task.lp_save()
+
+    def update(self, release=False, ready=False, yes=False):
+        project = lp.projects[f"ubuntu/focal/+source/{self.meta}"]
+        tasks = project.searchTasks()
+        candidate = None
+        for task in tasks:
+            bug = task.bug
+            if self.pattern.match(bug.title):
+                if yes_or_ask(
+                    yes,
+                    f'Do you want to update LP: #{bug.id} - "{bug.title}" for {self.kernel_meta}?',
+                ):
+                    candidate = bug
+
+        if candidate is None:
+            warning("Please use create-sru-bug to create the SRU bug first.")
+            exit(1)
+        else:
+            bug = candidate
+            if self.output:
+                self.output.write(f"{bug.id}\n")
+
+        bug.title = f"Update the hardware support for {self.market_name} in {self.meta}"
+        bug.description = self._read_from_template()
+        bug.lp_save()
+
+        subscriptions = list(map(lambda x: x.person.name, bug.subscriptions))
+        tags = copy(bug.tags)
+        if ready or release:
+            for subscriber in SUBSCRIBER_LIST:
+                if subscriber not in subscriptions:
+                    bug.subscribe(person=lp.people[subscriber])
+        if "oem-solutions-engineers" not in subscriptions:
+            bug.subscribe(person=lp.people["oem-solutions-engineers"])
+        if release:
+            if "oem-done-upload" not in tags:
+                tags.append("oem-done-upload")
+            if "oem-needs-upload" in tags:
+                tags.remove("oem-needs-upload")
+            if "ubuntu-desktop" not in subscriptions:
+                bug.subscribe(person=lp.people["ubuntu-desktop"])
+            if "ubuntu-sponsors" in subscriptions:
+                bug.unsubscribe(person=lp.people["ubuntu-sponsors"])
+            if "ubuntu-sru" not in subscriptions:
+                bug.subscribe(person=lp.people["ubuntu-sru"])
+        elif ready:
+            if "oem-done-upload" in tags:
+                tags.remove("oem-done-upload")
+            if "oem-needs-upload" not in tags:
+                tags.append("oem-needs-upload")
+            if "ubuntu-desktop" not in subscriptions:
+                bug.subscribe(person=lp.people["ubuntu-desktop"])
+            if "ubuntu-sponsors" not in subscriptions:
+                bug.subscribe(person=lp.people["ubuntu-sponsors"])
+            if "ubuntu-sru" in subscriptions:
+                bug.unsubscribe(person=lp.people["ubuntu-sru"])
+        else:
+            if "oem-done-upload" in tags:
+                tags.remove("oem-done-upload")
+            if "oem-needs-upload" in tags:
+                tags.remove("oem-needs-upload")
+            if "ubuntu-desktop" in subscriptions:
+                bug.unsubscribe(person=lp.people["ubuntu-desktop"])
+            if "ubuntu-sponsors" in subscriptions:
+                bug.unsubscribe(person=lp.people["ubuntu-sponsors"])
+            if "ubuntu-sru" in subscriptions:
+                bug.unsubscribe(person=lp.people["ubuntu-sru"])
+        for tag in bug.tags:
+            if tag.startswith("oem-scripts-"):
+                if tag[len("oem-scripts-") :] != oem_scripts.__version__:
+                    tags.remove(tag)
+        for tag in TAG_LIST:
+            if tag not in tags:
+                tags.append(tag)
+        bug.tags = tags
+        bug.lp_save()
+
+        for task in bug.bug_tasks:
+            if (
+                task.bug_target_name == "oem-priority"
+                or task.bug_target_name == "oem-somerville-varys-meta (Ubuntu Focal)"
+            ):
+                if release:
+                    task.status = "In Progress"
+                elif ready:
+                    task.status = "Triaged"
+                else:
+                    task.status = "Confirmed"
+            elif task.bug_target_name == "oem-somerville-varys-meta (Ubuntu)":
+                task.status = "Won't Fix"
+            task.lp_save()
+
+        if lp.service_root != "https://api.launchpad.net/":
+            info(f'{bug.web_link} - "{bug.title}" has been updated.')
+        else:
+            info(f'LP: #{bug.id} - "{bug.title}" has been updated.')
+
+
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog="""
+examples:
+    bootstrap-meta create-mir-bug platformJSON [WIP]
+    bootstrap-meta update-mir-bug platformJSON [WIP]
+    bootstrap-meta update-mir-git platformJSON [WIP]
+    bootstrap-meta create-sru-bug platformJSON [--kernel linux-generic-hwe-20.04]
+    bootstrap-meta update-sru-bug platformJSON [--kernel linux-generic-hwe-20.04] [--yes] [--ready|--release]
+    bootstrap-meta update-sru-git platformJSON [WIP]""",
+)
+
+parser.add_argument("-d", "--debug", help="print debug messages", action="store_true")
+parser.add_argument(
+    "-q", "--quiet", help="Don't print info messages", action="store_true"
+)
+
+subparsers = parser.add_subparsers(dest="subcommand")
+
+create_mir_bug = subparsers.add_parser("create-mir-bug", help="[-h] platformJSON")
+create_mir_bug.add_argument(
+    "json",
+    help="Specify the platform json of the OEM metapackage.",
+    type=argparse.FileType("r", encoding="UTF-8"),
+)
+
+update_mir_bug = subparsers.add_parser("update-mir-bug", help="[-h] platformJSON")
+update_mir_bug.add_argument(
+    "json",
+    help="Specify the platform json of the OEM metapackage.",
+    type=argparse.FileType("r", encoding="UTF-8"),
+)
+
+create_sru_bug = subparsers.add_parser("create-sru-bug", help="[-h] platformJSON")
+create_sru_bug.add_argument(
+    "json",
+    help="Specify the platform json of the OEM metapackage in Ubuntu archive.",
+    type=argparse.FileType("r", encoding="UTF-8"),
+)
+create_sru_bug.add_argument(
+    "--kernel",
+    default="linux-generic-hwe-20.04",
+    help="Specify the kernel meta of the OEM metapackage that is targeting on.",
+)
+create_sru_bug.add_argument(
+    "-o",
+    "--output",
+    help="Specify a file name to write the bug number.",
+    type=argparse.FileType("w", encoding="UTF-8"),
+)
+
+update_sru_bug = subparsers.add_parser(
+    "update-sru-bug",
+    help="[-h] platformJSON [--kernel linux-generic-hwe-20.04] [--yes] [--ready|--release]",
+)
+update_sru_bug.add_argument(
+    "json",
+    help="Specify the platform json of the OEM metapackage in Ubuntu archive.",
+    type=argparse.FileType("r", encoding="UTF-8"),
+)
+update_sru_bug.add_argument(
+    "--kernel",
+    default="linux-generic-hwe-20.04",
+    help="Specify the kernel meta of the OEM metapackage that is targeting on.",
+)
+update_sru_bug.add_argument(
+    "--release",
+    action="store_true",
+    help="Update the bug when the OEM metapackage has been uploaded into the queue for releasing.",
+)
+update_sru_bug.add_argument(
+    "--ready",
+    action="store_true",
+    help="Update the bug when the OEM metapackage is ready to upload.",
+)
+update_sru_bug.add_argument(
+    "--yes", help="Say yes for all prompts.", action="store_true"
+)
+update_sru_bug.add_argument(
+    "-o",
+    "--output",
+    help="Specify a file name to write the bug number.",
+    type=argparse.FileType("w", encoding="UTF-8"),
+)
+
+args = parser.parse_args()
+setup_logging(debug=args.debug, quiet=args.quiet)
+
+if args.subcommand:
+    login = LaunchpadLogin()
+    lp = login.lp
+    lp.service_root = login.service_root
+    lp.service_version = login.service_version
+
+# if args.subcommand == "create-mir-bug":
+#     mirbug = BootstrapMetaMIR(args.json, lp, args.kernel)
+#     mirbug.create()
+# elif args.subcommand == "update-mir-bug":
+#     mirbug = BootstrapMetaMIR(args.json, lp, args.kernel)
+#     mirbug.update()
+if args.subcommand == "create-sru-bug":
+    srubug = BootstrapMetaSRU(args.json, lp, args.kernel, args.output)
+    srubug.create()
+elif args.subcommand == "update-sru-bug":
+    srubug = BootstrapMetaSRU(args.json, lp, args.kernel, args.output)
+    srubug.update(release=args.release, ready=args.ready, yes=args.yes)
+else:
+    parser.print_help()

@@ -34,6 +34,7 @@ Also there is a meta package oem-dev-tools that installs all scripts""",
     author="Commercial Engineering",
     author_email="commercial-engineering@canonical.com",
     scripts=[
+        "bootstrap-meta",
         "copyPackage.py",
         "get-oem-auth-token",
         "get-oemshare-auth-token",
