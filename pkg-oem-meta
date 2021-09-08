@@ -9,6 +9,7 @@ import sys
 
 from distro_info import UbuntuDistroInfo
 from logging import warning, error
+from oem_scripts import ALLOWED_KERNEL_META_LIST
 from oem_scripts.logging import setup_logging
 from time import localtime, strftime
 
@@ -51,14 +52,9 @@ else:
 parser.add_argument(
     "-k",
     "--kernel",
-    choices=[
-        "linux-oem-20.04",
-        "linux-oem-20.04b",
-        "linux-oem-20.04c",
-        "linux-generic-hwe-20.04",
-    ],
+    choices=ALLOWED_KERNEL_META_LIST,
     default="linux-oem-20.04",
-    help="Specify the kernel meta. [linux-oem-20.04|linux-oem-20.04b|linux-oem-20.04c|linux-generic-hwe-20.04]",
+    help="Specify the kernel meta.",
 )
 info = UbuntuDistroInfo()
 try:
@@ -161,19 +157,14 @@ def generate_debian_package(version, bootstrap=False, real=False):
             extra = ", linux-generic-hwe-20.04"
         flavour = "default"
         grub_flavour = "generic"
-    elif args.kernel == "linux-oem-20.04":
-        if real:
-            extra = ", linux-oem-20.04"
-        flavour = "oem"
-        grub_flavour = "oem"
     elif args.kernel == "linux-oem-20.04b":
         if real:
             extra = ", linux-oem-20.04b | linux-oem-20.04"
         flavour = "oem"
         grub_flavour = "oem"
-    elif args.kernel == "linux-oem-20.04c":
+    elif args.kernel.startswith("linux-oem-20.04"):
         if real:
-            extra = ", linux-oem-20.04c"
+            extra = f", {args.kernel}"
         flavour = "oem"
         grub_flavour = "oem"
 

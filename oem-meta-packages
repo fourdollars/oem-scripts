@@ -33,19 +33,12 @@ from abc import ABCMeta, abstractmethod
 from apt import apt_pkg
 from configparser import ConfigParser
 from logging import debug, info, warning, error, critical
+from oem_scripts import ALLOWED_KERNEL_META_LIST
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
 from oem_scripts.logging import setup_logging
 from pydantic import BaseModel
 from string import Template
 from tempfile import TemporaryDirectory
-
-ALLOWED_KERNEL_META_LIST = (
-    "linux-oem-20.04c",
-    "linux-oem-20.04b",
-    "linux-oem-20.04",
-    "linux-generic-hwe-20.04",
-    "linux-generic",
-)
 
 SUBSCRIBER = "canonical-mainstream"
 
@@ -315,9 +308,9 @@ update.add_argument(
 update.add_argument("--meta", type=str, help="Specify the meta package to update.")
 update.add_argument(
     "--kernel",
-    type=str,
+    choices=ALLOWED_KERNEL_META_LIST,
     default="linux-generic-hwe-20.04",
-    help="Specify the kernel meta to update. linux-generic-hwe-20.04|linux-oem-20.04c|linux-oem-20.04b|linux-oem-20.04",
+    help="Specify the kernel meta to update.",
 )
 update.add_argument(
     "--factory",
@@ -531,50 +524,25 @@ def deal_with_kernel_depends(pkg_name, branch, git_dir) -> bool:
 
     # this only works for updating auto-generated code
     if (
-        args.kernel == "linux-generic-hwe-20.04"
-        and ", linux-generic-hwe-20.04," not in lines[idx]
-    ):
-        lines[idx] = lines[idx].replace(
-            ", linux-oem-20.04,", ", linux-generic-hwe-20.04,"
-        )
-        lines[idx] = lines[idx].replace(
-            ", linux-oem-20.04b | linux-oem-20.04,", ", linux-generic-hwe-20.04,"
-        )
-        lines[idx] = lines[idx].replace(
-            ", linux-oem-20.04c,", ", linux-generic-hwe-20.04,"
-        )
-        changed = True
-    elif args.kernel == "linux-oem-20.04" and ", linux-oem-20.04," not in lines[idx]:
-        lines[idx] = lines[idx].replace(
-            ", linux-generic-hwe-20.04,", ", linux-oem-20.04,"
-        )
-        lines[idx] = lines[idx].replace(
-            ", linux-oem-20.04b | linux-oem-20.04,", ", linux-oem-20.04,"
-        )
-        lines[idx] = lines[idx].replace(", linux-oem-20.04c", ", linux-oem-20.04,")
-        changed = True
-    elif (
         args.kernel == "linux-oem-20.04b"
         and ", linux-oem-20.04b | linux-oem-20.04," not in lines[idx]
     ):
-        lines[idx] = lines[idx].replace(
-            ", linux-generic-hwe-20.04,", ", linux-oem-20.04b | linux-oem-20.04,"
-        )
-        lines[idx] = lines[idx].replace(
-            ", linux-oem-20.04,", ", linux-oem-20.04b | linux-oem-20.04,"
-        )
-        lines[idx] = lines[idx].replace(
-            ", linux-oem-20.04c,", ", linux-oem-20.04b | linux-oem-20.04,"
-        )
+        for kernel in ALLOWED_KERNEL_META_LIST:
+            if kernel != args.kernel:
+                lines[idx] = lines[idx].replace(
+                    f", {kernel},", f", linux-oem-20.04b | linux-oem-20.04,"
+                )
         changed = True
-    elif args.kernel == "linux-oem-20.04c" and ", linux-oem-20.04c," not in lines[idx]:
+    elif (
+        args.kernel.startswith("linux-oem-20.04")
+        and f", {args.kernel}," not in lines[idx]
+    ):
         lines[idx] = lines[idx].replace(
-            ", linux-generic-hwe-20.04,", ", linux-oem-20.04c,"
+            ", linux-oem-20.04b | linux-oem-20.04,", f", {args.kernel},"
         )
-        lines[idx] = lines[idx].replace(", linux-oem-20.04,", ", linux-oem-20.04c,")
-        lines[idx] = lines[idx].replace(
-            ", linux-oem-20.04b | linux-oem-20.04,", ", linux-oem-20.04c,"
-        )
+        for kernel in ALLOWED_KERNEL_META_LIST:
+            if kernel != "linux-oem-20.04b" and kernel != args.kernel:
+                lines[idx] = lines[idx].replace(f", {kernel},", f", {args.kernel},")
         changed = True
 
     if args.factory:
@@ -590,12 +558,7 @@ def deal_with_kernel_depends(pkg_name, branch, git_dir) -> bool:
             critical("It can not find factory 'Depends' in debian/control.")
             exit(1)
 
-        for kernel in (
-            "linux-generic-hwe-20.04",
-            "linux-oem-20.04",
-            "linux-oem-20.04b",
-            "linux-oem-20.04c",
-        ):
+        for kernel in ALLOWED_KERNEL_META_LIST:
             if depends_line.endswith(kernel) or f"{kernel}," in depends_line:
                 if kernel != args.kernel:
                     lines[factory_idx] = lines[factory_idx].replace(kernel, args.kernel)
@@ -2087,21 +2050,16 @@ elif args.subcommand == "subscribe":
         name = args.meta
         info(f"Checking the subscriptions for {name}...")
         source = lp.distributions["ubuntu"].getSourcePackage(name=name)
-        if SUBSCRIBER in map(
-            lambda x: x.subscriber.name, source.getSubscriptions()
-        ):
+        if SUBSCRIBER in map(lambda x: x.subscriber.name, source.getSubscriptions()):
             info(f"ubuntu/{name} has subscribed '{SUBSCRIBER}'.")
             exit(0)
         warning(f"ubuntu/{name} didn't subscribe '{SUBSCRIBER}' yet.")
         if yes_or_ask(
-            args.yes,
-            f"Would you like to subscribe '{SUBSCRIBER}' for ubuntu/{name}?",
+            args.yes, f"Would you like to subscribe '{SUBSCRIBER}' for ubuntu/{name}?"
         ):
             try:
                 # When a person is subscribed to a source package, one actually subscribe all bugs for it.
-                source.addBugSubscription(
-                    subscriber=lp.people[SUBSCRIBER]
-                )
+                source.addBugSubscription(subscriber=lp.people[SUBSCRIBER])
             except lazr.restfulclient.errors.Unauthorized as e:
                 error(
                     f"{lp.me.name} does not have permission to subscribe '{SUBSCRIBER}'."
@@ -2113,21 +2071,16 @@ elif args.subcommand == "subscribe":
     for name in get_oem_meta_packages(cache):
         info(f"Checking the subscriptions for {name}...")
         source = lp.distributions["ubuntu"].getSourcePackage(name=name)
-        if SUBSCRIBER in map(
-            lambda x: x.subscriber.name, source.getSubscriptions()
-        ):
+        if SUBSCRIBER in map(lambda x: x.subscriber.name, source.getSubscriptions()):
             info(f"ubuntu/{name} has subscribed '{SUBSCRIBER}'.")
             continue
         warning(f"ubuntu/{name} didn't subscribe '{SUBSCRIBER}' yet.")
         if yes_or_ask(
-            args.yes,
-            f"Would you like to subscribe '{SUBSCRIBER}' for ubuntu/{name}?",
+            args.yes, f"Would you like to subscribe '{SUBSCRIBER}' for ubuntu/{name}?"
         ):
             try:
                 # When a person is subscribed to a source package, one actually subscribe all bugs for it.
-                source.addBugSubscription(
-                    subscriber=lp.people[SUBSCRIBER]
-                )
+                source.addBugSubscription(subscriber=lp.people[SUBSCRIBER])
             except lazr.restfulclient.errors.Unauthorized as e:
                 error(
                     f"{lp.me.name} does not have permission to subscribe '{SUBSCRIBER}'."
@@ -2146,9 +2099,7 @@ elif args.subcommand == "unsubscribe":
                 f"Would you like to unsubscribe '{SUBSCRIBER}' for ubuntu/{args.pkgName}?",
             ):
                 try:
-                    source.removeBugSubscription(
-                        subscriber=lp.people[SUBSCRIBER]
-                    )
+                    source.removeBugSubscription(subscriber=lp.people[SUBSCRIBER])
                 except lazr.restfulclient.errors.Unauthorized as e:
                     error(
                         f"{lp.me.name} does not have permission to unsubscribe '{SUBSCRIBER}'."
