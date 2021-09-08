@@ -1,4 +1,4 @@
-oem-scripts (1.12) UNRELEASED; urgency=medium
+oem-scripts (1.12) focal; urgency=medium
 
   * bootstrap-meta,
     debian/tests/bootstrap-meta,
