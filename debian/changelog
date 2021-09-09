@@ -1,4 +1,4 @@
-oem-scripts (1.13) UNRELEASED; urgency=medium
+oem-scripts (1.13) focal; urgency=medium
 
   * bootstrap-meta,
     oem-meta-packages,
