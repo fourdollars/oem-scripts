@@ -26,7 +26,13 @@ import re
 
 from copy import copy
 from logging import info, warning, error
-from oem_scripts import SUBSCRIBER_LIST, TAG_LIST, remove_prefix, yes_or_ask
+from oem_scripts import (
+    ALLOWED_KERNEL_META_LIST,
+    SUBSCRIBER_LIST,
+    TAG_LIST,
+    remove_prefix,
+    yes_or_ask,
+)
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
 from oem_scripts.logging import setup_logging
 
@@ -351,6 +357,7 @@ create_sru_bug.add_argument(
 )
 create_sru_bug.add_argument(
     "--kernel",
+    choices=ALLOWED_KERNEL_META_LIST,
     default="linux-generic-hwe-20.04",
     help="Specify the kernel meta of the OEM metapackage that is targeting on.",
 )
@@ -372,6 +379,7 @@ update_sru_bug.add_argument(
 )
 update_sru_bug.add_argument(
     "--kernel",
+    choices=ALLOWED_KERNEL_META_LIST,
     default="linux-generic-hwe-20.04",
     help="Specify the kernel meta of the OEM metapackage that is targeting on.",
 )

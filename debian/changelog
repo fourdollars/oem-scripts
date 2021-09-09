@@ -1,3 +1,12 @@
+oem-scripts (1.13) UNRELEASED; urgency=medium
+
+  * bootstrap-meta,
+    oem-meta-packages,
+    oem_scripts/__init__.py,
+    pkg-oem-meta: Support linux-oem-20.04d.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 08 Sep 2021 20:27:27 +0800
+
 oem-scripts (1.12) focal; urgency=medium
 
   * bootstrap-meta,
