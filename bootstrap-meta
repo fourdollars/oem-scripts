@@ -52,7 +52,7 @@ class BootstrapMeta(object):
             self.meta = (
                 "oem-stella."
                 + self.json["group"]
-                + "."
+                + "-"
                 + self.json["platform"]
                 + "-meta"
             )
@@ -60,7 +60,7 @@ class BootstrapMeta(object):
             self.meta = (
                 "oem-sutton."
                 + self.json["group"]
-                + "."
+                + "-"
                 + self.json["platform"]
                 + "-meta"
             )
