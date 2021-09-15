@@ -1,4 +1,4 @@
-oem-scripts (1.14) UNRELEASED; urgency=medium
+oem-scripts (1.14) focal; urgency=medium
 
   [ Bin Li ]
   * bootstrap-meta: Fix the typo of OEM metapackages for Stella and Sutton.
@@ -6,7 +6,7 @@ oem-scripts (1.14) UNRELEASED; urgency=medium
   [ Shih-Yuan Lee (FourDollars) ]
   * bootstrap-meta: Adjust the SRU bug process for the permission.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 14 Sep 2021 23:52:15 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 15 Sep 2021 08:25:41 +0000
 
 oem-scripts (1.13) focal; urgency=medium
 

@@ -1,4 +1,4 @@
-__version__ = "1.13"
+__version__ = "1.14"
 
 ALLOWED_KERNEL_META_LIST = (
     "linux-oem-20.04d",
