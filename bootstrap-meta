@@ -21,6 +21,7 @@ import argparse
 import collections
 import jinja2
 import json
+import lazr
 import oem_scripts
 import re
 
@@ -52,7 +53,7 @@ class BootstrapMeta(object):
             self.meta = (
                 "oem-stella."
                 + self.json["group"]
-                + "."
+                + "-"
                 + self.json["platform"]
                 + "-meta"
             )
@@ -60,7 +61,7 @@ class BootstrapMeta(object):
             self.meta = (
                 "oem-sutton."
                 + self.json["group"]
-                + "."
+                + "-"
                 + self.json["platform"]
                 + "-meta"
             )
@@ -189,7 +190,7 @@ class BootstrapMetaSRU(BootstrapMeta):
         )
 
     def create(self, importance="High", status="Confirmed"):
-        project = lp.projects[f"ubuntu/focal/+source/{self.meta}"]
+        project = lp.projects[f"ubuntu/+source/{self.meta}"]
         tasks = project.searchTasks()
         for task in tasks:
             bug = task.bug
@@ -210,17 +211,12 @@ class BootstrapMetaSRU(BootstrapMeta):
         )
         if self.output:
             self.output.write(f"{bug.id}\n")
+
         task = bug.addTask(target=lp.projects[f"ubuntu/+source/{self.meta}"])
-        task.status = "Won't Fix"
-        task.lp_save()
-        task = bug.addTask(target=lp.projects[f"ubuntu/focal/+source/{self.meta}"])
-        task.status = status
-        task.importance = importance
-        task.assignee = lp.me
         task.lp_save()
 
     def update(self, release=False, ready=False, yes=False):
-        project = lp.projects[f"ubuntu/focal/+source/{self.meta}"]
+        project = lp.projects[f"ubuntu/+source/{self.meta}"]
         tasks = project.searchTasks()
         candidate = None
         for task in tasks:
@@ -231,6 +227,17 @@ class BootstrapMetaSRU(BootstrapMeta):
                     f'Do you want to update LP: #{bug.id} - "{bug.title}" for {self.kernel_meta}?',
                 ):
                     candidate = bug
+        if candidate is None:
+            project = lp.projects[f"ubuntu/focal/+source/{self.meta}"]
+            tasks = project.searchTasks()
+            for task in tasks:
+                bug = task.bug
+                if self.pattern.match(bug.title):
+                    if yes_or_ask(
+                        yes,
+                        f'Do you want to update LP: #{bug.id} - "{bug.title}" for {self.kernel_meta}?',
+                    ):
+                        candidate = bug
 
         if candidate is None:
             warning("Please use create-sru-bug to create the SRU bug first.")
@@ -260,7 +267,12 @@ class BootstrapMetaSRU(BootstrapMeta):
             if "ubuntu-desktop" not in subscriptions:
                 bug.subscribe(person=lp.people["ubuntu-desktop"])
             if "ubuntu-sponsors" in subscriptions:
-                bug.unsubscribe(person=lp.people["ubuntu-sponsors"])
+                try:
+                    bug.unsubscribe(person=lp.people["ubuntu-sponsors"])
+                except lazr.restfulclient.errors.Unauthorized:
+                    warning(
+                        f"{lp.me.display_name} doesn't have the permission to unsubscribe ubuntu-sponsors."
+                    )
             if "ubuntu-sru" not in subscriptions:
                 bug.subscribe(person=lp.people["ubuntu-sru"])
         elif ready:
@@ -273,18 +285,38 @@ class BootstrapMetaSRU(BootstrapMeta):
             if "ubuntu-sponsors" not in subscriptions:
                 bug.subscribe(person=lp.people["ubuntu-sponsors"])
             if "ubuntu-sru" in subscriptions:
-                bug.unsubscribe(person=lp.people["ubuntu-sru"])
+                try:
+                    bug.unsubscribe(person=lp.people["ubuntu-sru"])
+                except lazr.restfulclient.errors.Unauthorized:
+                    warning(
+                        f"{lp.me.display_name} doesn't have the permission to unsubscribe ubuntu-sru."
+                    )
         else:
             if "oem-done-upload" in tags:
                 tags.remove("oem-done-upload")
             if "oem-needs-upload" in tags:
                 tags.remove("oem-needs-upload")
             if "ubuntu-desktop" in subscriptions:
-                bug.unsubscribe(person=lp.people["ubuntu-desktop"])
+                try:
+                    bug.unsubscribe(person=lp.people["ubuntu-desktop"])
+                except lazr.restfulclient.errors.Unauthorized:
+                    warning(
+                        f"{lp.me.display_name} doesn't have the permission to unsubscribe ubuntu-desktop."
+                    )
             if "ubuntu-sponsors" in subscriptions:
-                bug.unsubscribe(person=lp.people["ubuntu-sponsors"])
+                try:
+                    bug.unsubscribe(person=lp.people["ubuntu-sponsors"])
+                except lazr.restfulclient.errors.Unauthorized:
+                    warning(
+                        f"{lp.me.display_name} doesn't have the permission to unsubscribe ubuntu-sponsors."
+                    )
             if "ubuntu-sru" in subscriptions:
-                bug.unsubscribe(person=lp.people["ubuntu-sru"])
+                try:
+                    bug.unsubscribe(person=lp.people["ubuntu-sru"])
+                except lazr.restfulclient.errors.Unauthorized:
+                    warning(
+                        f"{lp.me.display_name} doesn't have the permission to unsubscribe ubuntu-sru."
+                    )
         for tag in bug.tags:
             if tag.startswith("oem-scripts-"):
                 if tag[len("oem-scripts-") :] != oem_scripts.__version__:
@@ -295,10 +327,14 @@ class BootstrapMetaSRU(BootstrapMeta):
         bug.tags = tags
         bug.lp_save()
 
+        focal_series_found = False
+
         for task in bug.bug_tasks:
+            if task.bug_target_name == f"{self.meta} (Ubuntu Focal)":
+                focal_series_found = True
             if (
                 task.bug_target_name == "oem-priority"
-                or task.bug_target_name == "oem-somerville-varys-meta (Ubuntu Focal)"
+                or task.bug_target_name == f"{self.meta} (Ubuntu Focal)"
             ):
                 if release:
                     task.status = "In Progress"
@@ -306,8 +342,19 @@ class BootstrapMetaSRU(BootstrapMeta):
                     task.status = "Triaged"
                 else:
                     task.status = "Confirmed"
-            elif task.bug_target_name == "oem-somerville-varys-meta (Ubuntu)":
-                task.status = "Won't Fix"
+            elif task.bug_target_name == f"{self.meta} (Ubuntu)":
+                if release:
+                    task.status = "Won't Fix"
+                elif ready:
+                    task.status = "Triaged"
+                else:
+                    task.status = "Confirmed"
+            task.lp_save()
+
+        if not focal_series_found and release:
+            task = bug.addTask(target=lp.projects[f"ubuntu/focal/+source/{self.meta}"])
+            task.status = "In Progress"
+            task.importance = "High"
             task.lp_save()
 
         if lp.service_root != "https://api.launchpad.net/":
