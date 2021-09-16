@@ -23,19 +23,24 @@ import jinja2
 import json
 import lazr
 import oem_scripts
+import os
 import re
+import shutil
 
 from copy import copy
-from logging import info, warning, error
+from logging import info, debug, warning, error, critical
 from oem_scripts import (
     ALLOWED_KERNEL_META_LIST,
     SUBSCRIBER_LIST,
     TAG_LIST,
+    _get_items_from_git,
+    _run_command,
     remove_prefix,
     yes_or_ask,
 )
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
 from oem_scripts.logging import setup_logging
+from tempfile import TemporaryDirectory
 
 
 class BootstrapMeta(object):
@@ -141,6 +146,60 @@ class BootstrapMeta(object):
         else:
             raise Exception("Not supported")
 
+    def search_meta_bug(
+        self, pattern, yes, output=None, update_bug=False, update_git=False
+    ):
+        if update_bug and update_git:
+            critical("This should not happen.")
+            exit(1)
+
+        if not update_bug and not update_git:
+            critical("This should not happen.")
+            exit(1)
+
+        if update_bug:
+            question_prefix = "Do you want to update"
+
+        if update_git:
+            question_prefix = "Do you want to update the bootstrap OEM metapackage in Git repository for"
+
+        project = lp.projects[f"ubuntu/+source/{self.meta}"]
+        tasks = project.searchTasks()
+        candidate = None
+        found = False
+        for task in tasks:
+            bug = task.bug
+            if pattern.match(bug.title):
+                found = True
+                if yes_or_ask(
+                    yes,
+                    f'{question_prefix} LP: #{bug.id} - "{bug.title}" for {self.kernel_meta}?',
+                ):
+                    candidate = bug
+        if candidate is None:
+            project = lp.projects[f"ubuntu/focal/+source/{self.meta}"]
+            tasks = project.searchTasks()
+            for task in tasks:
+                bug = task.bug
+                if pattern.match(bug.title):
+                    found = True
+                    if yes_or_ask(
+                        yes,
+                        f'{question_prefix} LP: #{bug.id} - "{bug.title}" for {self.kernel_meta}?',
+                    ):
+                        candidate = bug
+        if output:
+            output.write(f"{bug.id}\n")
+
+        if candidate is None:
+            if found:
+                exit(0)
+            else:
+                error("Please use create-sru-bug to create the SRU bug first.")
+                exit(1)
+
+        return candidate
+
 
 class BootstrapMetaMIR(BootstrapMeta):
     def __init__(self, platformJson, lp, kernel_meta):
@@ -216,37 +275,9 @@ class BootstrapMetaSRU(BootstrapMeta):
         task.lp_save()
 
     def update(self, release=False, ready=False, yes=False):
-        project = lp.projects[f"ubuntu/+source/{self.meta}"]
-        tasks = project.searchTasks()
-        candidate = None
-        for task in tasks:
-            bug = task.bug
-            if self.pattern.match(bug.title):
-                if yes_or_ask(
-                    yes,
-                    f'Do you want to update LP: #{bug.id} - "{bug.title}" for {self.kernel_meta}?',
-                ):
-                    candidate = bug
-        if candidate is None:
-            project = lp.projects[f"ubuntu/focal/+source/{self.meta}"]
-            tasks = project.searchTasks()
-            for task in tasks:
-                bug = task.bug
-                if self.pattern.match(bug.title):
-                    if yes_or_ask(
-                        yes,
-                        f'Do you want to update LP: #{bug.id} - "{bug.title}" for {self.kernel_meta}?',
-                    ):
-                        candidate = bug
-
-        if candidate is None:
-            warning("Please use create-sru-bug to create the SRU bug first.")
-            exit(1)
-        else:
-            bug = candidate
-            if self.output:
-                self.output.write(f"{bug.id}\n")
-
+        bug = self.search_meta_bug(
+            pattern=self.pattern, yes=yes, output=self.output, update_bug=True
+        )
         bug.title = f"Update the hardware support for {self.market_name} in {self.meta}"
         bug.description = self._read_from_template()
         bug.lp_save()
@@ -363,6 +394,187 @@ class BootstrapMetaSRU(BootstrapMeta):
             info(f'LP: #{bug.id} - "{bug.title}" has been updated.')
 
 
+class BootstrapMetaGit(BootstrapMeta):
+    def __init__(self, platformJson, lp, kernel_meta):
+        super().__init__(platformJson, lp, kernel_meta)
+        self.parse_market_name()
+
+    def update(self, yes=False, sru=False, mir=False, dryrun=False):
+        if sru and mir:
+            critical("This should not happen.")
+            exit(1)
+        if sru:
+            pattern = re.compile(
+                rf".*Update the hardware support for .* in {self.meta}.*"
+            )
+        if mir:
+            pattern = re.compile(rf".*[MIR] {self.meta}")
+        bug = self.search_meta_bug(pattern=pattern, yes=yes, update_git=True)
+        info(f'LP: #{bug.id} "{bug.title}"')
+        if self.group:
+            branch = f"{self.group}.{self.platform}-focal-ubuntu"
+        else:
+            branch = f"{self.platform}-focal-ubuntu"
+        kernel_flavour, _, market_name, ids = _get_items_from_git(
+            self.project, branch, self.meta
+        )
+        with TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
+            # Generated the meta package by pkg-oem-meta
+            if self.project == "somerville":
+                command = [
+                    "pkg-somerville-meta",
+                    "-s",
+                    "focal",
+                    "-k",
+                    self.kernel_meta,
+                    "-p",
+                    self.platform,
+                    "--public-bug",
+                    str(bug.id),
+                    "--market-name",
+                    self.market_name,
+                ]
+                command.extend(ids)
+            elif self.project == "stella":
+                command = [
+                    "pkg-stella-meta",
+                    "-s",
+                    "focal",
+                    "-k",
+                    self.kernel_meta,
+                    "-g",
+                    self.group,
+                    "-p",
+                    self.platform,
+                    "--public-bug",
+                    str(bug.id),
+                    "--market-name",
+                    self.market_name,
+                ]
+                command.extend(ids)
+            elif self.project == "sutton":
+                command = [
+                    "pkg-sutton-meta",
+                    "-s",
+                    "focal",
+                    "-k",
+                    self.kernel_meta,
+                    "-g",
+                    self.group,
+                    "-p",
+                    self.platform,
+                    "--public-bug",
+                    str(bug.id),
+                    "--market-name",
+                    self.market_name,
+                ]
+                for bvn, bvr, pvr in ids:
+                    if pvr:
+                        command.append(f"bvn{bvn}:bvr{bvr}:pvr{pvr}")
+                    else:
+                        command.append(f"bvn{bvn}:bvr{bvr}")
+            _run_command(command)
+            new_dir = os.path.join(tmpdir, self.meta)
+            os.chdir(new_dir)
+            _run_command(["git", "checkout", branch])
+
+            os.chdir(tmpdir)
+            os.rename(new_dir, new_dir + ".new")
+            new_dir += ".new"
+            shutil.rmtree(os.path.join(new_dir, ".git"))
+            os.remove(os.path.join(new_dir, "debian", "changelog"))
+
+            git_repo = f"git+ssh://{lp.me.name}@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{self.project}-projects-meta"
+            git_command = (
+                "git",
+                "clone",
+                "--depth",
+                "1",
+                "-b",
+                branch,
+                git_repo,
+                self.meta,
+            )
+            _run_command(git_command)
+            os.chdir(os.path.join(tmpdir, self.meta))
+            shutil.copytree(new_dir, ".", dirs_exist_ok=True)
+
+            lines = None
+            found = False
+            changelog = os.path.join(tmpdir, self.meta, "debian", "changelog")
+            with open(changelog, "r") as f:
+                lines = f.readlines()
+
+            for idx, line in enumerate(lines):
+                if f"(LP: #{bug.id})" in line:
+                    found = True
+                    lines[
+                        idx
+                    ] = f"  * Update the hardware support for {self.market_name}. (LP: #{bug.id})\n"
+
+            if found:
+                with open(changelog, "w") as f:
+                    f.writelines(lines)
+            else:
+                _run_command(
+                    [
+                        "dch",
+                        "-i",
+                        f"Update the hardware support for {self.market_name}. (LP: #{bug.id})",
+                    ]
+                )
+
+            # Remove deprecated autopkgtest file
+            deprecated_test = os.path.join(
+                tmpdir, self.meta, "debian", "tests", self.meta
+            )
+            if os.path.exists(deprecated_test):
+                _run_command(["git", "rm", f"debian/tests/{self.meta}"])
+
+            # Remove deprecated debian/compat
+            deprecated_compat = os.path.join(tmpdir, self.meta, "debian", "compat")
+            if os.path.exists(deprecated_compat):
+                _run_command(["git", "rm", f"debian/compat"])
+
+            # Check git status
+            if args.debug:
+                debug("$ git status")
+                out, _, _ = _run_command(["git", "status"])
+                print(out)
+
+            _run_command(["git", "add", "."])
+            out, _, _ = _run_command(["git", "diff", "--color=always", "--cached"])
+            if out != b"":
+                warning("$ git diff")
+                print(out)
+                if args.dryrun:
+                    warning(
+                        f"The update of the '{branch}' branch of {self.meta}'s Git repository is skipped on demand."
+                    )
+                    exit(1)
+                elif yes_or_ask(
+                    yes,
+                    f"Do you want to commit and push the changes above into the '{branch}' branch of {self.meta}'s Git repository?",
+                ):
+                    _run_command(
+                        [
+                            "git",
+                            "commit",
+                            "-a",
+                            "-m",
+                            f"Updated by oem-scripts {oem_scripts.__version__}.",
+                        ]
+                    )
+                    _run_command(["git", "push"])
+                    exit(0)
+            else:
+                info(
+                    f"The '{branch}' branch of {self.meta} in Git repository looks fine."
+                )
+                exit(0)
+
+
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
     epilog="""
@@ -372,7 +584,7 @@ examples:
     bootstrap-meta update-mir-git platformJSON [WIP]
     bootstrap-meta create-sru-bug platformJSON [--kernel linux-generic-hwe-20.04]
     bootstrap-meta update-sru-bug platformJSON [--kernel linux-generic-hwe-20.04] [--yes] [--ready|--release]
-    bootstrap-meta update-sru-git platformJSON [WIP]""",
+    bootstrap-meta update-sru-git platformJSON [--kernel linux-generic-hwe-20.04] [--yes] [--dryrun]""",
 )
 
 parser.add_argument("-d", "--debug", help="print debug messages", action="store_true")
@@ -450,6 +662,28 @@ update_sru_bug.add_argument(
     type=argparse.FileType("w", encoding="UTF-8"),
 )
 
+update_sru_git = subparsers.add_parser(
+    "update-sru-git",
+    help="[-h] platformJSON [--kernel linux-generic-hwe-20.04] [--yes] [--dryrun]",
+)
+update_sru_git.add_argument(
+    "json",
+    help="Specify the platform json of the OEM metapackage in Ubuntu archive.",
+    type=argparse.FileType("r", encoding="UTF-8"),
+)
+update_sru_git.add_argument(
+    "--kernel",
+    choices=ALLOWED_KERNEL_META_LIST,
+    default="linux-generic-hwe-20.04",
+    help="Specify the kernel meta of the OEM metapackage that is targeting on.",
+)
+update_sru_git.add_argument(
+    "--yes", help="Say yes for all prompts.", action="store_true"
+)
+update_sru_git.add_argument(
+    "--dryrun", help="Dry run. Don't commit.", action="store_true"
+)
+
 args = parser.parse_args()
 setup_logging(debug=args.debug, quiet=args.quiet)
 
@@ -471,5 +705,8 @@ if args.subcommand == "create-sru-bug":
 elif args.subcommand == "update-sru-bug":
     srubug = BootstrapMetaSRU(args.json, lp, args.kernel, args.output)
     srubug.update(release=args.release, ready=args.ready, yes=args.yes)
+elif args.subcommand == "update-sru-git":
+    git = BootstrapMetaGit(args.json, lp, args.kernel)
+    git.update(yes=args.yes, sru=True, dryrun=args.dryrun)
 else:
     parser.print_help()

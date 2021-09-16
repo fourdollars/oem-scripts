@@ -3,8 +3,14 @@ oem-scripts (1.15) UNRELEASED; urgency=medium
   * mir-bug,
     oem-meta-packages,
     oem_scripts/__init__.py: Resue the _run_command.
+  * bootstrap-meta,
+    debian/tests/bootstrap-meta,
+    mir-bug,
+    oem_scripts/__init__.py,
+    pkg-oem-meta: Implement the update-sru-git subcommand of bootstrap-meta,
+    and make mir-bug and pkg-sutton-meta to support the pvr string.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 16 Sep 2021 14:48:22 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 16 Sep 2021 19:29:03 +0800
 
 oem-scripts (1.14) focal; urgency=medium
 

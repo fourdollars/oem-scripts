@@ -56,3 +56,8 @@ bootstrap-meta update-sru-bug fossa-varys.json --kernel linux-oem-20.04d --yes -
 launchpad-api get "bugs/$BUG_ID" > "$BUG_ID.json"
 jq -r .description < "$BUG_ID.json" | grep linux-oem-20.04d
 jq -r '.tags|join(" ")' < "$BUG_ID.json" | grep oem-done-upload
+
+if bootstrap-meta update-sru-git fossa-varys.json --kernel linux-oem-20.04d --yes --dryrun; then
+    echo "It is expected to return failed."
+    exit 1
+fi
