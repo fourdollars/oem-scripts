@@ -28,7 +28,6 @@ import oem_scripts
 import os
 import re
 import shutil
-import subprocess
 
 from copy import copy
 from glob import glob
@@ -39,6 +38,7 @@ from oem_scripts import (
     ALLOWED_KERNEL_META_LIST,
     remove_prefix,
     yes_or_ask,
+    _run_command,
 )
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
 from oem_scripts.logging import setup_logging
@@ -726,34 +726,6 @@ def check_bug_tags(bug, certified: bool = False) -> bool:
             error(f"'{tag}' is not in the tags.")
             result = False
     return result
-
-
-def _run_command(command: list or tuple, returncode=(0,), env=None) -> (str, str):
-    debug("$ " + " ".join(command))
-    proc = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
-    )
-    out, err = proc.communicate()
-
-    if out:
-        out = out.decode("utf-8").strip()
-    if err:
-        err = err.decode("utf-8").strip()
-
-    if proc.returncode not in returncode:
-        critical(f"return {proc.returncode}")
-        if out:
-            info(out)
-        if err:
-            critical(err)
-        exit(1)
-
-    if out:
-        debug(out)
-    if err:
-        debug(err)
-
-    return (out, err, proc.returncode)
 
 
 def check_and_update_bug_attachments(

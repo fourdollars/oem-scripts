@@ -26,14 +26,13 @@ import oem_scripts
 import os
 import re
 import requests
-import subprocess
 import types
 
 from abc import ABCMeta, abstractmethod
 from apt import apt_pkg
 from configparser import ConfigParser
 from logging import debug, info, warning, error, critical
-from oem_scripts import ALLOWED_KERNEL_META_LIST
+from oem_scripts import ALLOWED_KERNEL_META_LIST, _run_command
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
 from oem_scripts.logging import setup_logging
 from pydantic import BaseModel
@@ -370,38 +369,6 @@ def _debug_obj(pkg) -> None:
         if not attr.startswith("__"):
             if not isinstance(pkg.__getattribute__(attr), types.BuiltinFunctionType):
                 debug(f"{attr}: {pkg.__getattribute__(attr)}")
-
-
-def _run_command(
-    command: list or tuple, returncode=(0,), env=None, silent=False
-) -> (str, str, int):
-    if not silent:
-        debug("$ " + " ".join(command))
-    proc = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
-    )
-    out, err = proc.communicate()
-
-    if out:
-        out = out.decode("utf-8").strip()
-    if err:
-        err = err.decode("utf-8").strip()
-
-    if proc.returncode not in returncode:
-        critical(f"return {proc.returncode}")
-        if out:
-            info(out)
-        if err:
-            critical(err)
-        exit(1)
-
-    if not silent:
-        if out:
-            debug(out)
-        if err:
-            debug(err)
-
-    return (out, err, proc.returncode)
 
 
 def get_oem_meta_packages(cache) -> list:
