@@ -28,7 +28,6 @@ import oem_scripts
 import os
 import re
 import shutil
-import subprocess
 
 from copy import copy
 from glob import glob
@@ -36,7 +35,8 @@ from logging import debug, info, warning, error, critical
 from oem_scripts import (
     SUBSCRIBER_LIST,
     TAG_LIST,
-    ALLOWED_KERNEL_META_LIST,
+    _get_items_from_git,
+    _run_command,
     remove_prefix,
     yes_or_ask,
 )
@@ -728,34 +728,6 @@ def check_bug_tags(bug, certified: bool = False) -> bool:
     return result
 
 
-def _run_command(command: list or tuple, returncode=(0,), env=None) -> (str, str):
-    debug("$ " + " ".join(command))
-    proc = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
-    )
-    out, err = proc.communicate()
-
-    if out:
-        out = out.decode("utf-8").strip()
-    if err:
-        err = err.decode("utf-8").strip()
-
-    if proc.returncode not in returncode:
-        critical(f"return {proc.returncode}")
-        if out:
-            info(out)
-        if err:
-            critical(err)
-        exit(1)
-
-    if out:
-        debug(out)
-    if err:
-        debug(err)
-
-    return (out, err, proc.returncode)
-
-
 def check_and_update_bug_attachments(
     bug, pkg_name: str, update=False, yes=False
 ) -> bool:
@@ -864,76 +836,6 @@ def check_and_update_bug_attachments(
         return True
     else:
         return False
-
-
-def _get_items_from_git(project: str, branch: str, pkg_name: str) -> tuple:
-    git_command = (
-        "git",
-        "clone",
-        "--depth",
-        "1",
-        "-b",
-        branch,
-        f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta",
-        pkg_name,
-    )
-    with TemporaryDirectory() as tmpdir:
-        os.chdir(tmpdir)
-        _run_command(git_command)
-        git_dir = os.path.join(tmpdir, pkg_name)
-
-        if project == "somerville":
-            prog = re.compile(
-                r"alias pci:\*sv00001028sd0000([0-9A-F]{4})[^ ]* meta (.*)"
-            )
-        elif project == "stella":
-            prog = re.compile(
-                r"alias pci:\*sv0000103Csd0000([0-9A-F]{4})[^ ]* meta (.*)"
-            )
-        else:
-            prog = re.compile(
-                r"alias dmi:\*bvn([0-9a-zA-Z]+):bvr([0-9a-zA-Z]{3})\* meta (.*)"
-            )
-
-        ids = []
-        with open(os.path.join(git_dir, "debian", "modaliases"), "r") as modaliases:
-            for line in modaliases:
-                result = prog.match(line.strip())
-                if result is None:
-                    continue
-                if result.group(result.lastindex) != pkg_name:
-                    error(
-                        "Something wrong in debian/modaliases. Please fix it manually first."
-                    )
-                    return False
-                if result.lastindex == 3:
-                    ids.append((result.group(1), result.group(2)))
-                else:
-                    ids.append(result.group(1))
-        kernel_flavour = None
-        kernel_meta = None
-        market_name = None
-        with open(os.path.join(git_dir, "debian", "control"), "r") as control:
-            for line in control:
-                if line.startswith("XB-Ubuntu-OEM-Kernel-Flavour:"):
-                    kernel_flavour = line[
-                        len("XB-Ubuntu-OEM-Kernel-Flavour:") :
-                    ].strip()
-                elif line.startswith("Depends:"):
-                    for meta in ALLOWED_KERNEL_META_LIST:
-                        if meta in line:
-                            kernel_meta = meta
-                            break
-                elif line.startswith("Description:"):
-                    if (
-                        "Dell" in line or "HP" in line or "Lenovo" in line
-                    ) and "(factory)" not in line:
-                        prog = re.compile(
-                            r"Description: hardware support for (Dell|HP|Lenovo) (.*)"
-                        )
-                        result = prog.match(line.strip())
-                        market_name = result.group(2)
-        return kernel_flavour, kernel_meta, market_name, ids
 
 
 def check_and_update_git_repo(
@@ -1074,8 +976,11 @@ def check_and_update_git_repo(
             ]
             if market_name:
                 command.extend(["--market-name", market_name])
-            for bvn, bvr in ids:
-                command.append(f"bvn{bvn}:bvr{bvr}")
+            for bvn, bvr, pvr in ids:
+                if pvr:
+                    command.append(f"bvn{bvn}:bvr{bvr}:pvr{pvr}")
+                else:
+                    command.append(f"bvn{bvn}:bvr{bvr}")
         _run_command(command)
         new_dir = os.path.join(tmpdir, pkg_name)
         os.chdir(new_dir)

@@ -9,7 +9,7 @@ import sys
 
 from distro_info import UbuntuDistroInfo
 from logging import warning, error
-from oem_scripts import ALLOWED_KERNEL_META_LIST
+from oem_scripts import ALLOWED_KERNEL_META_LIST, remove_prefix
 from oem_scripts.logging import setup_logging
 from time import localtime, strftime
 
@@ -88,7 +88,8 @@ elif codename == "sutton":
     parser.add_argument(
         "bios_ver",
         nargs="+",
-        help="First three chars in bios version, " + "such as S08 or bvnLENOVO:bvrS08",
+        help="First three chars in bios version, "
+        + "such as S08 or bvnLENOVO:bvrS08:pvrThinkStation",
     )
 args = parser.parse_args()
 
@@ -123,9 +124,11 @@ elif codename == "stella":
 elif codename == "sutton":
     group = args.group.lower()
     for bios_ver in args.bios_ver:
-        if (not re.match("[0-9a-zA-Z]{3}$", bios_ver)) and (
-            not re.match("bvn[0-9a-zA-Z]+:bvr[0-9a-zA-Z]{3}$", bios_ver)
+        if re.match("[0-9a-zA-Z]{3}$", bios_ver) or re.match(
+            "bvn[0-9a-zA-Z]+:bvr[0-9a-zA-Z]{3}(:pvr.*)?$", bios_ver
         ):
+            pass
+        else:
             error("Invalid BIOS version: {%s}" % bios_ver)
             exit(1)
     meta = "oem-" + codename + "." + group + "-" + platform + "-meta"
@@ -138,6 +141,8 @@ if args.market_name:
         Codename = "HP"
     elif codename == "sutton":
         Codename = "Lenovo"
+    if Platform.startswith(f"{Codename} "):
+        Platform = remove_prefix(Platform, f"{Codename} ")
 
 if os.path.exists(meta):
     error(meta + " already exists. Please remove or rename it.")
@@ -405,23 +410,26 @@ License: GPL-3
                 result = re.match("([0-9a-zA-Z]{3})$", bios_ver)
                 if result is None:
                     result = re.match(
-                        "bvn([0-9a-zA-Z]+):bvr([0-9a-zA-Z]{3})$", bios_ver
+                        "bvn([0-9a-zA-Z]+):bvr([0-9a-zA-Z]{3})(:pvr(.*))?$", bios_ver
                     )
                     if result is None:
                         continue
                     else:
                         bios_vendor = result.group(1).upper()
                         bios_ids = result.group(2).upper()
+                        product_version = result.group(4)
                 else:
                     # Set the default bios vendor for Lenovo
                     bios_vendor = "LENOVO"
                     bios_ids = result.group().upper()
+                    product_version = None
 
-                f.write(
-                    "alias dmi:*bvn{0}:bvr{1}* meta {2}\n".format(
-                        bios_vendor, bios_ids, meta
+                if product_version:
+                    f.write(
+                        f"alias dmi:*bvn{bios_vendor}:bvr{bios_ids}*:pvr{product_version}* meta {meta}\n"
                     )
-                )
+                else:
+                    f.write(f"alias dmi:*bvn{bios_vendor}:bvr{bios_ids}* meta {meta}\n")
 
     with open("rules", "w") as f:
         f.write(
