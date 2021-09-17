@@ -1,4 +1,4 @@
-oem-scripts (1.15) UNRELEASED; urgency=medium
+oem-scripts (1.15) focal; urgency=medium
 
   * mir-bug,
     oem-meta-packages,
@@ -10,7 +10,7 @@ oem-scripts (1.15) UNRELEASED; urgency=medium
     pkg-oem-meta: Implement the update-sru-git subcommand of bootstrap-meta,
     and make mir-bug and pkg-sutton-meta to support the pvr string.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 16 Sep 2021 19:29:03 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 17 Sep 2021 08:32:33 +0000
 
 oem-scripts (1.14) focal; urgency=medium
 
