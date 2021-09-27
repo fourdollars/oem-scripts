@@ -1,3 +1,11 @@
+oem-scripts (1.16) UNRELEASED; urgency=medium
+
+  * debian/install,
+    debian/tests/bootstrap-meta: Fix the missing template and improve the
+    test.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 27 Sep 2021 19:08:54 +0800
+
 oem-scripts (1.15) focal; urgency=medium
 
   * mir-bug,

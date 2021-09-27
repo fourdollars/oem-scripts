@@ -5,6 +5,9 @@ IFS=$'\n\t'
 
 export LAUNCHPAD_API="https://api.staging.launchpad.net/"
 
+# Change the working folder to avoid reading the template files under the source code folder.
+cd /tmp
+
 cat > fossa-varys.json <<ENDLINE
 {
   "group": "",
