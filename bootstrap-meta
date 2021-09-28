@@ -380,13 +380,23 @@ class BootstrapMetaSRU(BootstrapMeta):
                     task.status = "Triaged"
                 else:
                     task.status = "Confirmed"
-            task.lp_save()
+            try:
+                task.lp_save()
+            except lazr.restfulclient.errors.Unauthorized:
+                warning(
+                    f'{lp.me.display_name} doesn\'t have the permission to change the status of "{task.bug_target_name}".'
+                )
 
         if not focal_series_found and release:
             task = bug.addTask(target=lp.projects[f"ubuntu/focal/+source/{self.meta}"])
             task.status = "In Progress"
             task.importance = "High"
-            task.lp_save()
+            try:
+                task.lp_save()
+            except lazr.restfulclient.errors.Unauthorized:
+                warning(
+                    f'{lp.me.display_name} doesn\'t have the permission to add the task for "{task.bug_target_name}".'
+                )
 
         if lp.service_root != "https://api.launchpad.net/":
             info(f'{bug.web_link} - "{bug.title}" has been updated.')

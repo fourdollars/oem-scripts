@@ -1,3 +1,10 @@
+oem-scripts (1.17) UNRELEASED; urgency=medium
+
+  * bootstrap-meta: Try to catch some permission problem and avoid the
+    failures.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 28 Sep 2021 21:36:15 +0800
+
 oem-scripts (1.16) focal; urgency=medium
 
   * debian/install,
