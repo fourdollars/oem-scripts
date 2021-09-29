@@ -24,7 +24,7 @@ import subprocess
 from logging import debug, info, error, critical
 from tempfile import TemporaryDirectory
 
-__version__ = "1.16"
+__version__ = "1.17"
 
 ALLOWED_KERNEL_META_LIST = (
     "linux-oem-20.04d",

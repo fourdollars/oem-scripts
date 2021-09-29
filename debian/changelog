@@ -1,9 +1,9 @@
-oem-scripts (1.17) UNRELEASED; urgency=medium
+oem-scripts (1.17) focal; urgency=medium
 
   * bootstrap-meta: Try to catch some permission problem and avoid the
     failures.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 28 Sep 2021 21:36:15 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 29 Sep 2021 01:31:53 +0000
 
 oem-scripts (1.16) focal; urgency=medium
 
