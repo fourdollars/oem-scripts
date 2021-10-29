@@ -1,3 +1,11 @@
+oem-scripts (1.18) UNRELEASED; urgency=medium
+
+  * oem-meta-packages: Deal with the problem when there is only
+    ", linux-oem-20.04b," in Depends instead of ", linux-oem-20.04b |
+    linux-oem-20.04,".
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 29 Oct 2021 11:27:35 +0800
+
 oem-scripts (1.17) focal; urgency=medium
 
   * bootstrap-meta: Try to catch some permission problem and avoid the
