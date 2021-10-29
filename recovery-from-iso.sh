@@ -161,7 +161,7 @@ EOF1
 #!/bin/bash -ex
 # replace the grub entry which ubuntu_recovery expected
 recover_p=\$(lsblk -l | grep efi | cut -d ' ' -f 1 | sed 's/.$/2'/)
-UUID_OF_RECOVERY_PARTITION=\$(ls -l /dev/disk/by-uuid/ | grep vda2 | awk '{print \$9}')
+UUID_OF_RECOVERY_PARTITION=\$(ls -l /dev/disk/by-uuid/ | grep \$recover_p | awk '{print \$9}')
 echo partition = \$UUID_OF_RECOVERY_PARTITION
 sed -i "s/UUID_OF_RECOVERY_PARTITION/\$UUID_OF_RECOVERY_PARTITION/" push_preseed/preseed/$additional_grub_for_ubuntu_recovery
 sudo rm -f /etc/grub.d/99_dell_recovery || true
