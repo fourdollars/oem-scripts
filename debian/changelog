@@ -1,9 +1,9 @@
-oem-scripts (1.19) UNRELEASED; urgency=medium
+oem-scripts (1.19) focal; urgency=medium
 
   * oem-meta-packages: Make it automatically correct the debian/modaliases for
     SMBus/i2C SSIDs.
 
- -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 08 Nov 2021 22:38:24 +0800
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 09 Nov 2021 01:39:28 +0000
 
 oem-scripts (1.18) focal; urgency=medium
 
