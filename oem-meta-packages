@@ -545,6 +545,25 @@ def deal_with_kernel_depends(pkg_name, branch, git_dir) -> bool:
     return changed
 
 
+def deal_with_debian_modaliases(git_dir: str) -> bool:
+    debian_modaliases = os.path.join(git_dir, "debian", "modaliases")
+
+    with open(debian_modaliases, "r") as f:
+        modaliases = f.readlines()
+
+    changed = False
+    for i, modalias in enumerate(modaliases):
+        if 'bc0Csc05*' not in modalias:
+            changed = True
+            modaliases[i] = modalias.replace("* meta oem-", "bc0Csc05* meta oem-")
+
+    if changed:
+        with open(debian_modaliases, "w") as f:
+            f.writelines(modaliases)
+
+    return changed
+
+
 def deal_with_debian_tests(
     pkg_name: str, git_dir: str, branch: str, bootstrap: bool
 ) -> bool:
@@ -1810,6 +1829,8 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> boo
                 messages.append("grub flavour")
             if deal_with_maintainer_scripts(pkg_name, branch, git_dir):
                 messages.append("maintainer scripts")
+        if project != 'sutton' and deal_with_debian_modaliases(git_dir):
+            messages.append("debian/modaliases")
         if deal_with_gbp_conf(git_dir, branch):
             messages.append("debian/gbp.conf")
         if deal_with_debian_tests(pkg_name, git_dir, branch, bootstrap):
