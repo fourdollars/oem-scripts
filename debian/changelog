@@ -1,3 +1,14 @@
+oem-scripts (1.20) focal; urgency=medium
+
+  [ Alex Tu ]
+  * verified on both somerville and stella image
+  * recovery-from-iso: redirect the progress of iso download to null
+  * recovery-from-iso: force ubr mode depends on img name
+  * stop 1st boot to PXE when recovery injection
+  * fix typo, a missed part from my testing on VM
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 10 Nov 2021 16:02:26 +0800
+
 oem-scripts (1.19) focal; urgency=medium
 
   * oem-meta-packages: Make it automatically correct the debian/modaliases for
