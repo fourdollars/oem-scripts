@@ -527,13 +527,30 @@ class BootstrapMetaGit(BootstrapMeta):
                 with open(changelog, "w") as f:
                     f.writelines(lines)
             else:
-                _run_command(
+                dist, _, _ = _run_command(
                     [
-                        "dch",
-                        "-i",
-                        f"Update the hardware support for {self.market_name}. (LP: #{bug.id})",
+                        "dpkg-parsechangelog",
+                        "--show-field",
+                        "Distribution",
+                        "-l",
+                        "debian/changelog",
                     ]
                 )
+                if dist == "UNRELEASED":
+                    _run_command(
+                        [
+                            "dch",
+                            f"Update the hardware support for {self.market_name}. (LP: #{bug.id})",
+                        ]
+                    )
+                else:
+                    _run_command(
+                        [
+                            "dch",
+                            "-i",
+                            f"Update the hardware support for {self.market_name}. (LP: #{bug.id})",
+                        ]
+                    )
 
             # Remove deprecated autopkgtest file
             deprecated_test = os.path.join(
