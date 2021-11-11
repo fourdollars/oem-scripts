@@ -1,3 +1,10 @@
+oem-scripts (1.21) focal; urgency=medium
+
+  [ Shih-Yuan Lee ]
+  * bootstrap-meta: Don't increase the version when it is still UNRELEASED.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 11 Nov 2021 07:05:51 +0000
+
 oem-scripts (1.20) focal; urgency=medium
 
   [ Alex Tu ]
