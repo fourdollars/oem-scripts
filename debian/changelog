@@ -1,3 +1,10 @@
+oem-scripts (1.22) focal; urgency=medium
+
+  [ Shih-Yuan Lee ]
+  * debian/tests/control: Fix the test cases when there are no openssh-client installed.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 12 Nov 2021 15:22:02 +0800
+
 oem-scripts (1.21) focal; urgency=medium
 
   [ Shih-Yuan Lee ]
