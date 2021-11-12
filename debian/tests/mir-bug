@@ -5,16 +5,6 @@ IFS=$'\n\t'
 
 export LAUNCHPAD_API="https://api.staging.launchpad.net/"
 
-# create
-mir-bug create -o bug_id somerville bronn "some Dell platforms"
-BUG_ID=$(cat bug_id)
-lp-bug cleanup --yes "$BUG_ID"
-rm bug_id
-
-# collect
-mir-bug collect "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs.json
-mir-bug collect --ubuntu-certified "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs-ubuntu-certified.json
-
 # check & update
 cat > fossa-varys.json <<ENDLINE
 {
@@ -42,5 +32,15 @@ mir-bug check --skip --ready --release fossa-varys.json
 mir-bug update --yes --skip --tz=UTC --release fossa-varys.json
 
 mir-bug check --skip --tz=UTC --release fossa-varys.json
+
+# create
+mir-bug create -o bug_id somerville bronn "some Dell platforms"
+BUG_ID=$(cat bug_id)
+lp-bug cleanup --yes "$BUG_ID"
+rm bug_id
+
+# collect
+mir-bug collect "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs.json
+mir-bug collect --ubuntu-certified "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs-ubuntu-certified.json
 
 exit 77
