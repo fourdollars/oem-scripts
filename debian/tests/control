@@ -26,13 +26,13 @@ Depends: @
 Tests:
  mir-bug
 Restrictions: skippable
-Depends: @
+Depends: @, openssh-client
 
 Tests:
  git-url-insteadof-setting,
  lp-dl-attm,
  recovery-from-iso.sh
-Depends: @
+Depends: @, openssh-client
 Restrictions: allow-stderr
 
 Tests:
