@@ -34,8 +34,3 @@ Tests:
  recovery-from-iso.sh
 Depends: @, openssh-client
 Restrictions: allow-stderr
-
-Tests:
- mir-bug-verification
-Depends: @
-Restrictions: allow-stderr, needs-root
