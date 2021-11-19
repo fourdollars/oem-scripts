@@ -674,19 +674,18 @@ def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool
         if not args.ready:
             for subscriber in ("ubuntu-sponsors", "ubuntu-desktop"):
                 if subscriber == subscription.person.name:
-                    error(f"'{subscriber}' should not be in the subscriptions.")
-                    if update and yes_or_ask(
-                        yes, f"Do you want to unsubscribe '{subscriber}'?"
-                    ):
-                        if subscription.canBeUnsubscribedByUser():
+                    if subscription.canBeUnsubscribedByUser():
+                        error(f"'{subscriber}' should not be in the subscriptions.")
+                        if update and yes_or_ask(
+                            yes, f"Do you want to unsubscribe '{subscriber}'?"
+                        ):
                             bug.unsubscribe(person=lp.people[subscriber])
                         else:
-                            warning(
-                                f"{lp.me.name} doesn't have the permission to unsubscribe {subscriber}."
-                            )
                             result = False
                     else:
-                        result = False
+                        warning(
+                            f"'{subscriber}' should not be in the subscriptions, and {lp.me.name} doesn't have the permission to unsubscribe it."
+                        )
     if args.ready:
         for subscriber in SUBSCRIBER_LIST:
             if subscriber not in subscriptions:
