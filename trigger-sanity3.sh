@@ -1,7 +1,10 @@
 #!/bin/bash
 
-HIC_ADDR=f1.cctu.space:5000
-JENKINS_ADDR=10.102.135.50:8080
+# shellcheck source=config.sh
+source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
+
+HIC_ADDR=""
+JENKINS_ADDR=""
 verbose=0
 dry_run=0
 user=""
@@ -47,11 +50,26 @@ EOF
 exit 1
 }
 
+check_address() {
+    HIC_ADDR=$(read_oem_scripts_config hic_addr)
+    JENKINS_ADDR=$(read_oem_scripts_config jenkins_addr)
+    if [ -z "$HIC_ADDR" ];then
+        read -rp "Input HIC server address: " HIC_ADDR
+        HIC_ADDR="${HIC_ADDR/http:\/\//}"
+        write_oem_scripts_config hic_addr "${HIC_ADDR}"
+    fi
+    if [ -z "$JENKINS_ADDR" ];then
+        read -rp "Input Jenkins server address: " JENKINS_ADDR
+        HIC_ADDR="${JENKINS_ADDR/http:\/\//}"
+        write_oem_scripts_config jenkins_addr "${JENKINS_ADDR}"
+    fi
+}
+
 trigger_sanity_3() {
 	#get mapping of tag to skus
-    skus=$(curl http://$HIC_ADDR/q?db=tag | jq -r --arg TAG "$tag" 'with_entries(select(.value | startswith($TAG))) | keys | @sh' | tr -d \')
+    skus=$(curl http://"$HIC_ADDR"/q?db=tag | jq -r --arg TAG "$tag" 'with_entries(select(.value | startswith($TAG))) | keys | @sh' | tr -d \')
 
-    ONLINE_IPS=$(curl http://$HIC_ADDR/q?db=ipo)
+    ONLINE_IPS=$(curl http://"$HIC_ADDR"/q?db=ipo)
     for sku in $skus
     do
         #check sku has valid cid
@@ -66,13 +84,14 @@ trigger_sanity_3() {
         if [ -n "$status" ];then
             echo "trigger job sanity-3-testflinger-$project-$cid-staging"
             if [ $dry_run -eq 0 ];then
-                curl -X POST http://$user:$token@$JENKINS_ADDR/job/sanity-3-testflinger-$project-$cid-staging/buildWithParameters\?EXCLUDE_TASK=$exclude_task\&TARGET_IMG=$target_img\&IMAGE_NO=$image_no\&PLAN=$plan\&CMD_BEFOR_RUN_PLAN=$cmd_before_run_plan\&INJ_RECOVERY=$inj_recovery\&GITBRANCH_OEM_SANITY=$gitbranch_oem_sanity\&AUTO_CREATE_BUGS=$auto_create_bugs
+                curl -X POST http://$user:$token@"$JENKINS_ADDR"/job/sanity-3-testflinger-$project-$cid-staging/buildWithParameters\?EXCLUDE_TASK=$exclude_task\&TARGET_IMG=$target_img\&IMAGE_NO=$image_no\&PLAN=$plan\&CMD_BEFOR_RUN_PLAN=$cmd_before_run_plan\&INJ_RECOVERY=$inj_recovery\&GITBRANCH_OEM_SANITY=$gitbranch_oem_sanity\&AUTO_CREATE_BUGS=$auto_create_bugs
             fi
         fi
     done
 }
 
 main() {
+    check_address
     while [ $# -gt 0 ]
     do
         case "$1" in
