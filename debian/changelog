@@ -1,3 +1,14 @@
+oem-scripts (1.23) focal; urgency=medium
+
+  [ Shih-Yuan Lee ]
+  * debian/tests/mir-bug: Move the part that is prone to problems ahead.
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * debian/tests/control, debian/tests/mir-bug-verification: Remove mir-bug-verification because it has been covered by meta CI.
+  * mir-bug: Change the mechanism to unsubscribe groups.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 23 Nov 2021 08:33:14 +0000
+
 oem-scripts (1.22) focal; urgency=medium
 
   [ Shih-Yuan Lee ]
