@@ -1,4 +1,5 @@
 #!/bin/sh
 
 shellcheck \
-    lp-dl-attm
+    lp-dl-attm \
+    -x trigger-sanity3.sh
