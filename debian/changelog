@@ -1,3 +1,12 @@
+oem-scripts (1.24) focal; urgency=medium
+
+  [ Dirk Su ]
+  * Wrapper to query platform codename from HIC then trigger sanity-3
+  * Read server address from config.ini
+  * Include trigger-sanity3.sh in tests/test_shellcheck and debian/install
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 25 Nov 2021 13:59:28 +0800
+
 oem-scripts (1.23) focal; urgency=medium
 
   [ Shih-Yuan Lee ]
