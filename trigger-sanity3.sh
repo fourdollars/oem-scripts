@@ -86,7 +86,7 @@ trigger_sanity_3() {
         if [ -n "$status" ];then
             echo "trigger job sanity-3-testflinger-$project-$cid-staging"
             if [ $dry_run -eq 0 ];then
-                curl -X POST http://$user:$token@"$JENKINS_ADDR"/job/sanity-3-testflinger-$project-$cid-staging/buildWithParameters\?EXCLUDE_TASK=$exclude_task\&TARGET_IMG=$target_img\&IMAGE_NO=$image_no\&PLAN=$plan\&CMD_BEFOR_RUN_PLAN=$cmd_before_run_plan\&INJ_RECOVERY=$inj_recovery\&GITBRANCH_OEM_SANITY=$gitbranch_oem_sanity\&AUTO_CREATE_BUGS=$auto_create_bugs
+                curl -X POST http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&AUTO_CREATE_BUGS="$auto_create_bugs"
             fi
         else
             echo "$sku is offline"
