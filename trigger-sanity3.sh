@@ -7,8 +7,8 @@ HIC_ADDR=""
 JENKINS_ADDR=""
 verbose=0
 dry_run=0
-user=""
-token=""
+user=$(read_oem_scripts_config jenkins_user)
+token=$(read_oem_scripts_config jenkins_token)
 project="dummy"
 tag=""
 exclude_task=""
@@ -66,10 +66,12 @@ check_address() {
 }
 
 trigger_sanity_3() {
+    local silent
+    [ "$verbose" -eq 0 ] && silent="-s"
 	#get mapping of tag to skus
-    skus=$(curl http://"$HIC_ADDR"/q?db=tag | jq -r --arg TAG "$tag" 'with_entries(select(.value | startswith($TAG))) | keys | @sh' | tr -d \')
+    skus=$(curl ${silent} http://"$HIC_ADDR"/q?db=tag | jq -r --arg TAG "$tag" 'with_entries(select(.value | startswith($TAG))) | keys | @sh' | tr -d \')
 
-    ONLINE_IPS=$(curl http://"$HIC_ADDR"/q?db=ipo)
+    ONLINE_IPS=$(curl ${silent} http://"$HIC_ADDR"/q?db=ipo)
     for sku in $skus
     do
         #check sku has valid cid
@@ -86,6 +88,8 @@ trigger_sanity_3() {
             if [ $dry_run -eq 0 ];then
                 curl -X POST http://$user:$token@"$JENKINS_ADDR"/job/sanity-3-testflinger-$project-$cid-staging/buildWithParameters\?EXCLUDE_TASK=$exclude_task\&TARGET_IMG=$target_img\&IMAGE_NO=$image_no\&PLAN=$plan\&CMD_BEFOR_RUN_PLAN=$cmd_before_run_plan\&INJ_RECOVERY=$inj_recovery\&GITBRANCH_OEM_SANITY=$gitbranch_oem_sanity\&AUTO_CREATE_BUGS=$auto_create_bugs
             fi
+        else
+            echo "$sku is offline"
         fi
     done
 }
