@@ -40,8 +40,11 @@ Options:
     -k|--token                  Jenkins server user API token
     --exclude_task              sanity-3 parameter exclude_task
     --target_img                sanity-3 parameter target_image
+                                (e.g. pc-stella-cmit-focal-amd64)
     --image_no                  sanity-3 parameter image_no, default is lastSuccessfulBuild
+                                (e.g. no-provision)
     --plan                      sanity-3 parameter plan, default is pc-sanity-smoke-test
+                                (e.g. pc-sanity-smoke-test-no-dgpu-switching)
     --command_before_run_plan   sanity-3 parameter cmd_before_run_plan
     --inj_recovery              sanity-3 parameter inj_recovery, default is false
     --gitbranch_oem_sanity      sanity-3 parameter gitbranch_oem_sanity, default is master
