@@ -1,3 +1,12 @@
+oem-scripts (1.25) focal; urgency=medium
+
+  [ Jeremy Szu ]
+  * Improve the trigger-sanity3.sh to read the config
+  * Fix shellcheck
+  * Add some common arguments in usage of trigger-sanity-3.sh
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 30 Nov 2021 19:38:09 +0800
+
 oem-scripts (1.24) focal; urgency=medium
 
   [ Dirk Su ]
