@@ -1,3 +1,10 @@
+oem-scripts (1.26) focal; urgency=medium
+
+  [ Kai-Chuan Hsieh]
+  * bug-bind.py Add main and watch parameters
+
+ -- Kai-Chuan Hsieh <kaichuan.hsieh@canonical.com>  Fri, 17 Dec 2021 16:16:23 +0800
+
 oem-scripts (1.25) focal; urgency=medium
 
   [ Jeremy Szu ]
