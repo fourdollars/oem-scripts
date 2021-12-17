@@ -69,13 +69,16 @@ def link_bugs(public_bugnum, privates, ihv):
     add_bug_task(pub_bug, hwe_next)
 
 
-def link_priv_bugs(main_bugnum, privates, ihv):
+def link_priv_bugs(main_bugnum, privates, ihv, watch):
     assert main_bugnum.isdigit()
     login = LaunchpadLogin()
     lp = login.lp
     main_bug = lp.bugs[main_bugnum]
 
-    tag = "X-SWE-Bug: Bug #" + main_bugnum
+    if watch:
+        tag = "X-Watching-Bug: Bug #" + main_bugnum
+    else:
+        tag = "X-Working-Bug: Bug #" + main_bugnum
 
     # Add X-HWE-Bug: tag to description.
     for priv in privates:
@@ -127,7 +130,9 @@ def add_bug_tags(bug, tags):
 
 if __name__ == "__main__":
     description = """bind private bugs with pubilc bug
-bud-bind -p bugnumber private_bugnumber1 private_bugnumber2"""
+bud-bind.py -p public_bugnumber private_bugnumber1 private_bugnumber2...
+bug-bind.py -m private_bugnumber private_bugnumber1 private_bugnumer2...
+bug-bind.py -w private_bugnumber private_bugnumber1 private_bugnumber2..."""
     help = """The expected live cycle of an oem-priority bug is:
     1. SWE/HWE manually tag hwe-need-public/swe-need-public on the existed private bug,
     2. SWE/HWE manually create a public bug.
@@ -138,8 +143,10 @@ bud-bind -p bugnumber private_bugnumber1 private_bugnumber2"""
         epilog=help,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("-m", "--main", help="main bug for private bugs")
-    parser.add_argument("-p", "--public", help="The public bug number")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("-m", "--main", help="The working private bug number")
+    group.add_argument("-p", "--public", help="The working public bug number")
+    group.add_argument("-w", "--watch", help="The watching private bug number")
     parser.add_argument(
         "-i",
         "--ihv",
@@ -165,7 +172,10 @@ bud-bind -p bugnumber private_bugnumber1 private_bugnumber2"""
         )
     if len(private_bugs) == 0:
         parser.error("must provide private bug numbers.")
+
     if args.main:
-        link_priv_bugs(args.main, private_bugs, args.ihv)
+        link_priv_bugs(args.main, private_bugs, args.ihv, 0)
+    elif args.watch:
+        link_priv_bugs(args.watch, private_bugs, args.ihv, 1)
     else:
         link_bugs(args.public, private_bugs, args.ihv)
