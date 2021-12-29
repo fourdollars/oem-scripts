@@ -1,3 +1,13 @@
+oem-scripts (1.27) focal; urgency=medium
+
+  [ Alex Tu ]
+  * purge ubiquity to align the behavior of factory and stock Image.
+
+  [ Jeremy Szu ]
+  * Add release-helper.py script
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 29 Dec 2021 12:47:37 +0800
+
 oem-scripts (1.26) focal; urgency=medium
 
   [ Kai-Chuan Hsieh]
