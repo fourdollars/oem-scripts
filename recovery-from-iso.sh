@@ -251,7 +251,7 @@ prepare() {
 
 poll_recovery_status() {
     while(:); do
-        if $SSH "$user_on_target"@"$target_ip" ls /swapfile; then
+        if [ "$($SSH "$user_on_target"@"$target_ip"  systemctl is-active ubiquity)" = "inactive" ] ; then
            break
         fi
         sleep 180
