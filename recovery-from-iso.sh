@@ -86,38 +86,18 @@ ubiquity ubuntu-recovery/recovery_type string dev
         sed -i 's%ubiquity/reboot boolean false%ubiquity/reboot boolean true%' ./project.cfg
         sed -i 's%ubiquity/poweroff boolean true%ubiquity/poweroff boolean false%' ./project.cfg
         mv project.cfg $temp_folder/preseed
-        # replace $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/pack-fish.openssh-fossa --depth 1
-        # replace $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-skip-oobe --depth 1
-        # copy from maas. TODO: make it to use from same source.
-        mkdir -p $temp_folder/debs/main
-        pushd $temp_folder/debs/main
-        rm -rf maas_deps
-        git clone --depth 1 -b maas-focal lp:~lyoncore-team/lyoncore/+git/somerville-maas-override maas_deps
-        cd maas_deps
-        git rev-parse --short HEAD
-        rm -f maas-pkgs/oem-fix-misc-cnl-maas-helper*
-        cd ..
-        cp -r maas_deps/maas-pkgs/*.deb .
-        find .
-        popd
-        # TODO: share this with MaaS to use a same source. (e.g. debian package)
-        echo "#!/bin/bash
-. /usr/share/volatile/common.sh
-set -x
-dpkg -i /cdrom/debs/main/*.deb
-apt-get install -fy
-" | tee 32-install-custom-pkgs.sh
-        mkdir -p $temp_folder/scripts/chroot-scripts/os-post
-        mv 32-install-custom-pkgs.sh $temp_folder/scripts/chroot-scripts/os-post
     else
         # get checkbox pkgs and prepare-checkbox
         # get pkgs to skip OOBE
         $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-no-secureboot --depth 1
         $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-skip-storage-selecting --depth 1
         $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/pack-fish.openssh-fossa --depth 1
-        $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-skip-oobe --depth 1
     fi
 
+    # install common tool, so that we can use oem-install to create local repository and install packages.
+    $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-oem-image-helper --depth 1 -b oem-fix-misc-cnl-oem-image-helper_fish
+    # install packages related to skip oobe
+    $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-skip-oobe --depth 1
     # get pkgs for ssh key and skip disk checking.
     $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-misc-for-automation --depth 1 misc_for_automation
 
@@ -186,7 +166,7 @@ push_preseed() {
     $SSH "$user_on_target"@"$target_ip" sudo rm -f /cdrom/SUCCSS_push_preseed
 
     if [ "${ubr}" == "yes" ]; then
-        for folder in debs preseed scripts; do
+        for folder in preseed; do
             $SCP -r "$temp_folder/$folder" "$user_on_target"@"$target_ip":~/push_preseed || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
         done
     else
@@ -197,7 +177,7 @@ push_preseed() {
         done
     fi
 
-    for folder in misc_for_automation; do
+    for folder in misc_for_automation oem-fix-misc-cnl-oem-image-helper oem-fix-misc-cnl-skip-oobe; do
         tar -C "$temp_folder"/$folder -zcvf "$temp_folder"/$folder.tar.gz .
         $SCP "$temp_folder/$folder".tar.gz "$user_on_target"@"$target_ip":~
         $SSH "$user_on_target"@"$target_ip" tar -C push_preseed -zxvf $folder.tar.gz || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
@@ -271,7 +251,7 @@ prepare() {
 
 poll_recovery_status() {
     while(:); do
-        if $SSH "$user_on_target"@"$target_ip" ubuntu-report show; then
+        if [ "$($SSH "$user_on_target"@"$target_ip"  systemctl is-active ubiquity)" = "inactive" ] ; then
            break
         fi
         sleep 180
