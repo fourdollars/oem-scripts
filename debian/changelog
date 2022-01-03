@@ -1,3 +1,11 @@
+oem-scripts (1.28) focal; urgency=medium
+
+  [ Alex Tu ]
+  * fix checkbox debsum for stella and sutton
+  * recovery-from-iso.sh: judge the 1st login by the activity of ubiquity instead
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 03 Jan 2022 11:46:00 +0800
+
 oem-scripts (1.27) focal; urgency=medium
 
   [ Alex Tu ]
