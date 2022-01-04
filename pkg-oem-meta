@@ -357,7 +357,7 @@ Description: hardware support for {Codename} {platformStr} (factory)
                 + "fully. (factory)\n"
             )
 
-    timestamp = strftime("%Y", localtime())
+    timestamp = os.getenv("COPYRIGHT_YEAR", strftime("%Y", localtime()))
 
     with open("copyright", "w") as f:
         f.write(
