@@ -25,6 +25,9 @@ cat > fossa-varys.json <<ENDLINE
   ]
 }
 ENDLINE
+
+export COPYRIGHT_YEAR=2021
+
 mir-bug update --yes --skip --ready --release fossa-varys.json
 
 mir-bug check --skip --ready --release fossa-varys.json
