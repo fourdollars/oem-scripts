@@ -1,3 +1,9 @@
+oem-scripts (1.29) focal; urgency=medium
+
+  * debian/tests/mir-bug, pkg-oem-meta: Improve the test of mir-bug by a predefined copyright year to avoid the failures.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 05 Jan 2022 10:50:43 +0800
+
 oem-scripts (1.28) focal; urgency=medium
 
   [ Alex Tu ]
