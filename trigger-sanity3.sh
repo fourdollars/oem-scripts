@@ -77,7 +77,16 @@ trigger_sanity_3() {
 	#get mapping of tag to skus
     skus=$(curl ${silent} http://"$HIC_ADDR"/q?db=tag | jq -r --arg TAG "$tag" 'with_entries(select(.value | startswith($TAG))) | keys | @sh' | tr -d \')
 
-    ONLINE_IPS=$(curl ${silent} http://"$HIC_ADDR"/q?db=ipo)
+    for i in $(seq 1 10); do
+        ONLINE_IPS=$(curl ${silent} http://"$HIC_ADDR"/q?db=ipo)
+        if [ -z "$ONLINE_IPS" ]; then
+           echo "retry $i: get online IPs from hic server."
+           sleep 5
+           continue
+        fi
+        break
+    done
+    [ -n "$ONLINE_IPS" ] || (echo "hic server(http://$HIC_ADDR/q?db=ipo) no response"; exit 1)
     for sku in $skus
     do
         #check sku has valid cid
