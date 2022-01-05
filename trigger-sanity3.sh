@@ -48,7 +48,10 @@ Options:
     --command_before_run_plan   sanity-3 parameter cmd_before_run_plan
     --inj_recovery              sanity-3 parameter inj_recovery, default is false
     --gitbranch_oem_sanity      sanity-3 parameter gitbranch_oem_sanity, default is master
-    --auto_create_bugs          sanity-3 parameter auto_create_bugs, default is false
+    --auto_create_bugs          (obsoleted)sanity-3 parameter auto_create_bugs, default is false
+    --auto_create_bug_assignee  sanity-3 parameter AUTO_CREATE_BUGS_ASSIGNEE, put the target launchpad id here.
+                                The bugs will not be automatically created if this parameter is empty. default is empty.
+                                (e.g. stanley31)
 EOF
 exit 1
 }
@@ -89,7 +92,11 @@ trigger_sanity_3() {
         if [ -n "$status" ];then
             echo "trigger job sanity-3-testflinger-$project-$cid-staging"
             if [ $dry_run -eq 0 ];then
-                curl -X POST http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&AUTO_CREATE_BUGS="$auto_create_bugs"
+                if [ -n "$auto_create_bug_assignee" ]; then
+                    curl -X POST http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&AUTO_CREATE_BUGS_ASSIGNEE="$auto_create_bug_assignee"
+                else
+                    curl -X POST http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&AUTO_CREATE_BUGS="$auto_create_bugs"
+                fi
             fi
         else
             echo "$sku is offline"
@@ -155,6 +162,10 @@ main() {
             --auto_create_bugs)
                 shift
                 auto_create_bugs=$1
+            ;;
+            --auto_create_bug_assignee)
+                shift
+                auto_create_bug_assignee="$1"
             ;;
             *)
                 echo "Not recognize $1"
