@@ -24,7 +24,7 @@ usage() {
 cat << EOF
 Usage:
 $(basename "$0") -t <TAG> --dry-run
-$(basename "$0") -t <TAG> -p <PROJECT> -u <USER> -k <API_TOKEN>
+$(basename "$0") [-t <TAG>| --CID <CID> ] -p <PROJECT> -u <USER> -k <API_TOKEN>
             [--exclude_task <TASK_TO_EXCLUDE>]
             [--target_img <TARGET_IMAGE>]
             [--image_no <IMAGE_NO>]
@@ -38,6 +38,7 @@ Options:
     -p|--project                Project name, default is dummy
     -u|--user                   Jenkins server username
     -k|--token                  Jenkins server user API token
+    --CID                       The CID that you would like to run sanity-3, ex: 202012-28586
     --exclude_task              sanity-3 parameter exclude_task
     --target_img                sanity-3 parameter target_image
                                 (e.g. pc-stella-cmit-focal-amd64)
@@ -75,7 +76,8 @@ trigger_sanity_3() {
     local silent
     [ "$verbose" -eq 0 ] && silent="-s"
 	#get mapping of tag to skus
-    skus=$(curl ${silent} http://"$HIC_ADDR"/q?db=tag | jq -r --arg TAG "$tag" 'with_entries(select(.value | startswith($TAG))) | keys | @sh' | tr -d \')
+    [ -z "$tag" ] || skus=$(curl ${silent} http://"$HIC_ADDR"/q?db=tag | jq -r --arg TAG "$tag" 'with_entries(select(.value | startswith($TAG))) | keys | @sh' | tr -d \')
+    [ -z "$CID" ] || skus="$skus $CID"
 
     for i in $(seq 1 10); do
         ONLINE_IPS=$(curl ${silent} http://"$HIC_ADDR"/q?db=ipo)
@@ -176,6 +178,10 @@ main() {
                 shift
                 auto_create_bug_assignee="$1"
             ;;
+            --cid)
+                shift
+                CID=$1
+            ;;
             *)
                 echo "Not recognize $1"
                 usage
@@ -184,8 +190,7 @@ main() {
         shift
     done
     if [ -z "$tag" ];then
-        echo "Need to input tag"
-        usage
+        [ -n "$CID" ] || (echo "Need to input tag or CID"; usage)
     fi
     if [ $dry_run -eq 0 ];then
         if [ -z "$user" ];then
