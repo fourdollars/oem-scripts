@@ -24,7 +24,7 @@ usage() {
 cat << EOF
 Usage:
 $(basename "$0") -t <TAG> --dry-run
-$(basename "$0") [-t <TAG>| --CID <CID> ] -p <PROJECT> -u <USER> -k <API_TOKEN>
+$(basename "$0") [-t <TAG>| --cid <CID> ] -p <PROJECT> -u <USER> -k <API_TOKEN>
             [--exclude_task <TASK_TO_EXCLUDE>]
             [--target_img <TARGET_IMAGE>]
             [--image_no <IMAGE_NO>]
@@ -38,7 +38,7 @@ Options:
     -p|--project                Project name, default is dummy
     -u|--user                   Jenkins server username
     -k|--token                  Jenkins server user API token
-    --CID                       The CID that you would like to run sanity-3, ex: 202012-28586
+    --cid                       The CID that you would like to run sanity-3, ex: 202012-28586
     --exclude_task              sanity-3 parameter exclude_task
     --target_img                sanity-3 parameter target_image
                                 (e.g. pc-stella-cmit-focal-amd64)
