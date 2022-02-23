@@ -82,7 +82,7 @@ ubiquity ubuntu-recovery/recovery_hotkey/partition_label string PQSERVICE
 ubiquity ubuntu-recovery/recovery_type string dev
 " | tee ubuntu-recovery.cfg
         mv ubuntu-recovery.cfg $temp_folder/preseed
-        scp -o StrictHostKeyChecking=no "$user_on_target"@"$target_ip":/cdrom/preseed/project.cfg ./
+        $SCP "$user_on_target"@"$target_ip":/cdrom/preseed/project.cfg ./
         sed -i 's%ubiquity/reboot boolean false%ubiquity/reboot boolean true%' ./project.cfg
         sed -i 's%ubiquity/poweroff boolean true%ubiquity/poweroff boolean false%' ./project.cfg
         mv project.cfg $temp_folder/preseed
@@ -191,7 +191,7 @@ inject_preseed() {
     $SSH "$user_on_target"@"$target_ip" rm -rf /tmp/SUCCSS_inject_preseed
     download_preseed && \
     push_preseed
-    scp -o StrictHostKeyChecking=no "$user_on_target"@"$target_ip":/cdrom/SUCCSS_push_preseed "$temp_folder" || usage
+    $SCP "$user_on_target"@"$target_ip":/cdrom/SUCCSS_push_preseed "$temp_folder" || usage
 
     if [ "${ubr}" == "yes" ]; then
         $SSH "$user_on_target"@"$target_ip" bash \$HOME/push_preseed/preseed/set_env_for_ubuntu_recovery || usage
@@ -213,7 +213,7 @@ inject_recovery_iso() {
 --exclude=.disk/info.recovery --exclude=efi.factory --delete \
 --exclude=casper/filesystem.squashfs --temp-dir=/var/tmp/rsync"
         fi
-        scp -o StrictHostKeyChecking=no "$local_iso" "$user_on_target"@"$target_ip":~/
+        $SCP "$local_iso" "$user_on_target"@"$target_ip":~/
 cat <<EOF > "$temp_folder/$script_on_target_machine"
 #!/bin/bash
 set -ex
@@ -227,10 +227,10 @@ sudo rsync -alv /mnt/ /cdrom/ $rsync_opts && \
 sudo cp /mnt/.disk/ubuntu_dist_channel /cdrom/.disk/ && \
 touch /tmp/SUCCSS_inject_recovery_iso
 EOF
-        scp -o StrictHostKeyChecking=no "$temp_folder"/"$script_on_target_machine" "$user_on_target"@"$target_ip":~/
-        ssh -o StrictHostKeyChecking=no "$user_on_target"@"$target_ip" chmod +x "\$HOME/$script_on_target_machine"
-        ssh -o StrictHostKeyChecking=no "$user_on_target"@"$target_ip" "\$HOME/$script_on_target_machine"
-        scp -o StrictHostKeyChecking=no "$user_on_target"@"$target_ip":/tmp/SUCCSS_inject_recovery_iso "$temp_folder" || usage
+        $SCP "$temp_folder"/"$script_on_target_machine" "$user_on_target"@"$target_ip":~/
+        $SSH "$user_on_target"@"$target_ip" chmod +x "\$HOME/$script_on_target_machine"
+        $SSH "$user_on_target"@"$target_ip" "\$HOME/$script_on_target_machine"
+        $SCP "$user_on_target"@"$target_ip":/tmp/SUCCSS_inject_recovery_iso "$temp_folder" || usage
     else
         img_jenkins_out_url="ftp://$jenkins_url/jenkins_host/jobs/$jenkins_job_for_iso/builds/$jenkins_job_build_no/archive/out"
         img_name="$(wget -q "$img_jenkins_out_url/" -O - | grep -o 'href=.*iso"' | awk -F/ '{print $NF}' | tr -d \")"
@@ -266,7 +266,7 @@ do_recovery() {
         $SSH "$user_on_target"@"$target_ip" sudo update-grub
         $SSH "$user_on_target"@"$target_ip" sudo reboot &
     else
-        ssh -o StrictHostKeyChecking=no "$user_on_target"@"$target_ip" sudo dell-restore-system -y &
+        $SSH "$user_on_target"@"$target_ip" sudo dell-restore-system -y &
     fi
     sleep 300 # sleep to make sure the target system has been rebooted to recovery mode.
     poll_recovery_status
