@@ -19,6 +19,7 @@ cmd_before_run_plan=""
 inj_recovery="false"
 gitbranch_oem_sanity="master"
 auto_create_bugs="false"
+checkbox_ppas="ppa:oem-solutions-engineers/checkbox-snapshot-staging"
 
 usage() {
 cat << EOF
@@ -33,6 +34,11 @@ $(basename "$0") -t <TAG> -p <PROJECT> -u <USER> -k <API_TOKEN>
             [--inj_recovery <true/false>]
             [--gitbranch_oem_sanity <BRANCH>]
             [--auto_create_bugs <true/false>]
+            [--checkbox_ppas <PPA url>]
+
+Example:
+$(basename "$0") -t fossa-beldum --target_img pc-stella-cmit-focal-amd64 --auto_create_bugs true --image_no no-provision --inj_recovery true --checkbox_ppas "ppa:hardware-certification/public ppa:oem-solutions-engineers/plainbox-provider-pc-sanity-snapshot"
+
 Options:
     -t|--tag                    Platform tag, ex: fossa-arbok
     -p|--project                Project name, default is dummy
@@ -49,6 +55,9 @@ Options:
     --inj_recovery              sanity-3 parameter inj_recovery, default is false
     --gitbranch_oem_sanity      sanity-3 parameter gitbranch_oem_sanity, default is master
     --auto_create_bugs          (obsoleted)sanity-3 parameter auto_create_bugs, default is false
+    --checkbox_ppas             sanity-3 parameter checkbox_ppas, default is ppa:oem-solutions-engineers/checkbox-snapshot-staging
+                                e.g. if you would like to install checkbox from stable ppa:
+                                ppa:hardware-certification/public ppa:oem-solutions-engineers/plainbox-provider-pc-sanity-snapshot
     --auto_create_bug_assignee  sanity-3 parameter AUTO_CREATE_BUGS_ASSIGNEE, put the target launchpad id here.
                                 The bugs will not be automatically created if this parameter is empty. default is empty.
                                 (e.g. stanley31)
@@ -102,9 +111,9 @@ trigger_sanity_3() {
             echo "trigger job sanity-3-testflinger-$project-$cid-staging"
             if [ $dry_run -eq 0 ];then
                 if [ -n "$auto_create_bug_assignee" ]; then
-                    curl -X POST http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&AUTO_CREATE_BUGS_ASSIGNEE="$auto_create_bug_assignee"
+                    curl -X POST http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&CHECKBOX_PPAS="$checkbox_ppas"\&AUTO_CREATE_BUGS="$auto_create_bugs"\&AUTO_CREATE_BUGS_ASSIGNEE="$auto_create_bug_assignee"
                 else
-                    curl -X POST http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&AUTO_CREATE_BUGS="$auto_create_bugs"
+                    curl -X POST http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&CHECKBOX_PPAS="$checkbox_ppas"\&AUTO_CREATE_BUGS="$auto_create_bugs"
                 fi
             fi
         else
@@ -171,6 +180,13 @@ main() {
             --auto_create_bugs)
                 shift
                 auto_create_bugs=$1
+            ;;
+            --checkbox_ppas)
+                shift
+                checkbox_ppas=$1
+                if [[ $checkbox_ppas =~ [[:space:]] ]]; then
+                    checkbox_ppas=${checkbox_ppas/' '/%20}
+                fi
             ;;
             --auto_create_bug_assignee)
                 shift
