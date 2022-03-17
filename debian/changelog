@@ -1,3 +1,24 @@
+oem-scripts (1.30) focal; urgency=medium
+
+  [ Alex Tu ]
+  * add additional parameter for auto bugs asignee
+  * retry for online status
+  * additional parameter to trigger sanity3 by CID
+  * trigger-sanity3.sh:fix the typo for usage.
+
+  [ Jeremy Szu ]
+  * Fix recovery-from-iso logic
+  * Fix ssh/scp commands without using MACRO from recovery-from-iso.sh
+  * set ubr in sutton image in recovery-injection
+
+  [ Andy Chi ]
+  * Add new parameter.
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * debian/tests/setup-apt-dir, setup-apt-dir.sh: Support hirsute, impish and jammy.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 17 Mar 2022 11:20:02 +0800
+
 oem-scripts (1.29) focal; urgency=medium
 
   * debian/tests/mir-bug, pkg-oem-meta: Improve the test of mir-bug by a predefined copyright year to avoid the failures.
