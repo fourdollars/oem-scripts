@@ -2,6 +2,8 @@
 
 export LAUNCHPAD_TOKEN="::"
 
+setup-apt-dir.sh -c jammy -m http://archive.ubuntu.com/ubuntu --disable-updates --disable-backports -o aptdir.log
+rm -f aptdir.log
 setup-apt-dir.sh -c focal -m http://archive.ubuntu.com/ubuntu --disable-updates --disable-backports -o aptdir.log
 if [ ! -e aptdir.log ]; then
     echo "aptdir.log doesn't exist."
