@@ -175,7 +175,17 @@ if [ "${#PPA[@]}" != "0" ]; then
     done< <(get-private-ppa "${PPA[@]}")
 fi
 
-PUBKEY="790BC7277767219C42C86F933B4FE6ACC0B21F32"
+case "${CODENAME}" in
+    (bionic|focal)
+        PUBKEY="790BC7277767219C42C86F933B4FE6ACC0B21F32"
+        ;;
+    (hirsute|impish|jammy)
+        PUBKEY="F6ECB3762474EDA9D21B7022871920D1991BC93C"
+        ;;
+    (*)
+        echo "${CODENAME} is not supported by setup-apt-dir.sh yet."
+        ;;
+esac
 
 : > "$APTDIR/etc/apt/sources.list"
 
