@@ -1,3 +1,9 @@
+oem-scripts (1.31) focal; urgency=medium
+
+  * debian/tests/setup-apt-dir, setup-apt-dir.sh: Add the missing xenial and enhance the test case.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 23 Mar 2022 14:36:55 +0800
+
 oem-scripts (1.30) focal; urgency=medium
 
   [ Alex Tu ]
