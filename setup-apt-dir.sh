@@ -176,7 +176,7 @@ if [ "${#PPA[@]}" != "0" ]; then
 fi
 
 case "${CODENAME}" in
-    (bionic|focal)
+    (xenial|bionic|focal)
         PUBKEY="790BC7277767219C42C86F933B4FE6ACC0B21F32"
         ;;
     (hirsute|impish|jammy)
@@ -184,6 +184,7 @@ case "${CODENAME}" in
         ;;
     (*)
         echo "${CODENAME} is not supported by setup-apt-dir.sh yet."
+        exit 1
         ;;
 esac
 
