@@ -1,3 +1,10 @@
+oem-scripts (1.32) UNRELEASED; urgency=medium
+
+  [ Kai-Chuan Hsieh ]
+  * Add modinfo2json.py for retrieving modules info
+
+ -- Kai-Chuan Hsieh <kaichuan.hsieh@canonical.com>  Sat, 02 Apr 2022 19:31:27 +0800
+
 oem-scripts (1.31) focal; urgency=medium
 
   * debian/tests/setup-apt-dir, setup-apt-dir.sh: Add the missing xenial and enhance the test case.
