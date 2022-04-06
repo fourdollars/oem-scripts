@@ -1,4 +1,4 @@
-oem-scripts (1.32) UNRELEASED; urgency=medium
+oem-scripts (1.32) focal; urgency=medium
 
   [ Kai-Chuan Hsieh ]
   * Add modinfo2json.py for retrieving modules info
