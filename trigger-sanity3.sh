@@ -19,7 +19,7 @@ cmd_before_run_plan=""
 inj_recovery="false"
 gitbranch_oem_sanity="master"
 auto_create_bugs="false"
-checkbox_ppas="ppa:oem-solutions-engineers/checkbox-snapshot-staging"
+checkbox_ppas="ppa:oem-solutions-group/pc-sanity-daily%20ppa:hardware-certification/public"
 
 usage() {
 cat << EOF
@@ -56,9 +56,7 @@ Options:
     --inj_recovery              sanity-3 parameter inj_recovery, default is false
     --gitbranch_oem_sanity      sanity-3 parameter gitbranch_oem_sanity, default is master
     --auto_create_bugs          (obsoleted)sanity-3 parameter auto_create_bugs, default is false
-    --checkbox_ppas             sanity-3 parameter checkbox_ppas, default is ppa:oem-solutions-engineers/checkbox-snapshot-staging
-                                e.g. if you would like to install checkbox from stable ppa:
-                                ppa:hardware-certification/public ppa:oem-solutions-engineers/plainbox-provider-pc-sanity-snapshot
+    --checkbox_ppas             sanity-3 parameter checkbox_ppas, default is ppa:hardware-certification/public ppa:oem-solutions-group/pc-sanity-daily
     --auto_create_bug_assignee  sanity-3 parameter AUTO_CREATE_BUGS_ASSIGNEE, put the target launchpad id here.
                                 The bugs will not be automatically created if this parameter is empty. default is empty.
                                 (e.g. stanley31)
