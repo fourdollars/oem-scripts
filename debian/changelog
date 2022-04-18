@@ -1,3 +1,10 @@
+oem-scripts (1.33) focal; urgency=medium
+
+  [ Andy Chi ]
+  * Set default checkbox ppa to checkbox-stable and plainbox-provider-pc-sanity daily
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 18 Apr 2022 14:07:35 +0800
+
 oem-scripts (1.32) focal; urgency=medium
 
   [ Kai-Chuan Hsieh ]
