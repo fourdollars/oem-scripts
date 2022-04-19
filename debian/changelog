@@ -1,3 +1,9 @@
+oem-scripts (1.34) focal; urgency=medium
+
+  * debian/tests/pkg-somerville-meta, oem_scripts/__init__.py, pkg-oem-meta: Support linux-generic-hwe-22.04 and linux-oem-22.04a.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 19 Apr 2022 11:48:23 +0800
+
 oem-scripts (1.33) focal; urgency=medium
 
   [ Andy Chi ]
