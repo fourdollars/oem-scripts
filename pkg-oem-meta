@@ -24,8 +24,8 @@ if program_name == "pkg-somerville-meta":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
-        epilog=f"Ex. {program_name} --public-bug 1868254 -s focal -k"
-        " oem -p three-eyed-raven 0962",
+        epilog=f"Ex. {program_name} -s focal -k"
+        " linux-oem-20.04 -p three-eyed-raven 0962",
     )
 elif program_name == "pkg-stella-meta":
     codename = "stella"
@@ -34,7 +34,8 @@ elif program_name == "pkg-stella-meta":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
-        epilog=f"Ex. {program_name} -s focal -k oem" " -g cmit -p beedrill 8594",
+        epilog=f"Ex. {program_name} -s focal -k linux-oem-20.04"
+        " -g cmit -p beedrill 8594",
     )
 elif program_name == "pkg-sutton-meta":
     codename = "sutton"
@@ -43,19 +44,13 @@ elif program_name == "pkg-sutton-meta":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description=f"{Codename} platform meta package generator.",
-        epilog=f"Ex. {program_name} -s focal -k oem" " -g bachman -p banaing S08",
+        epilog=f"Ex. {program_name} -s focal -k linux-oem-20.04"
+        " -g bachman -p banaing S08",
     )
 else:
     error("This program can not be executed.")
     exit(1)
 
-parser.add_argument(
-    "-k",
-    "--kernel",
-    choices=ALLOWED_KERNEL_META_LIST,
-    default="linux-oem-20.04",
-    help="Specify the kernel meta.",
-)
 info = UbuntuDistroInfo()
 try:
     # for bionic
@@ -63,6 +58,19 @@ try:
 except AttributeError:
     # for focal
     series = lsb_release.get_os_release()["CODENAME"]
+
+if series == "focal":
+    default_kernel_meta = "linux-oem-20.04"
+elif series == "jammy":
+    default_kernel_meta = "linux-oem-22.04a"
+
+parser.add_argument(
+    "-k",
+    "--kernel",
+    choices=ALLOWED_KERNEL_META_LIST,
+    default=default_kernel_meta,
+    help="Specify the kernel meta.",
+)
 
 parser.add_argument(
     "-s",
@@ -162,12 +170,22 @@ def generate_debian_package(version, bootstrap=False, real=False):
             extra = ", linux-generic-hwe-20.04"
         flavour = "default"
         grub_flavour = "generic"
+    elif args.kernel == "linux-generic-hwe-22.04":
+        if real:
+            extra = ", linux-generic-hwe-22.04"
+        flavour = "default"
+        grub_flavour = "generic"
     elif args.kernel == "linux-oem-20.04b":
         if real:
             extra = ", linux-oem-20.04b | linux-oem-20.04"
         flavour = "oem"
         grub_flavour = "oem"
     elif args.kernel.startswith("linux-oem-20.04"):
+        if real:
+            extra = f", {args.kernel}"
+        flavour = "oem"
+        grub_flavour = "oem"
+    elif args.kernel.startswith("linux-oem-22.04"):
         if real:
             extra = f", {args.kernel}"
         flavour = "oem"

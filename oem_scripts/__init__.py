@@ -31,7 +31,10 @@ ALLOWED_KERNEL_META_LIST = (
     "linux-oem-20.04c",
     "linux-oem-20.04b",
     "linux-oem-20.04",
+    "linux-oem-22.04a",
     "linux-generic-hwe-20.04",
+    "linux-generic-hwe-22.04",
+    "linux-generic",
 )
 
 SUBSCRIBER_LIST = ("oem-solutions-engineers", "ubuntu-sponsors", "ubuntu-desktop")
