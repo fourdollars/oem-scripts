@@ -87,11 +87,11 @@ if codename == "somerville":
     parser.add_argument("bios_id", nargs="+", help="BIOS ID")
     parser.add_argument("-p", "--platform", help="platform tag", required=True)
 elif codename == "stella":
-    parser.add_argument("-g", "--group", help="OEM-group", required=True)
+    parser.add_argument("-g", "--group", help="OEM-group", default="cmit")
     parser.add_argument("-p", "--platform", help="platform-codename", required=True)
     parser.add_argument("sd_id", nargs="+", help="subsystem device ID, such as 0962")
 elif codename == "sutton":
-    parser.add_argument("-g", "--group", help="OEM-group", required=True)
+    parser.add_argument("-g", "--group", help="OEM-group", default="bachman")
     parser.add_argument("-p", "--platform", help="platform-codename", required=True)
     parser.add_argument(
         "bios_ver",
@@ -127,8 +127,11 @@ elif codename == "stella":
         if not re.match("[0-9a-fA-F]{4}$", sd_id):
             error("Invalid subsystem device ID: {%s}" % sd_id)
             exit(1)
-    meta = "oem-" + codename + "." + group + "-" + platform + "-meta"
-    Codename = Codename + " " + group.title()
+    if series == "focal":
+        meta = "oem-" + codename + "." + group + "-" + platform + "-meta"
+        Codename = Codename + " " + group.title()
+    else:
+        meta = "oem-" + codename + "-" + platform + "-meta"
 elif codename == "sutton":
     group = args.group.lower()
     for bios_ver in args.bios_ver:
@@ -139,8 +142,11 @@ elif codename == "sutton":
         else:
             error("Invalid BIOS version: {%s}" % bios_ver)
             exit(1)
-    meta = "oem-" + codename + "." + group + "-" + platform + "-meta"
-    Codename = Codename + " " + group.title()
+    if series == "focal":
+        meta = "oem-" + codename + "." + group + "-" + platform + "-meta"
+        Codename = Codename + " " + group.title()
+    else:
+        meta = "oem-" + codename + "-" + platform + "-meta"
 
 if args.market_name:
     if codename == "somerville":
@@ -191,14 +197,17 @@ def generate_debian_package(version, bootstrap=False, real=False):
         flavour = "oem"
         grub_flavour = "oem"
 
-    if group:
+    if group and series == "focal":
         prefix = group + "."
         infix = "." + group
         platform_archive = codename + infix
     else:
         prefix = ""
         infix = ""
-        platform_archive = codename + "-" + platform
+        if codename == "somerville":
+            platform_archive = codename + "-" + platform
+        else:
+            platform_archive = codename
 
     if bootstrap:
         release = "UNRELEASED"
@@ -240,11 +249,17 @@ def generate_debian_package(version, bootstrap=False, real=False):
 
     source_file = "oem-%s-%s-meta.list" % (codename + infix, platform)
     archive = "archive.canonical.com"
-    source_list = f"""\
+    if series == "focal" or codename == "somerville":
+        source_list = f"""\
 deb http://{brand}.{archive}/ {series} {codename}
 # deb-src http://{brand}.{archive}/ {series} {codename}
 deb http://{brand}.{archive}/ {series} {platform_archive}
 # deb-src http://{brand}.{archive}/ {series} {platform_archive}
+"""
+    else:
+        source_list = f"""\
+deb http://{brand}.{archive}/ {series} {codename}
+# deb-src http://{brand}.{archive}/ {series} {codename}
 """
 
     with open(source_file, "w") as f:
