@@ -1,3 +1,10 @@
+oem-scripts (1.36) focal; urgency=medium
+
+  * recovery-from-iso.sh: Use jammy branch of oem-fix-misc-cnl-skip-oobe if
+    "jammy" is in the image filename.
+
+ -- Yao Wei (魏銘廷) <yao.wei@canonical.com>  Fri, 22 Apr 2022 13:28:08 +0800
+
 oem-scripts (1.35) focal; urgency=medium
 
   * debian/tests/pkg-stella-meta, debian/tests/pkg-sutton-meta, pkg-oem-meta: Remove the group from Stella and Sutton for jammy.
