@@ -17,7 +17,7 @@ clear_all() {
     rm -rf "$temp_folder"
     # remove Ubiquity in the end to match factory and Stock Ubuntu image behavior.
     # and it also workaround some debsum error from ubiquity.
-    ssh -o StrictHostKeyChecking=no "$user_on_target"@"$target_ip" sudo apt-get purge -y ubiquity
+    ssh -o StrictHostKeyChecking=no "$user_on_target"@"$target_ip" sudo apt-get -o DPkg::Lock::Timeout=-1 purge -y ubiquity
 }
 trap clear_all EXIT
 # shellcheck disable=SC2046
