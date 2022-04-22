@@ -11,6 +11,7 @@ SCP="scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 #TAR="tar -C $temp_folder"
 temp_folder="$(mktemp -d -p "$PWD")"
 GIT="git -C $temp_folder"
+ubuntu_release="UNKNOWN_RELEASE"
 
 clear_all() {
     rm -rf "$temp_folder"
@@ -97,7 +98,11 @@ ubiquity ubuntu-recovery/recovery_type string dev
     # install common tool, so that we can use oem-install to create local repository and install packages.
     $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-oem-image-helper --depth 1 -b oem-fix-misc-cnl-oem-image-helper_fish
     # install packages related to skip oobe
-    $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-skip-oobe --depth 1
+    skip_oobe_branch="master"
+    if [ "$ubuntu_release" == "jammy" ]; then
+        skip_oobe_branch="jammy"
+    fi
+    $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-skip-oobe --depth 1 -b "$skip_oobe_branch"
     # get pkgs for ssh key and skip disk checking.
     $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-misc-for-automation --depth 1 misc_for_automation
 
@@ -205,6 +210,11 @@ inject_recovery_iso() {
         if [ -z "${img_name##*stella*}" ] ||
            [ -z "${img_name##*sutton*}" ]; then
             ubr="yes"
+        fi
+        if [ -z "${img_name##*jammy*}" ]; then
+            ubuntu_release="jammy"
+        elif [ -z "${img_name##*focal*}" ]; then
+            ubuntu_release="focal"
         fi
         if [ "${ubr}" == "yes" ]; then
             rsync_opts="--exclude=efi --delete --temp-dir=/var/tmp/rsync"
