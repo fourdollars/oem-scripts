@@ -12,7 +12,7 @@ class ShutUpAndTakeMyTokenAuthorizationEngine(
     credentials.RequestTokenAuthorizationEngine
 ):
     """This stub class prevents launchpadlib from nulling out consumer_name
-    in its demented campaign to force the use of desktop integration. """
+    in its demented campaign to force the use of desktop integration."""
 
     def __init__(
         self,
@@ -84,9 +84,11 @@ class LaunchpadLogin:
                 logging.info("Using anonymously login")
                 self.lp = Launchpad.login_anonymously(application_name, service_root)
             elif ":" in launchpad_token:
-                oauth_token, oauth_token_secret, oauth_consumer_key = launchpad_token.split(
-                    ":", maxsplit=2
-                )
+                (
+                    oauth_token,
+                    oauth_token_secret,
+                    oauth_consumer_key,
+                ) = launchpad_token.split(":", maxsplit=2)
                 self.lp = Launchpad.login(
                     oauth_consumer_key,
                     oauth_token,

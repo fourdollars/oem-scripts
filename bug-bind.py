@@ -109,7 +109,7 @@ def add_bug_task(bug, bug_task):
 
 
 def remote_bug_tag(bug, tag):
-    """ remove tag from the bug """
+    """remove tag from the bug"""
     if tag in bug.tags:
         tags = bug.tags
         tags.remove(tag)
@@ -118,7 +118,7 @@ def remote_bug_tag(bug, tag):
 
 
 def add_bug_tags(bug, tags):
-    """ add tags to the bug. """
+    """add tags to the bug."""
     log.info("Add tags {} to bug {}".format(tags, bug.web_link))
     new_tags = []
     for tag_to_add in tags:
