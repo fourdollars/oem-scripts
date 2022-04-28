@@ -4,6 +4,9 @@ oem-scripts (1.36) focal; urgency=medium
     - Use jammy branch of oem-fix-misc-cnl-skip-oobe if "jammy" is in the
       image filename
     - Wait for dpkg timeout before purging ubiquity
+    - Merge rsync options for ubuntu-recovery and dell-recovery to avoid
+      issues installing dell-bto-jammy image to DUTs with dell-bto-focal
+      installed.
 
  -- Yao Wei (魏銘廷) <yao.wei@canonical.com>  Fri, 22 Apr 2022 13:28:08 +0800
 

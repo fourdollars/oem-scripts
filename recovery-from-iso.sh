@@ -216,14 +216,7 @@ inject_recovery_iso() {
         elif [ -z "${img_name##*focal*}" ]; then
             ubuntu_release="focal"
         fi
-        if [ "${ubr}" == "yes" ]; then
-            rsync_opts="--exclude=efi --delete --temp-dir=/var/tmp/rsync"
-        else
-            rsync_opts="--exclude=factory/grub.cfg* --exclude=efi/boot \
---exclude=.disk/casper-uuid --exclude=.disk/info \
---exclude=.disk/info.recovery --exclude=efi.factory --delete \
---exclude=casper/filesystem.squashfs --temp-dir=/var/tmp/rsync"
-        fi
+        rsync_opts="--exclude=efi --delete --temp-dir=/var/tmp/rsync"
         $SCP "$local_iso" "$user_on_target"@"$target_ip":~/
 cat <<EOF > "$temp_folder/$script_on_target_machine"
 #!/bin/bash
