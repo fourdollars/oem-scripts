@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Rename the project
 # Program goes over the files and renames them using bzr
 # then it goes inside the file and cahnges all old names to new name
@@ -28,11 +28,11 @@ class QuicklyRename(object):
     # http://code.activestate.com/recipes/173220-test-if-a-file-or-string-is-text-or-binary/
     # TODO:Unicode?
     cfgfile = " "
-    text_characters = "".join(map(chr, range(32, 127)) + list("\n\r\t\b"))
+    text_characters = "".join(list(map(chr, list(range(32, 127)))) + list("\n\r\t\b"))
     _null_trans = string.maketrans("", "")
 
     def isTextfile(self, filename, blocksize=512):
-        print (os.getcwd())
+        print((os.getcwd()))
         return self.isText(open(filename).read(blocksize))
 
     def isText(self, s):
@@ -85,25 +85,27 @@ class QuicklyRename(object):
     def processDir(self, path, subst_list):
         save_cwd = os.getcwd()
         os.chdir(path)
-        print ("=> Processing directory <%s>" % path)
+        print(("=> Processing directory <%s>" % path))
         not_in_bzr = self.getNotInBzrFiles(".")
-        print ("not in bzr = ", not_in_bzr)
+        print(("not in bzr = ", not_in_bzr))
 
         try:
             for fname in os.listdir("."):
                 if fname in (".bzr", QuicklyRename.cfgfile):
                     continue
                 new_name = self.substAll(fname, subst_list)
-                print (
-                    "renaming and processing file <{0}> => <{1}>".format(
-                        fname, new_name
+                print(
+                    (
+                        "renaming and processing file <{0}> => <{1}>".format(
+                            fname, new_name
+                        )
                     )
                 )
                 if new_name != fname:
                     self.renameFile(fname, new_name, not_in_bzr)
                 if os.path.isdir(new_name):
                     self.processDir(new_name, subst_list)
-                    print ("<= Back to directory", path)
+                    print(("<= Back to directory", path))
                 elif self.isTextfile(new_name):
                     self.renameInFile(new_name, subst_list)
         finally:
@@ -117,7 +119,7 @@ class QuicklyRename(object):
             subprocess.call(("bzr", "mv", old_name, new_name))
 
     def renameInFile(self, file_name, subst_list):
-        """ Rename all the instances of the old name to the new one according to the subst_list"""
+        """Rename all the instances of the old name to the new one according to the subst_list"""
         with open(file_name + "_new", "w") as fw:
             with open(file_name, "r") as fr:
                 for line_r in fr:
@@ -145,7 +147,7 @@ def main():
         """.format(
             progname=progname
         )
-        print (usage)
+        print(usage)
         exit(1)
     dir_to_process = sys.argv[2]
     subst_list = []
@@ -157,27 +159,32 @@ def main():
                 line = line.strip()
                 if line != "":  # last line with \n only
                     subst_list.append(line.split("="))
-    except IOError as (errno, strerror):
-        print (
-            "Config file problem:open('{0}'), I/O error({1}): {2}".format(
-                fname, errno, strerror
+    except IOError as xxx_todo_changeme:
+        (errno, strerror) = xxx_todo_changeme.args
+        print(
+            (
+                "Config file problem:open('{0}'), I/O error({1}): {2}".format(
+                    fname, errno, strerror
+                )
             )
         )
         exit(1)
     # print(subst_list)
     # subst_list = (('apptime', 'apptimer'),('AppTime', 'AppTimer'), ('Apptime', 'Apptimer'))
 
-    print (
-        "\nreplacing:",
-        subst_list,
-        "in ",
-        dir_to_process,
-        "\nIf you don't like the result execute\n\nbzr revert\n\n",
-        "Do you want to continue? (Yes/no)?>",
+    print(
+        (
+            "\nreplacing:",
+            subst_list,
+            "in ",
+            dir_to_process,
+            "\nIf you don't like the result execute\n\nbzr revert\n\n",
+            "Do you want to continue? (Yes/no)?>",
+        )
     )
     answer = sys.stdin.readline().strip()
     if not (answer in ("Yes", "yes")):
-        print "exit"
+        print("exit")
         exit(1)
     qr = QuicklyRename()
     # print(qr.not_in_bzr)
