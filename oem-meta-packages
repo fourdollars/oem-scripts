@@ -42,7 +42,7 @@ from tempfile import TemporaryDirectory
 SUBSCRIBER = "canonical-mainstream"
 
 staging_copy_template = Template(
-    f'''Operation: copy_package
+    '''Operation: copy_package
 Source: $source
 Destination: $destination
 Package: $packages
@@ -497,7 +497,7 @@ def deal_with_kernel_depends(pkg_name, branch, git_dir) -> bool:
         for kernel in ALLOWED_KERNEL_META_LIST:
             prev = lines[idx]
             lines[idx] = lines[idx].replace(
-                f", {kernel},", f", linux-oem-20.04b | linux-oem-20.04,"
+                f", {kernel},", ", linux-oem-20.04b | linux-oem-20.04,"
             )
             if prev != lines[idx]:
                 changed = True
@@ -861,7 +861,7 @@ class BootstrapFromGit(OemMetaPkgInfo):
             os.chdir(tmpdir)
             _run_command(wget_changelog_command)
             self.version, _, _ = _run_command(
-                ["dpkg-parsechangelog", "--show-field", "Version", "-l", f"changelog"]
+                ["dpkg-parsechangelog", "--show-field", "Version", "-l", "changelog"]
             )
 
     def get_kernel_flavour_meta(self):
@@ -1124,7 +1124,7 @@ class OemFromGit(OemMetaPkgInfo):
             os.chdir(tmpdir)
             _run_command(wget_changelog_command)
             self.version, _, _ = _run_command(
-                ["dpkg-parsechangelog", "--show-field", "Version", "-l", f"changelog"]
+                ["dpkg-parsechangelog", "--show-field", "Version", "-l", "changelog"]
             )
 
     def get_kernel_flavour_meta(self):
@@ -1983,7 +1983,7 @@ END
                     "--show-field",
                     "Version",
                     "-l",
-                    f"debian/changelog",
+                    "debian/changelog",
                 ]
             )
             if not args.dry_run and yes_or_ask(
@@ -2196,7 +2196,7 @@ elif args.subcommand == "staging-copy":
             )
             > 0
         ):
-            critical(f"This should never happen.")
+            critical("This should never happen.")
             exit(1)
         else:
             dest.add(pkg_info.oem.staging.archive)
