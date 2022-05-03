@@ -698,9 +698,9 @@ def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool
                     result = False
     else:
         if "oem-solutions-engineers" not in subscriptions:
-            error(f"'oem-solutions-engineers' is not in the subscriptions.")
+            error("'oem-solutions-engineers' is not in the subscriptions.")
             if update and yes_or_ask(
-                yes, f"Do you want to subscribe 'oem-solutions-engineers'?"
+                yes, "Do you want to subscribe 'oem-solutions-engineers'?"
             ):
                 bug.subscribe(person=lp.people[subscriber])
             else:
@@ -1028,7 +1028,7 @@ def check_and_update_git_repo(
         # Remove deprecated debian/compat
         deprecated_compat = os.path.join(tmpdir, pkg_name, "debian", "compat")
         if os.path.exists(deprecated_compat):
-            _run_command(["git", "rm", f"debian/compat"])
+            _run_command(["git", "rm", "debian/compat"])
 
         # Check git status
         if args.debug:

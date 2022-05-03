@@ -1,3 +1,17 @@
+oem-scripts (1.36) focal; urgency=medium
+
+  * recovery-from-iso.sh:
+    - Use jammy branch of oem-fix-misc-cnl-skip-oobe if "jammy" is in the
+      image filename (SWEAS-74)
+    - Wait for dpkg timeout before purging ubiquity (SWEAS-76)
+    - Merge rsync options for ubuntu-recovery and dell-recovery to avoid
+      issues installing dell-bto-jammy image to DUTs with dell-bto-focal
+      installed. (SWEAS-72)
+  * rename-everything.py: Use 2to3 to convert it to python3 script
+  * python scripts: Run black and fix flake8 errors
+
+ -- Yao Wei (魏銘廷) <yao.wei@canonical.com>  Fri, 22 Apr 2022 13:28:08 +0800
+
 oem-scripts (1.35) focal; urgency=medium
 
   * debian/tests/pkg-stella-meta, debian/tests/pkg-sutton-meta, pkg-oem-meta: Remove the group from Stella and Sutton for jammy.

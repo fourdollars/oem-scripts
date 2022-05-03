@@ -491,7 +491,7 @@ export DH_VERBOSE=1
     os.chdir("tests")
     with open("control", "w") as f:
         f.write(
-            f"""Tests: meta
+            """Tests: meta
 Depends: @
 Restrictions: needs-root
 """
