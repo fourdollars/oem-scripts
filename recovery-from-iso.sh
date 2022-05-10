@@ -67,7 +67,7 @@ download_preseed() {
         # replace $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-no-secureboot --depth 1
         # Why need it?
         # reokace $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-skip-storage-selecting --depth 1
-        mkdir $temp_folder/preseed/
+        mkdir "$temp_folder/preseed/"
         echo "# Ubuntu Recovery configuration preseed
 
 ubiquity ubuntu-oobe/user-interface string dynamic
@@ -82,11 +82,11 @@ ubiquity ubiquity/poweroff boolean false
 ubiquity ubuntu-recovery/recovery_hotkey/partition_label string PQSERVICE
 ubiquity ubuntu-recovery/recovery_type string dev
 " | tee ubuntu-recovery.cfg
-        mv ubuntu-recovery.cfg $temp_folder/preseed
+        mv ubuntu-recovery.cfg "$temp_folder/preseed"
         $SCP "$user_on_target"@"$target_ip":/cdrom/preseed/project.cfg ./
         sed -i 's%ubiquity/reboot boolean false%ubiquity/reboot boolean true%' ./project.cfg
         sed -i 's%ubiquity/poweroff boolean true%ubiquity/poweroff boolean false%' ./project.cfg
-        mv project.cfg $temp_folder/preseed
+        mv project.cfg "$temp_folder/preseed"
     else
         # get checkbox pkgs and prepare-checkbox
         # get pkgs to skip OOBE
@@ -171,9 +171,7 @@ push_preseed() {
     $SSH "$user_on_target"@"$target_ip" sudo rm -f /cdrom/SUCCSS_push_preseed
 
     if [ "${ubr}" == "yes" ]; then
-        for folder in preseed; do
-            $SCP -r "$temp_folder/$folder" "$user_on_target"@"$target_ip":~/push_preseed || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
-        done
+        $SCP -r "$temp_folder/preseed" "$user_on_target"@"$target_ip":~/push_preseed || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
     else
         for folder in pack-fish.openssh-fossa oem-fix-misc-cnl-no-secureboot oem-fix-misc-cnl-skip-oobe oem-fix-misc-cnl-skip-storage-selecting; do
             tar -C "$temp_folder"/$folder -zcvf "$temp_folder"/$folder.tar.gz .
