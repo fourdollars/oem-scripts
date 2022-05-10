@@ -11,7 +11,7 @@ SCP="scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 #TAR="tar -C $temp_folder"
 temp_folder="$(mktemp -d -p "$PWD")"
 GIT="git -C $temp_folder"
-ubuntu_release="UNKNOWN_RELEASE"
+ubuntu_release=""
 
 clear_all() {
     rm -rf "$temp_folder"
@@ -99,8 +99,9 @@ ubiquity ubuntu-recovery/recovery_type string dev
     $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-oem-image-helper --depth 1 -b oem-fix-misc-cnl-oem-image-helper_fish
     # install packages related to skip oobe
     skip_oobe_branch="master"
-    if [ "$ubuntu_release" == "jammy" ]; then
-        skip_oobe_branch="jammy"
+    if [ -n "$ubuntu_release" ]; then
+        # set ubuntu_release to jammy or focal, depending on detected release
+        skip_oobe_branch="$ubuntu_release"
     fi
     $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-skip-oobe --depth 1 -b "$skip_oobe_branch"
     # get pkgs for ssh key and skip disk checking.
