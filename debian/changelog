@@ -1,3 +1,12 @@
+oem-scripts (1.37) focal; urgency=medium
+
+  * recovery-from-iso.sh:
+    - Use focal branch (instead of master branch) of
+      oem-fix-misc-cnl-skip-oobe if "focal" is in the image filename
+    - Fix shellcheck errors
+
+ -- Yao Wei (魏銘廷) <yao.wei@canonical.com>  Tue, 10 May 2022 12:43:15 +0800
+
 oem-scripts (1.36) focal; urgency=medium
 
   * recovery-from-iso.sh:
