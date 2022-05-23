@@ -35,7 +35,11 @@ export LAUNCHPAD_API="https://api.launchpad.net/"
 
 oem-meta-packages --quiet list
 
-oem-meta-packages --quiet collect --json platforms.json  # --output meta-info.json (by default)
+if [ "$(lsb_release -cs)" != focal ]; then
+    exit 77
+fi
+
+oem-meta-packages --quiet collect --json platforms.json --output meta-info.json # --output platforms-meta-info.json (by default)
 if [ "x$(jq -r '."oem-somerville-beric-icl-meta".new_desc' < meta-info.json)" != "xDell Inspiron 3501, Vostro 3401/3501" ]; then
     jq -S -M < meta-info.json
     exit 1

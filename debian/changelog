@@ -1,3 +1,15 @@
+oem-scripts (1.38) focal; urgency=medium
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * oem-meta-packages, debian/tests/oem-meta-packages: Update the help manual.
+  * debian/tests/control, debian/tests/oem-meta-packages: Skip the oem-meta-packages test except focal.
+  * debian/tests/mir-bug: Fix the test by separating from updating/checking commands.
+
+  [ Yao Wei (魏銘廷) ]
+  * feat: Add --sync for syncing from swift then download the iso
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 23 May 2022 17:32:50 +0800
+
 oem-scripts (1.37) focal; urgency=medium
 
   * recovery-from-iso.sh:
