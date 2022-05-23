@@ -21,40 +21,86 @@ clear_all() {
 }
 trap clear_all EXIT
 # shellcheck disable=SC2046
-eval set -- $(getopt -o "hj:t:b:u:" -l "help,target-ip:,jenkins-job:,local-iso:,url:,ubr" -- "$@")
+eval set -- $(getopt -o "su:c:j:b:t:h" -l "local-iso:,sync,url:,jenkins-credential:,jenkins-job:,jenkins-job-build-no:,oem-share-url:,oem-share-credential:,target-ip:,ubr,help" -- "$@")
 
 usage() {
     set +x
 cat << EOF
-usage:
-$(basename "$0") -u <jenkins url> -j <jenkins-job-name> -b <jenkins-job-build-no> -t <target-ip> [-h|--help] [--dry-run] [--ubr]
-$(basename "$0") --local-iso <path to local iso file> -t <target-ip> [-h|--help] [--dry-run] [--ubr]
+Usage:
+    # This triggers sync job, downloads the image from oem-share, upload the
+    # image to target DUT, and starts recovery.
+    $(basename "$0") \\
+        -s -u http://10.102.135.50:8080 \\
+        -c JENKINS_USERNAME:JENKINS_CREDENTIAL \\
+            -j dell-bto-jammy-jellyfish -b 17 \\
+        --oem-share-url https://oem-share.canonical.com/share/lyoncore/jenkins/job \\
+        --oem-share-credential OEM_SHARE_USERNAME:OEM_SHARE_PASSWORD \\
+        -t 192.168.101.68
+
+    # This downloads the image from Jenkins, upload the image to target DUT,
+    # and starts recovery.
+    $(basename "$0") \\
+        -u 10.101.46.50 \\
+        -j dell-bto-jammy-jellyfish -b 17 \\
+        -t 192.168.101.68
+
+    # This upload the image from local to target DUT, and starts recovery.
+    $(basename "$0") \\
+        --local-iso ./dell-bto-jammy-jellyfish-X10-20220519-17.iso \\
+        -t 192.168.101.68
+
+    # This upload the image from local to target DUT, and starts recovery.  The
+    # image is using ubuntu-recovery.
+    $(basename "$0") \\
+        --local-iso ./pc-stella-cmit-focal-amd64-X00-20210618-1563.iso \\
+        --ubr -t 192.168.101.68
 
 Limition:
-    It will failed when target recovery partition size smaller than target iso file.
+    It will failed when target recovery partition size smaller than target iso
+    file.
 
 The assumption of using this tool:
  - An root account 'ubuntu' on target machine.
- - The root account 'ubuntu' can execute command with root permission with \`sudo\` without password.
+ - The root account 'ubuntu' can execute command with root permission with
+   \`sudo\` without password.
  - Host executing this tool can access target machine without password over ssh.
 
 OPTIONS:
-    -u|--url                    The url of jenkins server.
-    -j|--jenkins-job            Get iso from jenkins-job. The default is "dell-bto-focal-fossa-edge-alloem".
-    -b|--jenkins-job-build-no   The build number of the Jenkins job assigned by -j|--jenkins-job.
-    -t|--target-ip  The IP address of target machine. It will be used for ssh accessing.
-                    Please put your ssh key on target machine. This tool no yet support keyphase for ssh.
-    --ubr         DUT which using ubuntu recovery (volatile-task).
-    -h|--help Print this message
+    --local-iso
+      Use local
 
-Usage:
+    -s | --sync
+      Trigger sync job \`infrastructure-swift-client\` in Jenkins in --url,
+      then download image from --oem-share-url.
 
-    $(basename "$0")  -u 10.101.46.50 -j  dell-bto-focal-fossa-edge-alloem -b 3 -t 192.168.101.68
+    -u | --url
+      URL of jenkins server.
 
-    $(basename "$0") --local-iso ./dell-bto-focal-fossa-edge-alloem-X73-20210302-3.iso -t 192.168.101.68
+    -c | --jenkins-credential
+      Jenkins credential in the form of username:password, used with --sync.
 
-    $(basename "$0") --local-iso ./pc-stella-cmit-focal-amd64-X00-20210618-1563.iso --ubr -t 192.168.101.68
+    -j | --jenkins-job
+      Get iso from jenkins-job.
 
+    -b | --jenkins-job-build-no
+      The build number of the Jenkins job assigned by --jenkins-job.
+
+    --oem-share-url
+      URL of oem-share, used with --sync.
+
+    --oem-share-credential
+      Credential in the form of username:password of lyoncore, used with --sync.
+
+    -t | --target-ip
+      The IP address of target machine. It will be used for ssh accessing.
+      Please put your ssh key on target machine. This tool no yet support
+      keyphase for ssh.
+
+    --ubr
+      DUT which using ubuntu recovery (volatile-task).
+
+    -h | --help
+      Print this message
 EOF
     set -x
 exit 1
@@ -203,20 +249,131 @@ inject_preseed() {
     $SSH "$user_on_target"@"$target_ip" touch /tmp/SUCCSS_inject_preseed
 }
 
+download_image() {
+    img_path=$1
+    img_name=$2
+    user=$3
+
+    echo "downloading $img_name from $img_path"
+    curl_cmd=(curl --retry 3 -S)
+    if [ -n "$user" ]; then
+        curl_cmd+=(--user "$user")
+    fi
+
+    pushd "$temp_folder"
+    "${curl_cmd[@]}" -O "$img_path/$img_name".md5sum
+    "${curl_cmd[@]}" -O "$img_path/$img_name" 2> /dev/null
+    if ! md5sum -c "$img_name".md5sum; then
+        echo "error: failed to check image with md5sum"
+        exit 1
+    fi
+    local_iso="$PWD/$img_name"
+    popd
+}
+
+download_from_jenkins() {
+    path="ftp://$jenkins_url/jenkins_host/jobs/$jenkins_job_for_iso/builds/$jenkins_job_build_no/archive/out"
+    img_name=$(wget -q "$path/" -O - | grep -o 'href=.*iso"' | awk -F/ '{print $NF}' | tr -d \")
+    download_image "$path" "$img_name"
+}
+
+sync_to_swift() {
+    if [ -z "$jenkins_url" ] ; then
+        echo "error: --url not set"
+        exit 1
+    elif [ -z "$jenkins_credential" ]; then
+        echo "error: --jenkins-credential not set"
+        exit 1
+    elif [ -z "$jenkins_job_for_iso" ]; then
+        echo "error: --jenkins-job not set"
+        exit 1
+    elif [ -z "$jenkins_job_build_no" ]; then
+        echo "error: --jenkins-job-build-no not set"
+        exit 1
+    elif [ -z "$oem_share_url" ]; then
+        echo "error: --oem-share-url not set"
+        exit 1
+    elif [ -z "$oem_share_credential" ]; then
+        echo "error: --oem-share-credential not set"
+        exit 1
+    fi
+
+    jenkins_job_name="infrastructure-swift-client"
+    jenkins_job_url="$jenkins_url/job/$jenkins_job_name/buildWithParameters"
+    curl_cmd=(curl --retry 3 --max-time 10 -sS)
+    headers_path="$temp_folder/build_request_headers"
+
+    echo "sending build request"
+    "${curl_cmd[@]}" --user "$jenkins_credential" -X POST -D "$headers_path" "$jenkins_job_url" \
+        --data option=sync \
+        --data "jenkins_job=$jenkins_job_for_iso" \
+        --data "build_no=$jenkins_job_build_no"
+
+    echo "getting job id from queue"
+    queue_url=$(grep '^Location: ' "$headers_path" | awk '{print $2}' | tr -d '\r')
+    duration=0
+    timeout=60
+    url=
+    until [ -n "$timeout" ] && [[ $duration -ge $timeout ]]; do
+        url=$("${curl_cmd[@]}" --user "$jenkins_credential" "${queue_url}api/json" | jq -r '.executable | .url')
+        if [ "$url" != "null" ]; then
+            break
+        fi
+        sleep 5
+        duration=$((duration+5))
+    done
+    if [ "$url" = "null" ]; then
+        echo "error: sync job was not created in time"
+        exit 1
+    fi
+
+    echo "polling build status"
+    duration=0
+    timeout=1800
+    until [ -n "$timeout" ] && [[ $duration -ge $timeout ]]; do
+        result=$("${curl_cmd[@]}" --user "$jenkins_credential" "${url}api/json" | jq -r .result)
+        if [ "$result" = "SUCCESS" ]; then
+            break
+        fi
+        sleep 30
+        duration=$((duration+30))
+    done
+    if [ "$result" != "SUCCESS" ]; then
+        echo "error: sync job has not been done in time"
+        exit 1
+    fi
+
+    oem_share_path="$oem_share_url/$jenkins_job_for_iso/$jenkins_job_build_no"
+    img_name=$(curl -sS --user "$oem_share_credential" "$oem_share_path/" | grep -o 'href=.*iso"' | tr -d \")
+    img_name=${img_name#"href="}
+    download_image "$oem_share_path" "$img_name" "$oem_share_credential"
+}
+
+download_iso() {
+    if [ "$enable_sync_to_swift" = true ]; then
+        sync_to_swift
+    else
+        download_from_jenkins
+    fi
+}
+
 inject_recovery_iso() {
-    if [ -n "$local_iso" ]; then
-        img_name="$(basename "$local_iso")"
-        if [ -z "${img_name##*stella*}" ] ||
-           [ -z "${img_name##*sutton*}" ]; then
-            ubr="yes"
-        fi
-        if [ -z "${img_name##*jammy*}" ]; then
-            ubuntu_release="jammy"
-        elif [ -z "${img_name##*focal*}" ]; then
-            ubuntu_release="focal"
-        fi
-        rsync_opts="--exclude=efi --delete --temp-dir=/var/tmp/rsync"
-        $SCP "$local_iso" "$user_on_target"@"$target_ip":~/
+    if [ -z "$local_iso" ]; then
+        download_iso
+    fi
+
+    img_name="$(basename "$local_iso")"
+    if [ -z "${img_name##*stella*}" ] ||
+       [ -z "${img_name##*sutton*}" ]; then
+        ubr="yes"
+    fi
+    if [ -z "${img_name##*jammy*}" ]; then
+        ubuntu_release="jammy"
+    elif [ -z "${img_name##*focal*}" ]; then
+        ubuntu_release="focal"
+    fi
+    rsync_opts="--exclude=efi --delete --temp-dir=/var/tmp/rsync"
+    $SCP "$local_iso" "$user_on_target"@"$target_ip":~/
 cat <<EOF > "$temp_folder/$script_on_target_machine"
 #!/bin/bash
 set -ex
@@ -230,21 +387,10 @@ sudo rsync -alv /mnt/ /cdrom/ $rsync_opts && \
 sudo cp /mnt/.disk/ubuntu_dist_channel /cdrom/.disk/ && \
 touch /tmp/SUCCSS_inject_recovery_iso
 EOF
-        $SCP "$temp_folder"/"$script_on_target_machine" "$user_on_target"@"$target_ip":~/
-        $SSH "$user_on_target"@"$target_ip" chmod +x "\$HOME/$script_on_target_machine"
-        $SSH "$user_on_target"@"$target_ip" "\$HOME/$script_on_target_machine"
-        $SCP "$user_on_target"@"$target_ip":/tmp/SUCCSS_inject_recovery_iso "$temp_folder" || usage
-    else
-        img_jenkins_out_url="ftp://$jenkins_url/jenkins_host/jobs/$jenkins_job_for_iso/builds/$jenkins_job_build_no/archive/out"
-        img_name="$(wget -q "$img_jenkins_out_url/" -O - | grep -o 'href=.*iso"' | awk -F/ '{print $NF}' | tr -d \")"
-        pushd "$temp_folder" || usage
-        wget "$img_jenkins_out_url/$img_name".md5sum
-        wget "$img_jenkins_out_url/$img_name" 2> /dev/null
-        md5sum -c "$img_name".md5sum || usage
-        local_iso="$PWD/$img_name"
-        popd
-        inject_recovery_iso
-    fi
+    $SCP "$temp_folder"/"$script_on_target_machine" "$user_on_target"@"$target_ip":~/
+    $SSH "$user_on_target"@"$target_ip" chmod +x "\$HOME/$script_on_target_machine"
+    $SSH "$user_on_target"@"$target_ip" "\$HOME/$script_on_target_machine"
+    $SCP "$user_on_target"@"$target_ip":/tmp/SUCCSS_inject_recovery_iso "$temp_folder" || usage
 }
 prepare() {
     echo "prepare"
@@ -283,9 +429,16 @@ main() {
                 shift
                 local_iso="$1"
                 ;;
+            -s | --sync)
+                enable_sync_to_swift=true
+                ;;
             -u | --url)
                 shift
                 jenkins_url="$1"
+                ;;
+            -c | --jenkins-credential)
+                shift
+                jenkins_credential="$1"
                 ;;
             -j | --jenkins-job)
                 shift
@@ -294,6 +447,14 @@ main() {
             -b | --jenkins-job-build-no)
                 shift
                 jenkins_job_build_no="$1"
+                ;;
+            --oem-share-url)
+                shift
+                oem_share_url="$1"
+                ;;
+            --oem-share-credential)
+                shift
+                oem_share_credential="$1"
                 ;;
             -t | --target-ip)
                 shift
@@ -307,11 +468,12 @@ main() {
                 exit 0
                 ;;
             --)
-           ;;
+                ;;
             *)
-            echo "Not recognize $1"
-            usage
-       ;;
+                echo "Not recognize $1"
+                usage
+                exit 1
+                ;;
            esac
            shift
     done
