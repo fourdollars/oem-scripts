@@ -16,7 +16,6 @@ Tests:
  jq-lp,
  launchpad-api,
  lp-bug,
- oem-meta-packages,
  pkg-list,
  review-merge-proposal,
  run-autopkgtest,
@@ -24,7 +23,8 @@ Tests:
 Depends: @
 
 Tests:
- mir-bug
+ mir-bug,
+ oem-meta-packages
 Restrictions: skippable
 Depends: @, openssh-client
 
