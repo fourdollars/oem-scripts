@@ -886,6 +886,27 @@ def check_and_update_git_repo(
             new_market_name = remove_prefix(new_market_name, "HP ")
         else:
             new_market_name = _grouping_market_names(args.json["productnames"])
+
+        # The new_market_name will be replaced by short_description if it's provided in json
+        # https://warthogs.atlassian.net/browse/CED-40
+        if "short_description" in args.json:
+            short_desc = args.json["short_description"]
+            len_short_desc = len(short_desc)
+            # The first line of the "Description:" must be less than 80 characters long.
+            # https://salsa.debian.org/lintian/lintian/-/blob/master/tags/s/synopsis-too-long.tag
+            # In pkg-oem-meta, the Codename will be "Dell", "HP" and "Lenovo"
+            # Description: hardware support for {Codename} {platformStr}
+            #             |-------- 22 --------||--- 7 ---||--- 51 ----|
+            # Description: hardware support for {Codename} {platformStr} (factory)
+            #             |-------- 22 --------||--- 7 ---||--- 41 ----||-- 10 --|
+            if len_short_desc > 0:
+                if len_short_desc < 41:
+                    new_market_name = short_desc
+                else:
+                    warning(
+                        f"The market name({short_desc}) in short description is {len_short_desc} bytes, it's more than 40 bytes!!!"
+                    )
+
         if market_name is None:
             market_name = new_market_name
         if market_name != new_market_name:
