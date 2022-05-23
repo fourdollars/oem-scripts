@@ -896,7 +896,7 @@ def check_and_update_git_repo(
         #             |-------- 22 --------||--- 7 ---||--- 51 ----|
         # Description: hardware support for {Codename} {platformStr} (factory)
         #             |-------- 22 --------||--- 7 ---||--- 41 ----||-- 10 --|
-        short_desc = args.json.get("short_description", '')
+        short_desc = args.json.get("short_description", "")
         len_short_desc = len(short_desc)
         if len_short_desc > 0:
             if len_short_desc < 41:
