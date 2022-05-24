@@ -4,12 +4,14 @@ exec 2>&1
 set -euo pipefail
 IFS=$'\n\t'
 
+cd "$AUTOPKGTEST_ARTIFACTS"
+
 export DEBFULLNAME="Commercial Engineering"
 export DEBEMAIL="commercial-engineering@canonical.com"
 
 echo "== Check linux-oem-22.04a =="
 
-pkg-somerville-meta --public-bug 1868254 --private-bug 123456 -s jammy -k linux-oem-22.04a -p three-eyed-raven 0962
+pkg-somerville-meta --public-bug 1868254 --private-bug 123456 -s jammy -k linux-oem-22.04a -p three-eyed-raven 0962 --market-name "XPS 13 7390" --product-name "XPS 13 7390"
 cd oem-somerville-three-eyed-raven-meta || exit 1
 
 git checkout three-eyed-raven-jammy-ubuntu
@@ -20,13 +22,15 @@ grep "^deb http://dell.archive.canonical.com/ jammy somerville-three-eyed-raven\
 grep "^# deb-src http://dell.archive.canonical.com/ jammy somerville-three-eyed-raven\$" oem-somerville-three-eyed-raven-meta.list
 
 grep "oem-somerville-three-eyed-raven-meta (22.04~ubuntu1) UNRELEASED; urgency=medium" debian/changelog
-grep "Meta package for Somerville Three-Eyed-Raven." debian/changelog
+grep "Meta package for Dell XPS 13 7390." debian/changelog
 grep '(LP: #1868254)' debian/changelog
 
 grep "Source: oem-somerville-three-eyed-raven-meta" debian/control
 grep "Depends: \${misc:Depends}, ubuntu-oem-keyring$" debian/control
 grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
 grep -v "Package: oem-somerville-factory-three-eyed-raven-meta" debian/control
+grep "^Description: hardware support for Dell XPS 13 7390\$" debian/control
+grep "^ \* Dell XPS 13 7390\$" -B 1 -A 1 debian/control
 
 grep "Upstream-Name: oem-somerville-three-eyed-raven-meta" debian/copyright
 
@@ -50,7 +54,7 @@ grep "^deb http://dell.archive.canonical.com/ jammy somerville-three-eyed-raven\
 grep "^# deb-src http://dell.archive.canonical.com/ jammy somerville-three-eyed-raven\$" oem-somerville-three-eyed-raven-meta.list
 
 grep "oem-somerville-three-eyed-raven-meta (22.04ubuntu1) jammy; urgency=medium" debian/changelog
-grep "Meta package for Somerville Three-Eyed-Raven." debian/changelog
+grep "Meta package for Dell XPS 13 7390." debian/changelog
 grep '(LP: #123456)' debian/changelog
 
 grep "Source: oem-somerville-three-eyed-raven-meta" debian/control
@@ -58,6 +62,8 @@ grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-oem-22.04a, oem-somer
 grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
 grep "Package: oem-somerville-factory-three-eyed-raven-meta" debian/control
 grep "Depends: \${misc:Depends}, oem-somerville-factory-meta$" debian/control
+grep "^Description: hardware support for Dell XPS 13 7390\$" debian/control
+grep "^ \* Dell XPS 13 7390\$" -B 1 -A 1 debian/control
 
 grep "Upstream-Name: oem-somerville-three-eyed-raven-meta" debian/copyright
 
