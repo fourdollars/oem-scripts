@@ -28,7 +28,9 @@ ENDLINE
 
 export COPYRIGHT_YEAR=2021
 
+# check/update
 mir-bug update --yes --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/fossa-varys.json
+mir-bug check --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/fossa-varys.json
 
 # create
 mir-bug create -o bug_id somerville bronn "some Dell platforms"
@@ -36,13 +38,6 @@ BUG_ID=$(cat bug_id)
 lp-bug cleanup --yes "$BUG_ID"
 rm bug_id
 
-mir-bug check --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/fossa-varys.json
-mir-bug update --yes --skip --tz=UTC --release "$AUTOPKGTEST_ARTIFACTS"/fossa-varys.json
-
 # collect
 mir-bug collect "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs.json
 mir-bug collect --ubuntu-certified "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs-ubuntu-certified.json
-
-mir-bug check --skip --tz=UTC --release "$AUTOPKGTEST_ARTIFACTS"/fossa-varys.json
-
-exit 77

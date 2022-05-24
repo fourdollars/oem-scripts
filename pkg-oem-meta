@@ -81,7 +81,16 @@ parser.add_argument(
 )
 parser.add_argument("--public-bug", help="Launchpad public bug number.", type=int)
 parser.add_argument("--private-bug", help="Launchpad private bug number.", type=int)
-parser.add_argument("--market-name", help="Specify the market name string.")
+parser.add_argument(
+    "--market-name",
+    help="Specify the market name string. (It will be used in the short description of Debian package.)",
+)
+parser.add_argument(
+    "--product-name",
+    help="Specify the product name string. (It needs to be used with '--market-name'.)",
+    type=str,
+    action="append",
+)
 
 if codename == "somerville":
     parser.add_argument("bios_id", nargs="+", help="BIOS ID")
@@ -102,8 +111,12 @@ elif codename == "sutton":
 args = parser.parse_args()
 
 platform = args.platform.lower()
+product_names = []
+
 if args.market_name:
     Platform = args.market_name
+    if args.product_name:
+        product_names = args.product_name
 else:
     Platform = platform.title()
 series = args.series
@@ -157,6 +170,11 @@ if args.market_name:
         Codename = "Lenovo"
     if Platform.startswith(f"{Codename} "):
         Platform = remove_prefix(Platform, f"{Codename} ")
+    if product_names:
+        for idx, product_name in enumerate(product_names):
+            if not product_name.startswith(f"{Codename} "):
+                product_names[idx] = f"{Codename} {product_name}"
+        product_names = sorted(product_names)
 
 if os.path.exists(meta):
     error(meta + " already exists. Please remove or rename it.")
@@ -356,8 +374,18 @@ debian-tag = {branch}_%(version)s
 
     if not args.market_name:
         platformStr = Platform + " platform"
+        platformsStr = platformStr + "."
+    elif args.product_name:
+        platformStr = Platform
+        if len(args.product_name) == 1:
+            platformsStr = "PC:"
+        else:
+            platformsStr = "PCs:"
+        for product_name in product_names:
+            platformsStr += f"\n * {product_name}"
     else:
         platformStr = Platform
+        platformsStr = platformStr + "."
 
     with open("control", "w") as f:
         f.write(
@@ -376,8 +404,8 @@ Depends: ${{misc:Depends}}, ubuntu-oem-keyring{extra}
 XB-Modaliases: ${{modaliases}}
 XB-Ubuntu-OEM-Kernel-Flavour: {flavour}
 Description: hardware support for {Codename} {platformStr}
- This is a metapackage for {Codename} {platformStr}. It installs\n"""
-            + " packages needed to support this hardware fully.\n"
+ This is a metapackage for {Codename} {platformsStr}
+ It installs packages needed to support this hardware fully.\n"""
         )
         if real:
             f.write(
@@ -385,9 +413,8 @@ Description: hardware support for {Codename} {platformStr}
 Architecture: all
 Depends: ${{misc:Depends}}{factory_depends}
 Description: hardware support for {Codename} {platformStr} (factory)
- This is a factory metapackage for {Codename} {platformStr}.\n"""
-                + " It installs packages needed to support this hardware "
-                + "fully. (factory)\n"
+ This is a factory metapackage for {Codename} {platformsStr}
+ It installs packages needed to support this hardware fully. (factory)\n"""
             )
 
     timestamp = os.getenv("COPYRIGHT_YEAR", strftime("%Y", localtime()))
