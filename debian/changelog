@@ -1,3 +1,16 @@
+oem-scripts (1.39) focal; urgency=medium
+
+  [ Bin Li ]
+  * Support short_description
+  * Use get() method to reduce KeyError in a better way
+  * fix autopkg's error
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * pkg-oem-meta, debian/tests/pkg-somerville-meta: Support the '--product-name' option.
+  * debian/tests/mir-bug: Skip the test for '--tz=UTC'.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 24 May 2022 20:54:55 +0800
+
 oem-scripts (1.38) focal; urgency=medium
 
   [ Shih-Yuan Lee (FourDollars) ]
