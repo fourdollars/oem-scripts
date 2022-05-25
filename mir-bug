@@ -878,7 +878,10 @@ def check_and_update_git_repo(
         project, branch, pkg_name
     )
 
+    product_names = []
+
     if args.json:
+        product_names = args.json.get("productnames", [])
         if group == "cmit":
             new_market_name = _grouping_market_names(
                 args.json["productnames"], maxsplit=2
@@ -961,6 +964,8 @@ def check_and_update_git_repo(
             ]
             if market_name:
                 command.extend(["--market-name", market_name])
+                for product_name in product_names:
+                    command.extend(["--product-name", product_name])
             command.extend(ids)
         elif project == "stella":
             command = [
@@ -978,6 +983,8 @@ def check_and_update_git_repo(
             ]
             if market_name:
                 command.extend(["--market-name", market_name])
+                for product_name in product_names:
+                    command.extend(["--product-name", product_name])
             command.extend(ids)
         elif project == "sutton":
             command = [
@@ -995,6 +1002,8 @@ def check_and_update_git_repo(
             ]
             if market_name:
                 command.extend(["--market-name", market_name])
+                for product_name in product_names:
+                    command.extend(["--product-name", product_name])
             for bvn, bvr, pvr in ids:
                 if pvr:
                     command.append(f"bvn{bvn}:bvr{bvr}:pvr{pvr}")
