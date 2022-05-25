@@ -31,6 +31,8 @@ export COPYRIGHT_YEAR=2021
 # check/update
 mir-bug update --yes --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/fossa-varys.json
 mir-bug check --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/fossa-varys.json
+mir-bug update --yes --skip --tz=UTC --release "$AUTOPKGTEST_ARTIFACTS"/fossa-varys.json
+mir-bug check --skip --tz=UTC --release "$AUTOPKGTEST_ARTIFACTS"/fossa-varys.json
 
 # create
 mir-bug create -o bug_id somerville bronn "some Dell platforms"

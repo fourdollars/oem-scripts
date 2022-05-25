@@ -795,7 +795,14 @@ def check_and_update_bug_attachments(
         )
         content += "\n"
         with open(debdiff, "w") as f:
-            f.write(content)
+            diff_started = False
+            for line in content.split("\n"):
+                if diff_started is False and line.startswith("diff -Nru oem-qemu-meta"):
+                    diff_started = True
+                if diff_started:
+                    f.write(line + "\n")
+        with open(debdiff, "r") as f:
+            content = f.read()
 
         for attachment in bug.attachments:
             if "debdiff" in attachment.title:
