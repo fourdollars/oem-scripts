@@ -51,6 +51,7 @@ class BootstrapMeta(object):
         self.project = self.json["project"]
         self.group = self.json["group"]
         self.platform = self.json["platform"]
+        self.product_names = self.json.get("productnames")
 
         if self.json["project"] == "somerville":
             self.meta = "oem-somerville-" + self.json["platform"] + "-meta"
@@ -445,6 +446,9 @@ class BootstrapMetaGit(BootstrapMeta):
                     "--market-name",
                     self.market_name,
                 ]
+                if self.product_names:
+                    for product_name in self.product_names:
+                        command.extend(["--product-name", product_name])
                 command.extend(ids)
             elif self.project == "stella":
                 command = [
@@ -462,6 +466,9 @@ class BootstrapMetaGit(BootstrapMeta):
                     "--market-name",
                     self.market_name,
                 ]
+                if self.product_names:
+                    for product_name in self.product_names:
+                        command.extend(["--product-name", product_name])
                 command.extend(ids)
             elif self.project == "sutton":
                 command = [
@@ -479,6 +486,9 @@ class BootstrapMetaGit(BootstrapMeta):
                     "--market-name",
                     self.market_name,
                 ]
+                if self.product_names:
+                    for product_name in self.product_names:
+                        command.extend(["--product-name", product_name])
                 for bvn, bvr, pvr in ids:
                     if pvr:
                         command.append(f"bvn{bvn}:bvr{bvr}:pvr{pvr}")
