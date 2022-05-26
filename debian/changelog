@@ -1,3 +1,12 @@
+oem-scripts (1.40) focal; urgency=medium
+
+  * mir-bug: Support '--product-name' of pkg-oem-meta.
+  * bootstrap-meta, debian/tests/control: Support the '--product-name' option of pkg-oem-meta.
+  * debian/control, mir-bug, oem_scripts/__init__.py, oem_scripts/logging.py: Don't print colors when the stdout is not a terminal.
+  * mir-bug, debian/tests/mir-bug: Check the debdiff content before writing.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 26 May 2022 14:42:48 +0800
+
 oem-scripts (1.39) focal; urgency=medium
 
   [ Bin Li ]
