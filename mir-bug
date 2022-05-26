@@ -28,6 +28,7 @@ import oem_scripts
 import os
 import re
 import shutil
+import sys
 
 from copy import copy
 from glob import glob
@@ -794,14 +795,26 @@ def check_and_update_bug_attachments(
         )
         content += "\n"
         with open(debdiff, "w") as f:
-            f.write(content)
+            diff_started = False
+            for line in content.split("\n"):
+                if diff_started is False and line.startswith("diff -Nru oem-qemu-meta"):
+                    diff_started = True
+                if diff_started:
+                    f.write(line + "\n")
+        with open(debdiff, "r") as f:
+            content = f.read()
 
         for attachment in bug.attachments:
             if "debdiff" in attachment.title:
                 _run_command(["wget", attachment.data_link, "-O", "data"])
-                out, err, returncode = _run_command(
-                    ["colordiff", "-ur", "data", debdiff], returncode=(0, 1)
-                )
+                if sys.stdout.isatty():
+                    out, err, returncode = _run_command(
+                        ["colordiff", "-ur", "data", debdiff], returncode=(0, 1)
+                    )
+                else:
+                    out, err, returncode = _run_command(
+                        ["diff", "-ur", "data", debdiff], returncode=(0, 1)
+                    )
                 if returncode == 1:
                     warning(
                         f"{attachment.title} - {attachment.web_link} has unexpected content."
@@ -878,7 +891,10 @@ def check_and_update_git_repo(
         project, branch, pkg_name
     )
 
+    product_names = []
+
     if args.json:
+        product_names = args.json.get("productnames", [])
         if group == "cmit":
             new_market_name = _grouping_market_names(
                 args.json["productnames"], maxsplit=2
@@ -961,6 +977,8 @@ def check_and_update_git_repo(
             ]
             if market_name:
                 command.extend(["--market-name", market_name])
+                for product_name in product_names:
+                    command.extend(["--product-name", product_name])
             command.extend(ids)
         elif project == "stella":
             command = [
@@ -978,6 +996,8 @@ def check_and_update_git_repo(
             ]
             if market_name:
                 command.extend(["--market-name", market_name])
+                for product_name in product_names:
+                    command.extend(["--product-name", product_name])
             command.extend(ids)
         elif project == "sutton":
             command = [
@@ -995,6 +1015,8 @@ def check_and_update_git_repo(
             ]
             if market_name:
                 command.extend(["--market-name", market_name])
+                for product_name in product_names:
+                    command.extend(["--product-name", product_name])
             for bvn, bvr, pvr in ids:
                 if pvr:
                     command.append(f"bvn{bvn}:bvr{bvr}:pvr{pvr}")

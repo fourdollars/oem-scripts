@@ -10,7 +10,6 @@ Tests:
 Depends: @, ubuntu-dev-tools, git-buildpackage
 
 Tests:
- bootstrap-meta,
  bug-bind,
  get-private-ppa,
  jq-lp,
@@ -23,6 +22,7 @@ Tests:
 Depends: @
 
 Tests:
+ bootstrap-meta,
  mir-bug,
  oem-meta-packages
 Restrictions: skippable

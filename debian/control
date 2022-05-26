@@ -24,7 +24,6 @@ Depends:
  ${misc:Depends},
  ${python3:Depends},
  build-essential,
- colordiff,
  debhelper,
  devscripts,
  dh-modaliases,
@@ -48,6 +47,7 @@ Depends:
 Breaks: lp-fish-tools (<<1.192.40)
 Replaces: lp-fish-tools (<<1.192.40)
 Recommends:
+ colordiff,
  qemu-user-static,
  zsync-curl
 Suggests:
