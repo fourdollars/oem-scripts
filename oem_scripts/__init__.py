@@ -19,6 +19,7 @@
 
 import os
 import re
+import sys
 import subprocess
 
 from logging import debug, info, error, critical
@@ -49,10 +50,16 @@ def remove_prefix(s, prefix):
 
 def yes_or_ask(yes: bool, message: str) -> bool:
     if yes:
-        print(f"> \033[1;34m{message}\033[1;0m (y/n) y")
+        if sys.stdout.isatty():
+            print(f"> \033[1;34m{message}\033[1;0m (y/n) y")
+        else:
+            print(f"> {message} (y/n) y")
         return True
     while True:
-        res = input(f"> \033[1;34m{message}\033[1;0m (y/n) ").lower()
+        if sys.stdout.isatty():
+            res = input(f"> \033[1;34m{message}\033[1;0m (y/n) ").lower()
+        else:
+            res = input(f"> {message} (y/n) ").lower()
         if res not in {"y", "n"}:
             continue
         if res == "y":

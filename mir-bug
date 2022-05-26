@@ -28,6 +28,7 @@ import oem_scripts
 import os
 import re
 import shutil
+import sys
 
 from copy import copy
 from glob import glob
@@ -799,9 +800,14 @@ def check_and_update_bug_attachments(
         for attachment in bug.attachments:
             if "debdiff" in attachment.title:
                 _run_command(["wget", attachment.data_link, "-O", "data"])
-                out, err, returncode = _run_command(
-                    ["colordiff", "-ur", "data", debdiff], returncode=(0, 1)
-                )
+                if sys.stdout.isatty():
+                    out, err, returncode = _run_command(
+                        ["colordiff", "-ur", "data", debdiff], returncode=(0, 1)
+                    )
+                else:
+                    out, err, returncode = _run_command(
+                        ["diff", "-ur", "data", debdiff], returncode=(0, 1)
+                    )
                 if returncode == 1:
                     warning(
                         f"{attachment.title} - {attachment.web_link} has unexpected content."

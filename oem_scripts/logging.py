@@ -22,22 +22,33 @@ import sys
 
 
 def setup_logging(debug=False, quiet=False):
-    logging.addLevelName(
-        logging.DEBUG, "\033[1;96m%s\033[1;0m" % logging.getLevelName(logging.DEBUG)
-    )
-    logging.addLevelName(
-        logging.INFO, "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.INFO)
-    )
-    logging.addLevelName(
-        logging.WARNING, "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING)
-    )
-    logging.addLevelName(
-        logging.ERROR, "\033[1;31m%s\033[1;0m" % logging.getLevelName(logging.ERROR)
-    )
-    logging.addLevelName(
-        logging.CRITICAL,
-        "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.CRITICAL),
-    )
+    if sys.stdout.isatty():
+        logging.addLevelName(
+            logging.DEBUG, "\033[1;96m%s\033[1;0m" % logging.getLevelName(logging.DEBUG)
+        )
+        logging.addLevelName(
+            logging.INFO, "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.INFO)
+        )
+        logging.addLevelName(
+            logging.WARNING,
+            "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING),
+        )
+        logging.addLevelName(
+            logging.ERROR, "\033[1;31m%s\033[1;0m" % logging.getLevelName(logging.ERROR)
+        )
+        logging.addLevelName(
+            logging.CRITICAL,
+            "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.CRITICAL),
+        )
+    else:
+        for level in (
+            logging.DEBUG,
+            logging.INFO,
+            logging.WARNING,
+            logging.ERROR,
+            logging.CRITICAL,
+        ):
+            logging.addLevelName(level, "%s" % logging.getLevelName(level))
     if debug:
         logging.basicConfig(
             format="<%(levelname)s> %(message)s",
