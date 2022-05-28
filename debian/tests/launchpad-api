@@ -10,11 +10,20 @@ fi
 launchpad-api patch bugs/100 tags:='["focal"]'
 
 if [ "$(launchpad-api get bugs/100 | jq -r '.tags|join(" ")')" != "focal" ]; then
+    echo "launchpad-api patch failed."
     exit 1
 fi
 
 launchpad-api patch bugs/100 tags:='["lp-translations"]'
 if [ "$(launchpad-api get bugs/100 | jq -r '.tags|join(" ")')" != "lp-translations" ]; then
+    echo "launchpad-api patch failed."
+    exit 1
+fi
+
+timestamp=$(date +%s)
+launchpad-api post bugs/100 ws.op=newMessage content="Hello World $timestamp"
+if [ "$(launchpad-api get bugs/100/messages | jq -r '.entries | .[-1].content')" != "Hello World $timestamp" ]; then
+    echo "launchpad-api post failed."
     exit 1
 fi
 
