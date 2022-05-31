@@ -1,3 +1,9 @@
+oem-scripts (1.41) focal; urgency=medium
+
+  * debian/tests/launchpad-api, launchpad-api: Unify to use the Authorization header.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 31 May 2022 09:47:27 +0800
+
 oem-scripts (1.40) focal; urgency=medium
 
   * mir-bug: Support '--product-name' of pkg-oem-meta.
