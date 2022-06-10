@@ -30,7 +30,7 @@ grep "Depends: \${misc:Depends}, ubuntu-oem-keyring$" debian/control
 grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
 grep -v "Package: oem-somerville-factory-three-eyed-raven-meta" debian/control
 grep "^Description: hardware support for Dell XPS 13 7390\$" debian/control
-grep "^ \* Dell XPS 13 7390\$" -B 1 -A 1 debian/control
+grep "^  \* Dell XPS 13 7390\$" -B 1 -A 1 debian/control
 
 grep "Upstream-Name: oem-somerville-three-eyed-raven-meta" debian/copyright
 
@@ -63,7 +63,7 @@ grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
 grep "Package: oem-somerville-factory-three-eyed-raven-meta" debian/control
 grep "Depends: \${misc:Depends}, oem-somerville-factory-meta$" debian/control
 grep "^Description: hardware support for Dell XPS 13 7390\$" debian/control
-grep "^ \* Dell XPS 13 7390\$" -B 1 -A 1 debian/control
+grep "^  \* Dell XPS 13 7390\$" -B 1 -A 1 debian/control
 
 grep "Upstream-Name: oem-somerville-three-eyed-raven-meta" debian/copyright
 

@@ -382,7 +382,7 @@ debian-tag = {branch}_%(version)s
         else:
             platformsStr = "PCs:"
         for product_name in product_names:
-            platformsStr += f"\n * {product_name}"
+            platformsStr += f"\n  * {product_name}"
     else:
         platformStr = Platform
         platformsStr = platformStr + "."
