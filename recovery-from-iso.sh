@@ -12,6 +12,7 @@ SCP="scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 temp_folder="$(mktemp -d -p "$PWD")"
 GIT="git -C $temp_folder"
 ubuntu_release=""
+enable_sb="no"
 
 clear_all() {
     rm -rf "$temp_folder"
@@ -21,7 +22,7 @@ clear_all() {
 }
 trap clear_all EXIT
 # shellcheck disable=SC2046
-eval set -- $(getopt -o "su:c:j:b:t:h" -l "local-iso:,sync,url:,jenkins-credential:,jenkins-job:,jenkins-job-build-no:,oem-share-url:,oem-share-credential:,target-ip:,ubr,help" -- "$@")
+eval set -- $(getopt -o "su:c:j:b:t:h" -l "local-iso:,sync,url:,jenkins-credential:,jenkins-job:,jenkins-job-build-no:,oem-share-url:,oem-share-credential:,target-ip:,ubr,enable-secureboot,help" -- "$@")
 
 usage() {
     set +x
@@ -96,6 +97,12 @@ OPTIONS:
       Please put your ssh key on target machine. This tool no yet support
       keyphase for ssh.
 
+    --enable-secureboot
+      Enable Secure Boot. When this option is on, the script will not install
+      file that prevents turning on Secure Boot after installation. Only
+      effective with dell-recovery images that enables Secure Boot on
+      Somerville platforms.
+
     --ubr
       DUT which using ubuntu recovery (volatile-task).
 
@@ -109,6 +116,10 @@ exit 1
 download_preseed() {
     echo " == download_preseed == "
     if [ "${ubr}" == "yes" ]; then
+        if [ "$enable_sb" = "yes" ]; then
+            echo "error: --enable-secureboot does not apply to ubuntu-recovery images"
+            exit 1
+        fi
         # TODO: sync togother
         # replace $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-no-secureboot --depth 1
         # Why need it?
@@ -136,7 +147,9 @@ ubiquity ubuntu-recovery/recovery_type string dev
     else
         # get checkbox pkgs and prepare-checkbox
         # get pkgs to skip OOBE
-        $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-no-secureboot --depth 1
+        if [ "$enable_sb" = "no" ]; then
+            $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-no-secureboot --depth 1
+        fi
         $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-skip-storage-selecting --depth 1
         $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/pack-fish.openssh-fossa --depth 1
     fi
@@ -220,7 +233,15 @@ push_preseed() {
     if [ "${ubr}" == "yes" ]; then
         $SCP -r "$temp_folder/preseed" "$user_on_target"@"$target_ip":~/push_preseed || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
     else
-        for folder in pack-fish.openssh-fossa oem-fix-misc-cnl-no-secureboot oem-fix-misc-cnl-skip-oobe oem-fix-misc-cnl-skip-storage-selecting; do
+        folders=(
+            "pack-fish.openssh-fossa"
+            "oem-fix-misc-cnl-skip-oobe"
+            "oem-fix-misc-cnl-skip-storage-selecting"
+        )
+        if [ "$enable_sb" = "no" ]; then
+            folders+=("oem-fix-misc-cnl-no-secureboot")
+        fi
+        for folder in "${folders[@]}"; do
             tar -C "$temp_folder"/$folder -zcvf "$temp_folder"/$folder.tar.gz .
             $SCP "$temp_folder/$folder".tar.gz "$user_on_target"@"$target_ip":~
             $SSH "$user_on_target"@"$target_ip" tar -C push_preseed -zxvf $folder.tar.gz || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
@@ -462,6 +483,9 @@ main() {
                 ;;
             --ubr)
                 ubr="yes"
+                ;;
+            --enable-secureboot)
+                enable_sb="yes"
                 ;;
             -h | --help)
                 usage 0
