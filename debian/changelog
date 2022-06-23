@@ -1,3 +1,10 @@
+oem-scripts (1.43) focal; urgency=medium
+
+  [ Yao Wei (魏銘廷) ]
+  * recovery-from-iso.sh: add option --enable-secureboot
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 23 Jun 2022 10:56:34 +0800
+
 oem-scripts (1.42) focal; urgency=medium
 
   * pkg-oem-meta, debian/tests/pkg-somerville-meta: Fix the possible-unindented-list-in-extended-description tag in Lintian.
