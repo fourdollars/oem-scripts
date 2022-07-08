@@ -408,6 +408,9 @@ sudo rsync -alv /mnt/ /cdrom/ $rsync_opts && \
 sudo cp /mnt/.disk/ubuntu_dist_channel /cdrom/.disk/ && \
 touch /tmp/SUCCSS_inject_recovery_iso
 EOF
+    if [ "$ubr" != "yes" ] && [ "$enable_sb" = "yes" ]; then
+        echo "sudo rm -f /cdrom/no_sb" >> "$temp_folder/$script_on_target_machine"
+    fi
     $SCP "$temp_folder"/"$script_on_target_machine" "$user_on_target"@"$target_ip":~/
     $SSH "$user_on_target"@"$target_ip" chmod +x "\$HOME/$script_on_target_machine"
     $SSH "$user_on_target"@"$target_ip" "\$HOME/$script_on_target_machine"
