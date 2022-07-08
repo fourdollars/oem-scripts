@@ -1,3 +1,9 @@
+oem-scripts (1.44) focal; urgency=medium
+
+  * mir-bug: Filter out non-ceritified hardwares.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 08 Jul 2022 14:02:36 +0800
+
 oem-scripts (1.43) focal; urgency=medium
 
   [ Yao Wei (魏銘廷) ]
