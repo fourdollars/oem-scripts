@@ -27,6 +27,7 @@ import lazr
 import oem_scripts
 import os
 import re
+import requests
 import shutil
 import sys
 
@@ -497,6 +498,9 @@ def check_bug_description(bug, certified_hardwares: list) -> (str, str):
         desc += "\n"
 
     for hardware in certified_hardwares:
+        response = requests.get(f"https://ubuntu.com/certified/{hardware}")
+        if response.status_code != 200:
+            continue
         desc += f"\nhttps://ubuntu.com/certified/{hardware}"
 
     if bug.description != desc:
