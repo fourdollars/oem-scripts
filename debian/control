@@ -28,6 +28,7 @@ Depends:
  devscripts,
  dh-modaliases,
  diffutils,
+ distro-info,
  dkms,
  dpkg-dev,
  git,
