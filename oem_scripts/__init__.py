@@ -33,6 +33,7 @@ ALLOWED_KERNEL_META_LIST = (
     "linux-oem-20.04b",
     "linux-oem-20.04",
     "linux-oem-22.04a",
+    "linux-oem-22.04b",
     "linux-generic-hwe-20.04",
     "linux-generic-hwe-22.04",
     "linux-generic",
