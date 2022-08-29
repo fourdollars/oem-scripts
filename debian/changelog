@@ -1,3 +1,10 @@
+oem-scripts (1.46) focal; urgency=medium
+
+  [ Kai-Chuan Hsieh ]
+  * Add linue-oem-22.04b kernel meta
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 29 Aug 2022 10:58:00 +0800
+
 oem-scripts (1.45) focal; urgency=medium
 
   * debian/control,
