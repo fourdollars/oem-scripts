@@ -1,3 +1,10 @@
+oem-scripts (1.47) focal; urgency=medium
+
+  [ Kai-Chuan Hsieh ]
+  * lp-bug: Add attach subcommand to attach file to the bug
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 14 Sep 2022 16:53:32 +0800
+
 oem-scripts (1.46) focal; urgency=medium
 
   [ Kai-Chuan Hsieh ]
