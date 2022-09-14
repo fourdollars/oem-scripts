@@ -24,6 +24,7 @@ import oem_scripts
 import re
 import subprocess
 import sys
+import os
 
 from apt import apt_pkg
 from logging import debug, warning, info, critical
@@ -36,7 +37,8 @@ parser = argparse.ArgumentParser(
 examples:
     lp-bug copy --output=target_bug_id SOURCE_BUG_ID
     lp-bug cleanup BUG_ID
-    lp-bug cqa-verify [BUG_ID]""",
+    lp-bug cqa-verify [BUG_ID]
+    lp-bug attach --name=attachmentName --comment=bugComment FILE_PATH BUG_ID""",
 )
 
 parser.add_argument("-d", "--debug", help="print debug messages", action="store_true")
@@ -82,6 +84,15 @@ The 'cqa-verify' subcommand will check the versions in the production archive au
 cqa_verify.add_argument("--yes", help="Say yes for all prompts.", action="store_true")
 cqa_verify.add_argument("--dry-run", help="Dry run the process.", action="store_true")
 cqa_verify.add_argument("bugID", nargs="?", type=int)
+
+attach = subparsers.add_parser(
+    "attach",
+    help="[-h] [--name=attachmentName] [--comment=commentMessage] filepath bugID",
+)
+attach.add_argument("--name", help="Specify name of the attachment")
+attach.add_argument("--comment", help="The input message for the comment")
+attach.add_argument("filepath", help="The file path to upload to the bug")
+attach.add_argument("bugID", help="Specify bug number to attach the file", type=int)
 
 args = parser.parse_args()
 
@@ -362,6 +373,25 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> None:
                     bug.lp_save()
 
 
+def attach_file_to_bug(
+    lp, file_path: str, bug_number: int, name: str, comment: int
+) -> None:
+    bug = lp.bugs[bug_number]
+    bt = bug.bug_tasks[0]
+
+    if name is None:
+        name = os.path.basename(file_path)
+
+    if comment is None:
+        comment = ""
+
+    adata = open(file_path, "rb").read()
+    debug("opening file: %s" % file_path)
+
+    bt.bug.addAttachment(comment=comment, filename=name, data=adata)
+    bt.lp_save()
+
+
 if args.subcommand:
     login = LaunchpadLogin()
     lp = login.lp
@@ -372,5 +402,9 @@ elif args.subcommand == "cleanup":
     cleanup_bug(lp, args.bugID, args.yes)
 elif args.subcommand == "cqa-verify":
     cloudberry_cqa_verified(lp, args.yes, args.bugID)
+elif args.subcommand == "attach":
+    attach_file_to_bug(
+        lp, args.filepath, args.bugID, name=args.name, comment=args.comment
+    )
 else:
     parser.print_help()
