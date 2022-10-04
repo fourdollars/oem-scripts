@@ -242,9 +242,9 @@ push_preseed() {
             folders+=("oem-fix-misc-cnl-no-secureboot")
         fi
         for folder in "${folders[@]}"; do
-            tar -C "$temp_folder"/$folder -zcvf "$temp_folder"/$folder.tar.gz .
+            tar -C "$temp_folder/$folder" -zcvf "$temp_folder/$folder.tar.gz" .
             $SCP "$temp_folder/$folder".tar.gz "$user_on_target"@"$target_ip":~
-            $SSH "$user_on_target"@"$target_ip" tar -C push_preseed -zxvf $folder.tar.gz || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
+            $SSH "$user_on_target"@"$target_ip" tar -C push_preseed -zxvf "$folder.tar.gz" || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
         done
     fi
 
@@ -275,6 +275,9 @@ download_image() {
     img_name=$2
     user=$3
 
+    MAX_RETRIES=10
+    local retries=0
+
     echo "downloading $img_name from $img_path"
     curl_cmd=(curl --retry 3 -S)
     if [ -n "$user" ]; then
@@ -282,13 +285,25 @@ download_image() {
     fi
 
     pushd "$temp_folder"
-    "${curl_cmd[@]}" -O "$img_path/$img_name".md5sum
-    "${curl_cmd[@]}" -O "$img_path/$img_name" 2> /dev/null
-    if ! md5sum -c "$img_name".md5sum; then
-        echo "error: failed to check image with md5sum"
+
+    while [ "$retries" -lt "$MAX_RETRIES" ]; do
+        ((retries+=1)) || true # arithmetics, see https://www.shellcheck.net/wiki/SC2219
+        echo "Downloading checksum and image, tries $retries/$MAX_RETRIES"
+        "${curl_cmd[@]}" -O "$img_path/$img_name".md5sum || true
+        "${curl_cmd[@]}" -O "$img_path/$img_name" || true
+        if md5sum -c "$img_name".md5sum; then
+            break
+        fi
+        sleep 10; continue
+    done
+
+    if [ "$retries" -ge "$MAX_RETRIES" ]; then
+        echo "error: max retries reached"
         exit 1
     fi
+
     local_iso="$PWD/$img_name"
+
     popd
 }
 
