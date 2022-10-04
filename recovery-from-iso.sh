@@ -242,9 +242,9 @@ push_preseed() {
             folders+=("oem-fix-misc-cnl-no-secureboot")
         fi
         for folder in "${folders[@]}"; do
-            tar -C "$temp_folder"/$folder -zcvf "$temp_folder"/$folder.tar.gz .
+            tar -C "$temp_folder/$folder" -zcvf "$temp_folder/$folder.tar.gz" .
             $SCP "$temp_folder/$folder".tar.gz "$user_on_target"@"$target_ip":~
-            $SSH "$user_on_target"@"$target_ip" tar -C push_preseed -zxvf $folder.tar.gz || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
+            $SSH "$user_on_target"@"$target_ip" tar -C push_preseed -zxvf "$folder.tar.gz" || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
         done
     fi
 
