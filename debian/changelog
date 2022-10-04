@@ -1,3 +1,17 @@
+oem-scripts (1.48) focal; urgency=medium
+
+  [ Andy Chi ]
+  * Add get-oem-info.sh into oem-scripts
+
+  [ Yao Wei (魏銘廷) ]
+  * recovery-from-iso.sh: fix shellcheck warnings
+  * recovery-from-iso.sh: add retries for downloading image and checksum
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * oem-meta-packages: Fix the problem when specifying linux-generic-* kernel.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 04 Oct 2022 19:07:04 +0800
+
 oem-scripts (1.47) focal; urgency=medium
 
   [ Kai-Chuan Hsieh ]
