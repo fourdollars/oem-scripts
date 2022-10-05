@@ -1,3 +1,9 @@
+oem-scripts (1.49) focal; urgency=medium
+
+  * oem-meta-packages: Fix the problem when OEM metapackage doesn't use "linux-oem-20.04b | linux-oem-20.04" in Depends for linux-oem-20.04b.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 05 Oct 2022 11:45:31 +0800
+
 oem-scripts (1.48) focal; urgency=medium
 
   [ Andy Chi ]
