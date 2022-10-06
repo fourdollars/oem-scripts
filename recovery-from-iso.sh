@@ -348,7 +348,7 @@ sync_to_swift() {
     echo "getting job id from queue"
     queue_url=$(grep '^Location: ' "$headers_path" | awk '{print $2}' | tr -d '\r')
     duration=0
-    timeout=60
+    timeout=600
     url=
     until [ -n "$timeout" ] && [[ $duration -ge $timeout ]]; do
         url=$("${curl_cmd[@]}" --user "$jenkins_credential" "${queue_url}api/json" | jq -r '.executable | .url')
