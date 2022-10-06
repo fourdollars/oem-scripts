@@ -371,6 +371,10 @@ sync_to_swift() {
         if [ "$result" = "SUCCESS" ]; then
             break
         fi
+        if [ "$result" = "FAILURE" ]; then
+            echo "error: sync job failed"
+            exit 1
+        fi
         sleep 30
         duration=$((duration+30))
     done
