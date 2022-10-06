@@ -279,7 +279,7 @@ download_image() {
     local retries=0
 
     echo "downloading $img_name from $img_path"
-    curl_cmd=(curl --retry 3 -S)
+    curl_cmd=(curl --retry 3 --fail --show-error)
     if [ -n "$user" ]; then
         curl_cmd+=(--user "$user")
     fi
