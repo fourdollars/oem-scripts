@@ -279,7 +279,7 @@ download_image() {
     local retries=0
 
     echo "downloading $img_name from $img_path"
-    curl_cmd=(curl --retry 3 -S)
+    curl_cmd=(curl --retry 3 --fail --show-error)
     if [ -n "$user" ]; then
         curl_cmd+=(--user "$user")
     fi
@@ -348,7 +348,7 @@ sync_to_swift() {
     echo "getting job id from queue"
     queue_url=$(grep '^Location: ' "$headers_path" | awk '{print $2}' | tr -d '\r')
     duration=0
-    timeout=60
+    timeout=600
     url=
     until [ -n "$timeout" ] && [[ $duration -ge $timeout ]]; do
         url=$("${curl_cmd[@]}" --user "$jenkins_credential" "${queue_url}api/json" | jq -r '.executable | .url')
@@ -370,6 +370,10 @@ sync_to_swift() {
         result=$("${curl_cmd[@]}" --user "$jenkins_credential" "${url}api/json" | jq -r .result)
         if [ "$result" = "SUCCESS" ]; then
             break
+        fi
+        if [ "$result" = "FAILURE" ]; then
+            echo "error: sync job failed"
+            exit 1
         fi
         sleep 30
         duration=$((duration+30))
