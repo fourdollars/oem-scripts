@@ -281,6 +281,9 @@ staging_copy.add_argument("--meta", help="Specify the meta package to copy.")
 staging_copy.add_argument(
     "--ignore-staging-lock", help="Ignore the staging-lock tag.", action="store_true"
 )
+staging_copy.add_argument(
+    "--tag", help="Specify the tag when creating the cloudberry bug.", type=str
+)
 
 update = subparsers.add_parser(
     "update",
@@ -2240,6 +2243,8 @@ elif args.subcommand == "staging-copy":
                 f"oem-scripts-{oem_scripts.__version__}",
                 "oem-metapackages",
             ]
+            if args.tag:
+                tags.append(args.tag)
             if args.dry_run:
                 info(f"TITLE: {title}")
                 info("TAGS: " + ",".join(tags))
