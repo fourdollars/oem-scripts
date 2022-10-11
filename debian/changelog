@@ -1,3 +1,15 @@
+oem-scripts (1.50) focal; urgency=medium
+
+  [ Yao Wei (魏銘廷) ]
+  * recovery-from-iso.sh: increase sync job timeout
+  * recovery-from-iso.sh: return error if sync job failed
+  * recovery-from-iso.sh: fail on server error, extend -S to --show-error
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * oem-meta-packages: Add a tag argument to specify the tag when creating the cloudberry bug.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 11 Oct 2022 14:40:07 +0800
+
 oem-scripts (1.49) focal; urgency=medium
 
   * oem-meta-packages: Fix the problem when OEM metapackage doesn't use "linux-oem-20.04b | linux-oem-20.04" in Depends for linux-oem-20.04b.
