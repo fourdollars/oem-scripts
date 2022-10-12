@@ -1318,6 +1318,7 @@ class OemFromPrivateArchive(OemMetaPkgInfo):
                 result = self.staging_pattern.match(line)
                 if result:
                     archive = result.group(1)
+                    break
         source_line = config["archive"].replace(
             "https://", f"https://{config['username']}:{config['password']}@"
         )
