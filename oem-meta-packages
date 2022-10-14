@@ -1309,16 +1309,26 @@ class OemFromPrivateArchive(OemMetaPkgInfo):
             codename = self.platform
         else:
             codename = self.group
+
         for line in index.split("\n"):
-            if (
-                self.project in line
-                and codename in line
-                and f"focal-{self._branch}" in line
-            ):
+            if self.project in line and f"{codename}-focal-{self._branch}" in line:
                 result = self.staging_pattern.match(line)
                 if result:
                     archive = result.group(1)
                     break
+
+        if not archive:
+            for line in index.split("\n"):
+                if (
+                    self.project in line
+                    and codename in line
+                    and f"focal-{self._branch}" in line
+                ):
+                    result = self.staging_pattern.match(line)
+                    if result:
+                        archive = result.group(1)
+                        break
+
         source_line = config["archive"].replace(
             "https://", f"https://{config['username']}:{config['password']}@"
         )
