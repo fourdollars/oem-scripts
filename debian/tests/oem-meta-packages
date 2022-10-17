@@ -35,31 +35,40 @@ export LAUNCHPAD_API="https://api.launchpad.net/"
 
 oem-meta-packages --quiet list
 
-if [ "$(lsb_release -cs)" != focal ]; then
-    exit 77
-fi
+case "$(lsb_release -cs)" in
+    (focal)
+        oem-meta-packages --quiet collect --json platforms.json --output meta-info.json # --output platforms-meta-info.json (by default)
+        if [ "x$(jq -r '."oem-somerville-beric-icl-meta".new_desc' < meta-info.json)" != "xDell Inspiron 3501, Vostro 3401/3501" ]; then
+            jq -S -M < meta-info.json
+            exit 1
+        fi
 
-oem-meta-packages --quiet collect --json platforms.json --output meta-info.json # --output platforms-meta-info.json (by default)
-if [ "x$(jq -r '."oem-somerville-beric-icl-meta".new_desc' < meta-info.json)" != "xDell Inspiron 3501, Vostro 3401/3501" ]; then
-    jq -S -M < meta-info.json
-    exit 1
-fi
+        oem-meta-packages --quiet collect --meta oem-somerville-beric-icl-meta  # --output oem-somerville-beric-icl-meta.json (by default)
+        if [ "x$(jq -r '."oem-somerville-beric-icl-meta".oem.git.market_name' < oem-somerville-beric-icl-meta.json)" != "xInspiron 3501, Vostro 3401/3501" ]; then
+            jq -S -M < oem-somerville-beric-icl-meta.json
+            exit 1
+        fi
 
-oem-meta-packages --quiet collect --meta oem-somerville-beric-icl-meta  # --output oem-somerville-beric-icl-meta.json (by default)
-if [ "x$(jq -r '."oem-somerville-beric-icl-meta".oem.git.market_name' < oem-somerville-beric-icl-meta.json)" != "xInspiron 3501, Vostro 3401/3501" ]; then
-    jq -S -M < oem-somerville-beric-icl-meta.json
-    exit 1
-fi
+        oem-meta-packages --dry-run update --json meta-info.json
 
-oem-meta-packages --dry-run update --json meta-info.json
+        sed -i 's/"staging_version":.*/"staging_version": "20.04ubuntu2",/' meta-info.json # lower the staging version to simulate
 
-sed -i 's/"staging_version":.*/"staging_version": "20.04ubuntu2",/' meta-info.json # lower the staging version to simulate
+        oem-meta-packages --dry-run staging-copy --json meta-info.json
 
-oem-meta-packages --dry-run staging-copy --json meta-info.json
+        oem-meta-packages --dry-run staging-copy --ignore-staging-lock --json meta-info.json
 
-oem-meta-packages --dry-run staging-copy --ignore-staging-lock --json meta-info.json
-
-for project in somerville stella sutton; do
-    meta="$(apt-cache search oem-"$project" | awk '{print $1}' | shuf | head -n 1)"
-    oem-meta-packages --dry-run update --meta "$meta" --factory
-done
+        for project in somerville stella sutton; do
+            meta="$(apt-cache search oem-"$project" | awk '{print $1}' | shuf | head -n 1)"
+            oem-meta-packages --dry-run update --meta "$meta" --factory
+        done
+        ;;
+    (jammy)
+        oem-meta-packages --dry-run staging-copy --meta oem-somerville-kingdra-adl-meta 2>&1 | grep -e cesg:somerville-fossa-kingdra-adl-focal-staging -e somerville-fossa-kingdra-adl-focal-devel
+        oem-meta-packages --dry-run staging-copy --meta oem-somerville-charmander-meta 2>&1 | grep -e cesg:somerville-fossa-charmander-focal-staging -e cesg:somerville-fossa-charmander-focal-devel
+        oem-meta-packages --dry-run staging-copy --meta oem-stella.cmit-aerodactyl-meta 2>&1 | grep -e cesg:stella-cmit-ouagadougou-focal-staging -e stella-cmit-ouagadougou-focal-devel
+        oem-meta-packages --dry-run staging-copy --meta oem-sutton.newell-aaden-meta 2>&1 | grep -e cesg:sutton-newell-focal-staging -e cesg:sutton-newell-focal-devel
+        ;;
+    (*)
+        exit 77
+        ;;
+esac
