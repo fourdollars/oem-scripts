@@ -1,3 +1,10 @@
+oem-scripts (1.52) focal; urgency=medium
+
+  * oem-meta-packages: Fix the problem when searching Somerville specific platform archive on CESG.
+  * debian/tests/oem-meta-packages: Add some tests for staging-copy on jammy.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 18 Oct 2022 00:30:23 +0800
+
 oem-scripts (1.51) focal; urgency=medium
 
   * oem-meta-packages: Fix the problem that it will continue to match the same prefix pattern.
