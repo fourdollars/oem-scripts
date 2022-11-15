@@ -80,7 +80,9 @@ parser.add_argument(
     help=f"Ubuntu series, such as {series} by default.",
 )
 parser.add_argument("--public-bug", help="Launchpad public bug number.", type=int)
-parser.add_argument("--private-bug", help="Launchpad private bug number.", type=int)
+parser.add_argument(
+    "--private-bug", help="Launchpad private bug number.", type=int, required=True
+)
 parser.add_argument(
     "--market-name",
     help="Specify the market name string. (It will be used in the short description of Debian package.)",
