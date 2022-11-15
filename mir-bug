@@ -898,6 +898,7 @@ def check_and_update_git_repo(
     product_names = []
 
     if args.json:
+        private_meta_bug = args.json.get("metabug", "")
         product_names = args.json.get("productnames", [])
         if group == "cmit":
             new_market_name = _grouping_market_names(
@@ -978,6 +979,8 @@ def check_and_update_git_repo(
                 platform,
                 "--public-bug",
                 str(bug.id),
+                "--private-bug",
+                str(private_meta_bug),
             ]
             if market_name:
                 command.extend(["--market-name", market_name])
@@ -997,6 +1000,8 @@ def check_and_update_git_repo(
                 platform,
                 "--public-bug",
                 str(bug.id),
+                "--private-bug",
+                str(private_meta_bug),
             ]
             if market_name:
                 command.extend(["--market-name", market_name])
@@ -1016,6 +1021,8 @@ def check_and_update_git_repo(
                 platform,
                 "--public-bug",
                 str(bug.id),
+                "--private-bug",
+                str(private_meta_bug),
             ]
             if market_name:
                 command.extend(["--market-name", market_name])

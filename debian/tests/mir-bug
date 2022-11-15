@@ -6,33 +6,34 @@ IFS=$'\n\t'
 export LAUNCHPAD_API="https://api.staging.launchpad.net/"
 
 # check & update
-cat > "$AUTOPKGTEST_ARTIFACTS"/fossa-varys.json <<ENDLINE
+cat > "$AUTOPKGTEST_ARTIFACTS"/fossa-tentacool.json <<ENDLINE
 {
   "certification-hardware": [
-    "202001-27664",
-    "202001-27665",
-    "202001-27666",
-    "202001-27667",
-    "202005-27873",
-    "202005-27874"
+    "202112-29761",
+    "202112-29762",
+    "202112-29763",
+    "202112-29800",
+    "202112-29801",
+    "202112-29802"
   ],
   "certify-planning": [
-    1904011
+    1942334
   ],
-  "mirbug": 1937243,
+  "metabug": 1942333,
+  "mirbug": 1943413,
   "productnames": [
-    "Precision 5550"
+    "XPS 9320"
   ]
 }
 ENDLINE
 
-export COPYRIGHT_YEAR=2021
+export COPYRIGHT_YEAR=2022
 
 # check/update
-mir-bug update --yes --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/fossa-varys.json
-mir-bug check --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/fossa-varys.json
-mir-bug update --yes --skip --tz=UTC --release "$AUTOPKGTEST_ARTIFACTS"/fossa-varys.json
-mir-bug check --skip --tz=UTC --release "$AUTOPKGTEST_ARTIFACTS"/fossa-varys.json
+mir-bug update --yes --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/fossa-tentacool.json
+mir-bug check --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/fossa-tentacool.json
+mir-bug update --yes --skip --tz=UTC --release "$AUTOPKGTEST_ARTIFACTS"/fossa-tentacool.json
+mir-bug check --skip --tz=UTC --release "$AUTOPKGTEST_ARTIFACTS"/fossa-tentacool.json
 
 # create
 mir-bug create -o bug_id somerville bronn "some Dell platforms"
