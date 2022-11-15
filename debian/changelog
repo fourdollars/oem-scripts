@@ -1,3 +1,10 @@
+oem-scripts (1.53) focal; urgency=medium
+
+  * pkg-oem-meta: Make the --private-bug mandatory.
+  * debian/tests/mir-bug, mir-bug: Make it read and pass the private meta bug to pkg-oem-meta.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 15 Nov 2022 17:49:44 +0800
+
 oem-scripts (1.52) focal; urgency=medium
 
   * oem-meta-packages: Fix the problem when searching Somerville specific platform archive on CESG.
