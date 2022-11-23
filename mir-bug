@@ -24,6 +24,7 @@ import difflib
 import jinja2
 import json
 import lazr
+import lsb_release
 import oem_scripts
 import os
 import re
@@ -32,6 +33,7 @@ import shutil
 import sys
 
 from copy import copy
+from distro_info import UbuntuDistroInfo
 from glob import glob
 from logging import debug, info, warning, error, critical
 from oem_scripts import (
@@ -70,6 +72,11 @@ create = subparsers.add_parser(
 create.add_argument("oemCodename", help="Such as somerville, stella, or sutton.simon")
 create.add_argument("platformCodename", help="Name deined by PM, like ace.")
 create.add_argument("deviceName", help="ThinkPad X1 Carbon Gen 8")
+create.add_argument(
+    "-s",
+    "--series",
+    help="Specify the Ubuntu series to create the bug.",
+)
 create.add_argument(
     "-o",
     "--output",
@@ -148,6 +155,7 @@ args = parser.parse_args()
 setup_logging(debug=args.debug, quiet=args.quiet)
 
 pattern = re.compile(r".*\[MIR\]\W*oem-([^-]*)-(.*)-meta\W*")
+pattern2 = re.compile(r".*\[MIR\]\[(.*)\]\W*oem-([^-]*)-(.*)-meta\W*")
 
 
 def _grouping_market_names(market_names: list, maxsplit=1) -> str:
@@ -177,7 +185,7 @@ def _grouping_market_names(market_names: list, maxsplit=1) -> str:
         return ", ".join(f"{name} {'/'.join(models)}" for name, models in tmp.items())
 
 
-def create_bug(lp, oemCodename, platformCodename, deviceName):
+def create_bug(lp, oemCodename, platformCodename, deviceName, series):
     info("Creating bug...")
     tempList = oemCodename.split(".")
     oemCodenameNogroup = tempList[0]
@@ -192,18 +200,22 @@ def create_bug(lp, oemCodename, platformCodename, deviceName):
     metaPkgName = "oem-" + oemCodename + "-" + platformCodename + "-meta"
 
     if oemGroupName.strip() != "":
-        branchName = oemGroupName + "." + platformCodename + "-focal-ubuntu"
+        branchName = oemGroupName + "." + platformCodename + f"-{series}-ubuntu"
     else:
-        branchName = platformCodename + "-focal-ubuntu"
+        branchName = platformCodename + f"-{series}-ubuntu"
 
     project = lp.projects["oem-priority"]
 
-    bt = "[DRAFT][MIR] " + metaPkgName
+    if series == "focal":
+        bt = f"[DRAFT][MIR] {metaPkgName}"
+    else:
+        bt = f"[DRAFT][MIR][{series}] {metaPkgName}"
     bd = "[DRAFT]" + read_from_template(
         metaPkgName=metaPkgName,
         branchName=branchName,
         oemCodenameNogroup=oemCodenameNogroup,
         deviceName=deviceName,
+        series=series,
     )
     bug = lp.bugs.createBug(
         description=bd,
@@ -281,19 +293,26 @@ def collect_bugs(lp, output):
                 )
                 continue
 
-        result = pattern.match(bug.title)
+        result = pattern2.match(bug.title)
         git = None
         if result:
-            if "." in result.group(1):
-                project, group = result.group(1).split(".")
-            else:
-                project = result.group(1)
-                group = None
-            platform = result.group(2)
-            if group:
-                git = f"git clone --depth 1 -b {group}.{platform}-focal-ubuntu https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta oem-{project}.{group}-{platform}-meta"
-            else:
-                git = f"git clone --depth 1 -b {platform}-focal-ubuntu https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta oem-{project}-{platform}-meta"
+            series = result.group(1)
+            project = result.group(2)
+            platform = result.group(3)
+            git = f"git clone --depth 1 -b {platform}-{series}-ubuntu https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta oem-{project}-{platform}-meta"
+        else:
+            result = pattern.match(bug.title)
+            if result:
+                if "." in result.group(1):
+                    project, group = result.group(1).split(".")
+                else:
+                    project = result.group(1)
+                    group = None
+                platform = result.group(2)
+                if group:
+                    git = f"git clone --depth 1 -b {group}.{platform}-focal-ubuntu https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta oem-{project}.{group}-{platform}-meta"
+                else:
+                    git = f"git clone --depth 1 -b {platform}-focal-ubuntu https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta oem-{project}-{platform}-meta"
 
         subscriptions = []
         for subscription in bug.subscriptions:
@@ -338,6 +357,7 @@ def collect_bugs(lp, output):
 
 def update_bug(
     lp,
+    series: str,
     bug_number: int,
     yes: bool,
     certified: bool = False,
@@ -353,7 +373,7 @@ def update_bug(
         bug_modified = True
         bug.description = desc
 
-    if check_bug_title(bug, pkg_name) is False and yes_or_ask(
+    if check_bug_title(bug, pkg_name, series) is False and yes_or_ask(
         yes, "Do you want to update the bug title?"
     ):
         bug_modified = True
@@ -406,9 +426,11 @@ def update_bug(
         if tags != bug.tags:
             bug.tags = tags
 
-    check_and_update_git_repo(bug, pkg_name, yes=yes, update=True, username=lp.me.name)
+    check_and_update_git_repo(
+        bug, pkg_name, series=series, yes=yes, update=True, username=lp.me.name
+    )
 
-    check_and_update_bug_attachments(bug, pkg_name, update=True, yes=yes)
+    check_and_update_bug_attachments(bug, pkg_name, series=series, update=True, yes=yes)
 
     if bug_modified:
         bug.lp_save()
@@ -420,7 +442,11 @@ def update_bug(
 
 
 def check_bug(
-    lp, bug_number: int, certified: bool = False, certified_hardwares: list = []
+    lp,
+    bug_number: int,
+    series: str,
+    certified: bool = False,
+    certified_hardwares: list = [],
 ) -> None:
     bug = lp.bugs[bug_number]
     info(f'Checking LP: #{bug_number} - "{bug.title}" ...')
@@ -428,7 +454,7 @@ def check_bug(
     desc, pkg_name = check_bug_description(bug, certified_hardwares)
     if desc:
         need_fixing = True
-    if check_bug_title(bug, pkg_name) is False:
+    if check_bug_title(bug, pkg_name, series) is False:
         need_fixing = True
     if check_bug_importance(bug) is False:
         need_fixing = True
@@ -438,13 +464,14 @@ def check_bug(
         need_fixing = True
     if check_bug_tags(bug, certified) is False:
         need_fixing = True
-    if check_and_update_git_repo(bug, pkg_name) is False:
+    if check_and_update_git_repo(bug, pkg_name, series=series) is False:
         need_fixing = True
-    if check_and_update_bug_attachments(bug, pkg_name) is False:
+    if check_and_update_bug_attachments(bug, pkg_name, series=series) is False:
         need_fixing = True
     if (
         not args.skip
-        and check_and_update_git_repo(bug, pkg_name, bootstrap=False) is False
+        and check_and_update_git_repo(bug, pkg_name, series=series, bootstrap=False)
+        is False
     ):
         need_fixing = True
 
@@ -456,22 +483,31 @@ def check_bug(
 
 def check_bug_description(bug, certified_hardwares: list) -> (str, str):
     info("Checking bug description...")
-    result = pattern.match(bug.title)
+    result = pattern2.match(bug.title)
     if not result:
-        critical(f"LP: #{bug.id} '{bug.title}' is NOT MATCHED")
-        exit(1)
-
-    if "." in result.group(1):
-        project, group = result.group(1).split(".")
-        platform = result.group(2)
-        branchName = group + "." + platform + "-focal-ubuntu"
+        result = pattern.match(bug.title)
+        if not result:
+            critical(f"LP: #{bug.id} '{bug.title}' is NOT MATCHED")
+            exit(1)
+        if "." in result.group(1):
+            project, group = result.group(1).split(".")
+            platform = result.group(2)
+            branchName = group + "." + platform + "-focal-ubuntu"
+        else:
+            project = result.group(1)
+            platform = result.group(2)
+            group = None
+            branchName = platform + "-focal-ubuntu"
+        metaPkgName = f"oem-{result.group(1)}-{result.group(2)}-meta"
+        series = "focal"
     else:
-        project = result.group(1)
-        platform = result.group(2)
+        series = result.group(1)
+        project = result.group(2)
+        platform = result.group(3)
         group = None
-        branchName = platform + "-focal-ubuntu"
+        branchName = platform + f"-{series}-ubuntu"
+        metaPkgName = f"oem-{project}-{platform}-meta"
 
-    metaPkgName = f"oem-{result.group(1)}-{result.group(2)}-meta"
     prog = re.compile(r"\W*We want to improve the hardware support for ([^.]*).\W*")
     deviceName = None
 
@@ -480,7 +516,7 @@ def check_bug_description(bug, certified_hardwares: list) -> (str, str):
         if not result:
             continue
         deviceName = result.group(1)
-        if deviceName.endswith(" on focal"):
+        if deviceName.endswith(f" on {series}"):
             deviceName = deviceName[:-9]
         break
     else:
@@ -492,6 +528,7 @@ def check_bug_description(bug, certified_hardwares: list) -> (str, str):
         branchName=branchName,
         oemCodenameNogroup=project,
         deviceName=deviceName,
+        series=series,
     )
 
     if certified_hardwares:
@@ -517,9 +554,11 @@ def check_bug_description(bug, certified_hardwares: list) -> (str, str):
     return (None, metaPkgName)
 
 
-def check_bug_title(bug, pkg_name: str) -> bool:
+def check_bug_title(bug, pkg_name: str, series: str) -> bool:
     info("Checking bug title...")
-    if bug.title == f"[MIR] {pkg_name}":
+    if series == "focal" and bug.title == f"[MIR] {pkg_name}":
+        return True
+    elif bug.title == f"[MIR][{series}] {pkg_name}":
         return True
     error(f"The bug title shall be '[MIR] {pkg_name}' but it is '{bug.title}'.")
     return False
@@ -733,29 +772,43 @@ def check_bug_tags(bug, certified: bool = False) -> bool:
 
 
 def check_and_update_bug_attachments(
-    bug, pkg_name: str, update=False, yes=False
+    bug,
+    pkg_name: str,
+    series: str,
+    update=False,
+    yes=False,
 ) -> bool:
     if update:
         info("Checking and updating attachments...")
     else:
         info("Checking attachments...")
-    result = pattern.match(f"[MIR] {pkg_name}")
 
-    if result is None:
-        critical(f"{pkg_name} failed.")
-        exit(1)
-
-    if "." in result.group(1):
-        project, group = result.group(1).split(".")
+    if series != "focal":
+        result = pattern2.match(f"[MIR][{series}] {pkg_name}")
+        if result is None:
+            critical(f"{pkg_name} failed.")
+            exit(1)
+        project = result.group(2)
+        platform = result.group(3)
+        branch = f"{platform}-{series}-ubuntu"
     else:
-        project = result.group(1)
-        group = None
-    platform = result.group(2)
+        result = pattern.match(f"[MIR] {pkg_name}")
 
-    if group:
-        branch = f"{group}.{platform}-focal-ubuntu"
-    else:
-        branch = f"{platform}-focal-ubuntu"
+        if result is None:
+            critical(f"{pkg_name} failed.")
+            exit(1)
+
+        if "." in result.group(1):
+            project, group = result.group(1).split(".")
+        else:
+            project = result.group(1)
+            group = None
+        platform = result.group(2)
+
+        if group:
+            branch = f"{group}.{platform}-focal-ubuntu"
+        else:
+            branch = f"{platform}-focal-ubuntu"
 
     git_command = (
         "git",
@@ -855,7 +908,13 @@ def check_and_update_bug_attachments(
 
 
 def check_and_update_git_repo(
-    bug, pkg_name: str, yes=False, bootstrap=True, update=False, username=None
+    bug,
+    pkg_name: str,
+    series: str,
+    yes=False,
+    bootstrap=True,
+    update=False,
+    username=None,
 ) -> bool:
     if update:
         if bootstrap:
@@ -868,28 +927,37 @@ def check_and_update_git_repo(
         else:
             info("Checking git repo for oem branch...")
 
-    result = pattern.match(f"[MIR] {pkg_name}")
-
-    if result is None:
-        critical(f"{pkg_name} failed.")
-        exit(1)
-
-    if "." in result.group(1):
-        project, group = result.group(1).split(".")
+    if series != "focal":
+        result = pattern2.match(f"[MIR][{series}] {pkg_name}")
+        platform = result.group(2)
+        if bootstrap:
+            suffix = "ubuntu"
+        else:
+            suffix = "oem"
+        branch = f"{platform}-{series}-{suffix}"
     else:
-        project = result.group(1)
-        group = None
-    platform = result.group(2)
+        result = pattern.match(f"[MIR] {pkg_name}")
 
-    if bootstrap:
-        suffix = "ubuntu"
-    else:
-        suffix = "oem"
+        if result is None:
+            critical(f"{pkg_name} failed.")
+            exit(1)
 
-    if group:
-        branch = f"{group}.{platform}-focal-{suffix}"
-    else:
-        branch = f"{platform}-focal-{suffix}"
+        if "." in result.group(1):
+            project, group = result.group(1).split(".")
+        else:
+            project = result.group(1)
+            group = None
+        platform = result.group(2)
+
+        if bootstrap:
+            suffix = "ubuntu"
+        else:
+            suffix = "oem"
+
+        if group:
+            branch = f"{group}.{platform}-focal-{suffix}"
+        else:
+            branch = f"{platform}-focal-{suffix}"
 
     kernel_flavour, kernel_meta, market_name, ids = _get_items_from_git(
         project, branch, pkg_name
@@ -940,10 +1008,11 @@ def check_and_update_git_repo(
             ):
                 market_name = new_market_name
 
+    version = UbuntuDistroInfo().version(series).split(" ")[0]
     if kernel_flavour == "default":
         if kernel_meta is None:
-            kernel_meta = "linux-generic-hwe-20.04"
-        elif kernel_meta == "linux-generic-hwe-20.04":
+            kernel_meta = f"linux-generic-hwe-{version}"
+        elif kernel_meta == f"linux-generic-hwe-{version}":
             pass
         else:
             critical(
@@ -952,8 +1021,8 @@ def check_and_update_git_repo(
             exit(1)
     elif kernel_flavour == "oem":
         if kernel_meta is None:
-            kernel_meta = "linux-oem-20.04"
-        elif kernel_meta.startswith("linux-oem-20.04"):
+            kernel_meta = f"linux-oem-{version}"
+        elif kernel_meta.startswith(f"linux-oem-{version}"):
             pass
         else:
             critical(
@@ -972,7 +1041,7 @@ def check_and_update_git_repo(
             command = [
                 "pkg-somerville-meta",
                 "-s",
-                "focal",
+                series,
                 "-k",
                 kernel_meta,
                 "-p",
@@ -991,7 +1060,7 @@ def check_and_update_git_repo(
             command = [
                 "pkg-stella-meta",
                 "-s",
-                "focal",
+                series,
                 "-k",
                 kernel_meta,
                 "-g",
@@ -1012,7 +1081,7 @@ def check_and_update_git_repo(
             command = [
                 "pkg-sutton-meta",
                 "-s",
-                "focal",
+                series,
                 "-k",
                 kernel_meta,
                 "-g",
@@ -1060,10 +1129,13 @@ def check_and_update_git_repo(
             with open(changelog, "r") as f:
                 lines = f.readlines()
 
+            version = UbuntuDistroInfo().version(series).split(" ")[0]
             if args.release:
-                lines[0] = f"{pkg_name} (20.04~ubuntu1) focal; urgency=medium\n"
+                lines[0] = f"{pkg_name} ({version}~ubuntu1) {series}; urgency=medium\n"
             else:
-                lines[0] = f"{pkg_name} (20.04~ubuntu1) UNRELEASED; urgency=medium\n"
+                lines[
+                    0
+                ] = f"{pkg_name} ({version}~ubuntu1) UNRELEASED; urgency=medium\n"
 
             if f"(LP: #{bug.id})" not in lines[2] and lines[2].startswith(
                 "  * Meta package for"
@@ -1130,7 +1202,8 @@ def check_and_update_git_repo(
             return True
 
 
-def read_from_template(metaPkgName, branchName, oemCodenameNogroup, deviceName):
+def read_from_template(metaPkgName, branchName, oemCodenameNogroup, deviceName, series):
+    version = UbuntuDistroInfo().version(series).split(" ")[0]
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(["./", "/usr/share/oem-scripts"])
     )
@@ -1140,6 +1213,7 @@ def read_from_template(metaPkgName, branchName, oemCodenameNogroup, deviceName):
         branchName=branchName,
         oemCodenameNogroup=oemCodenameNogroup,
         deviceName=deviceName,
+        version=version,
     )
 
 
@@ -1148,7 +1222,13 @@ if args.subcommand:
     lp = login.lp
 
 if args.subcommand == "create":
-    create_bug(lp, args.oemCodename, args.platformCodename, args.deviceName)
+    if not args.series:
+        series = lsb_release.get_os_release()["CODENAME"]
+    else:
+        series = args.series
+    if not UbuntuDistroInfo().is_lts(series):
+        series = UbuntuDistroInfo().lts()
+    create_bug(lp, args.oemCodename, args.platformCodename, args.deviceName, series)
 elif args.subcommand == "update":
     args.json = json.load(args.json)
     certified = False
@@ -1182,6 +1262,7 @@ elif args.subcommand == "update":
 
     update_bug(
         lp,
+        series=args.json["series"],
         bug_number=bug_number,
         yes=args.yes,
         certified=certified,
@@ -1220,6 +1301,7 @@ elif args.subcommand == "check":
 
     check_bug(
         lp,
+        series=args.json["series"],
         bug_number=bug_number,
         certified=certified,
         certified_hardwares=certified_hardwares,
