@@ -1,3 +1,9 @@
+oem-scripts (1.54) focal; urgency=medium
+
+  * debian/tests/mir-bug, mir-bug, oem-meta-package.mir.jinja2: Support jammy.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 23 Nov 2022 13:41:47 +0800
+
 oem-scripts (1.53) focal; urgency=medium
 
   * pkg-oem-meta: Make the --private-bug mandatory.
