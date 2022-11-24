@@ -1,3 +1,9 @@
+oem-scripts (1.55) jammy; urgency=medium
+
+  * Bump to 1.55 for jammy.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 24 Nov 2022 10:30:26 +0800
+
 oem-scripts (1.54) focal; urgency=medium
 
   * debian/tests/mir-bug, mir-bug, oem-meta-package.mir.jinja2: Support jammy.
