@@ -415,7 +415,8 @@ Description: hardware support for {Codename} {platformStr}
             f.write(
                 f"""\nPackage: {factory}
 Architecture: all
-Depends: ${{misc:Depends}}{factory_depends}\n""")
+Depends: ${{misc:Depends}}{factory_depends}\n"""
+            )
             if codename == "sutton":
                 f.write(f"""Suggests: {doc}""")
             f.write(
