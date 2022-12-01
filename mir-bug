@@ -1216,20 +1216,27 @@ def read_from_template(metaPkgName, branchName, oemCodenameNogroup, deviceName, 
         version=version,
     )
 
+def series_from_filename(filename: str) -> str:
+    basename = os.path.basename(filename)
+    parts = basename.split('-')
+    if len(parts) < 2:
+        goto_failed()
 
-if args.subcommand:
-    login = LaunchpadLogin()
-    lp = login.lp
+    prefix = parts[0].tolower()
+    mapping = {
+        "fossa": "focal",
+        "jellyfish": "jammy",
+        "beaver": "bionic"
+    }
+    if prefix in mapping:
+        return mapping[prefix]
 
-if args.subcommand == "create":
-    if not args.series:
-        series = lsb_release.get_os_release()["CODENAME"]
-    else:
-        series = args.series
-    if not UbuntuDistroInfo().is_lts(series):
-        series = UbuntuDistroInfo().lts()
-    create_bug(lp, args.oemCodename, args.platformCodename, args.deviceName, series)
-elif args.subcommand == "update":
+    def goto_failed():
+        raise Exception(f"Cannot determine series name from [{filename}]")
+    goto_failed()
+
+def handle_bug(lp, args, handler, overwrite_args=None):
+    filename = args.json
     args.json = json.load(args.json)
     certified = False
     if (
@@ -1245,12 +1252,11 @@ elif args.subcommand == "update":
                 if task.bug_target_name == "certify-planning":
                     if task.status != "Fix Released":
                         certified = False
-    if certified:
-        certified_hardwares = args.json["certification-hardware"]
-    else:
-        certified_hardwares = []
 
+    certified_hardwares = args.json["certification-hardware"] if certified else []
     bug_number = args.json["mirbug"]
+    series = args.json["series"] if "series" in args.json \
+        else series_from_filename(filename)
 
     if type(bug_number) == str:
         bug_number = int(bug_number)
@@ -1268,44 +1274,35 @@ elif args.subcommand == "update":
         certified=certified,
         certified_hardwares=certified_hardwares,
     )
+    
+    kwargs = (overwrite_args or (lambda x: x))({
+        "series": series,
+        "bug_number": bug_number,
+        "certified": certified,
+        "certified_hardwares": certified_hardwares,
+    })
+    
+    handler(lp, **kwargs)
+
+if args.subcommand:
+    login = LaunchpadLogin()
+    lp = login.lp
+
+if args.subcommand == "create":
+    if not args.series:
+        series = lsb_release.get_os_release()["CODENAME"]
+    else:
+        series = args.series
+    if not UbuntuDistroInfo().is_lts(series):
+        series = UbuntuDistroInfo().lts()
+    create_bug(lp, args.oemCodename, args.platformCodename, args.deviceName, series)
+elif args.subcommand == "update":
+    def append_yes(kwargs):
+        kwargs["yes"] = args.yes
+        return kwargs
+    handle_bug(lp, args, update_bug, append_yes)
 elif args.subcommand == "check":
-    args.json = json.load(args.json)
-    certified = False
-    if (
-        args.ready
-        and args.json
-        and type(args.json) is dict
-        and len(args.json.get("certify-planning", [])) != 0
-    ):
-        certified = True
-        for bug_id in args.json["certify-planning"]:
-            bug = lp.bugs[bug_id]
-            for task in bug.bug_tasks:
-                if task.bug_target_name == "certify-planning":
-                    if task.status != "Fix Released":
-                        certified = False
-    if certified:
-        certified_hardwares = args.json["certification-hardware"]
-    else:
-        certified_hardwares = []
-
-    bug_number = args.json["mirbug"]
-
-    if type(bug_number) == str:
-        bug_number = int(bug_number)
-    elif type(bug_number) == int:
-        pass
-    else:
-        unexpected = type(bug_number)
-        raise Exception(f"Unexpected '{unexpected}' type")
-
-    check_bug(
-        lp,
-        series=args.json["series"],
-        bug_number=bug_number,
-        certified=certified,
-        certified_hardwares=certified_hardwares,
-    )
+    handle_bug(lp, args, check_bug)
 elif args.subcommand == "collect":
     collect_bugs(lp, args.json)
 else:
