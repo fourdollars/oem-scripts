@@ -56,7 +56,9 @@ parser.add_argument(
     "-n", "--name", help="platform-name, such as ThinkPad P15s", required=True
 )
 parser.add_argument("-f", "--filepath", help="User guide file name", required=True)
-parser.add_argument("-u","--push-git", help="use git-push directly", action='store_true')
+parser.add_argument(
+    "-u", "--push-git", help="use git-push directly", action="store_true"
+)
 
 args = parser.parse_args()
 
@@ -70,7 +72,10 @@ if codename == "sutton":
     name = args.name.replace("\n", " ")
     pseries = name.split()[0]
     if pseries not in platform_series:
-        error(name + " is not supported. It should start with ThinkPad/ThinkCentre/ThinkStation/Lenovo.")
+        error(
+            name
+            + " is not supported. It should start with ThinkPad/ThinkCentre/ThinkStation/Lenovo."
+        )
         exit(1)
     filename = args.filepath
     if args.group:
@@ -276,6 +281,6 @@ generate_debian_package(version)
 subprocess.run(["git", "remote", "add", "origin", f"lp:{git_repo}"])
 
 if args.push_git:
-    subprocess.run(['git', 'push', '--set-upstream', 'origin', series])
+    subprocess.run(["git", "push", "--set-upstream", "origin", series])
 
 print(f"'{ug}' is ready.")
