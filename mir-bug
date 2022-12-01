@@ -1034,69 +1034,41 @@ def check_and_update_git_repo(
         error("Something wrong in debian/modaliases. Please fix it manually first.")
         return False
 
+    def base_command(project):
+        entry = f"pkg-{project}-meta"
+        source_root = os.path.abspath(os.path.dirname(__file__))
+        local_entry = os.path.join(source_root, entry)
+        if os.path.exists(local_entry):
+            # if calling ./mir-bug from source
+            entry = local_entry
+        command = [
+            entry,
+            "-s",
+            series,
+            "-k",
+            kernel_meta,
+            "-p",
+            platform,
+            "--public-bug",
+            str(bug.id),
+            "--private-bug",
+            str(private_meta_bug),
+        ]
+        if market_name:
+            command.extend(["--market-name", market_name])
+            for product_name in product_names:
+                command.extend(["--product-name", product_name])
+        return command
+
     with TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
+        command = base_command(project)
         # Generated the meta package by pkg-oem-meta
         if project == "somerville":
-            command = [
-                "pkg-somerville-meta",
-                "-s",
-                series,
-                "-k",
-                kernel_meta,
-                "-p",
-                platform,
-                "--public-bug",
-                str(bug.id),
-                "--private-bug",
-                str(private_meta_bug),
-            ]
-            if market_name:
-                command.extend(["--market-name", market_name])
-                for product_name in product_names:
-                    command.extend(["--product-name", product_name])
             command.extend(ids)
         elif project == "stella":
-            command = [
-                "pkg-stella-meta",
-                "-s",
-                series,
-                "-k",
-                kernel_meta,
-                "-g",
-                group,
-                "-p",
-                platform,
-                "--public-bug",
-                str(bug.id),
-                "--private-bug",
-                str(private_meta_bug),
-            ]
-            if market_name:
-                command.extend(["--market-name", market_name])
-                for product_name in product_names:
-                    command.extend(["--product-name", product_name])
             command.extend(ids)
         elif project == "sutton":
-            command = [
-                "pkg-sutton-meta",
-                "-s",
-                series,
-                "-k",
-                kernel_meta,
-                "-g",
-                group,
-                "-p",
-                platform,
-                "--public-bug",
-                str(bug.id),
-                "--private-bug",
-                str(private_meta_bug),
-            ]
-            if market_name:
-                command.extend(["--market-name", market_name])
-                for product_name in product_names:
-                    command.extend(["--product-name", product_name])
             for bvn, bvr, pvr in ids:
                 if pvr:
                     command.append(f"bvn{bvn}:bvr{bvr}:pvr{pvr}")
@@ -1235,7 +1207,7 @@ def handle_bug(lp, args, handler, overwrite_args=None):
 
     certified_hardwares = args.json["certification-hardware"] if certified else []
     bug_number = args.json["mirbug"]
-    
+
     if type(bug_number) == str:
         bug_number = int(bug_number)
     elif type(bug_number) == int:

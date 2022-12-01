@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.swp
+pkg-somerville-meta
+pkg-stella-meta
+pkg-sutton-meta
