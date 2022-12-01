@@ -1067,8 +1067,12 @@ def check_and_update_git_repo(
         if project == "somerville":
             command.extend(ids)
         elif project == "stella":
+            if group:
+                command.extend(["-g", group])
             command.extend(ids)
         elif project == "sutton":
+            if group:
+                command.extend(["-g", group])
             for bvn, bvr, pvr in ids:
                 if pvr:
                     command.append(f"bvn{bvn}:bvr{bvr}:pvr{pvr}")
