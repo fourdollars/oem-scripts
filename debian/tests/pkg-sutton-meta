@@ -52,6 +52,7 @@ grep "Source: oem-sutton-adam-meta" debian/control
 grep "Package: oem-sutton-factory-adam-meta" debian/control
 grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-oem-22.04a, oem-sutton-meta" debian/control
 grep "Depends: \${misc:Depends}, oem-sutton-factory-meta" debian/control
+grep "Suggests: oem-sutton-adam-doc" debian/control
 grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
 grep "^Restrictions: needs-root$" debian/tests/control
 grep "^apt-get autoremove --purge --yes oem-sutton-adam-meta$" debian/tests/meta
@@ -109,6 +110,7 @@ grep "Source: oem-sutton.newell-adam-meta" debian/control
 grep "Package: oem-sutton.newell-factory-adam-meta" debian/control
 grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-oem-20.04, oem-sutton.newell-meta" debian/control
 grep "Depends: \${misc:Depends}, oem-sutton.newell-factory-meta" debian/control
+grep "Suggests: oem-sutton.newell-adam-doc" debian/control
 grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
 grep "^Restrictions: needs-root$" debian/tests/control
 grep "^apt-get autoremove --purge --yes oem-sutton.newell-adam-meta$" debian/tests/meta

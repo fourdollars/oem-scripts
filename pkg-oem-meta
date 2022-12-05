@@ -159,9 +159,11 @@ elif codename == "sutton":
             exit(1)
     if series == "focal":
         meta = "oem-" + codename + "." + group + "-" + platform + "-meta"
+        doc = "oem-" + codename + "." + group + "-" + platform + "-doc"
         Codename = Codename + " " + group.title()
     else:
         meta = "oem-" + codename + "-" + platform + "-meta"
+        doc = "oem-" + codename + "-" + platform + "-doc"
 
 if args.market_name:
     if codename == "somerville":
@@ -413,7 +415,12 @@ Description: hardware support for {Codename} {platformStr}
             f.write(
                 f"""\nPackage: {factory}
 Architecture: all
-Depends: ${{misc:Depends}}{factory_depends}
+Depends: ${{misc:Depends}}{factory_depends}\n"""
+            )
+            if codename == "sutton":
+                f.write(f"""Suggests: {doc}""")
+            f.write(
+                f"""
 Description: hardware support for {Codename} {platformStr} (factory)
  This is a factory metapackage for {Codename} {platformsStr}
  It installs packages needed to support this hardware fully. (factory)\n"""
