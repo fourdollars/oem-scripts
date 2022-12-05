@@ -1192,6 +1192,7 @@ def read_from_template(metaPkgName, branchName, oemCodenameNogroup, deviceName, 
         version=version,
     )
 
+
 def handle_bug(lp, args, handler, overwrite_args=None):
     args.json = json.load(args.json)
     certified = False
@@ -1220,14 +1221,17 @@ def handle_bug(lp, args, handler, overwrite_args=None):
         unexpected = type(bug_number)
         raise Exception(f"Unexpected '{unexpected}' type")
 
-    kwargs = (overwrite_args or (lambda x: x))({
-        "series": args.json["series"],
-        "bug_number": bug_number,
-        "certified": certified,
-        "certified_hardwares": certified_hardwares,
-    })
-    
+    kwargs = (overwrite_args or (lambda x: x))(
+        {
+            "series": args.json["series"],
+            "bug_number": bug_number,
+            "certified": certified,
+            "certified_hardwares": certified_hardwares,
+        }
+    )
+
     handler(lp, **kwargs)
+
 
 if args.subcommand:
     login = LaunchpadLogin()
@@ -1242,9 +1246,11 @@ if args.subcommand == "create":
         series = UbuntuDistroInfo().lts()
     create_bug(lp, args.oemCodename, args.platformCodename, args.deviceName, series)
 elif args.subcommand == "update":
+
     def append_yes(kwargs):
         kwargs["yes"] = args.yes
         return kwargs
+
     handle_bug(lp, args, update_bug, append_yes)
 elif args.subcommand == "check":
     handle_bug(lp, args, check_bug)
