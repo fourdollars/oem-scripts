@@ -1,0 +1,286 @@
+#!/usr/bin/env python3
+
+import argparse
+import lsb_release
+import os
+import re
+import subprocess
+import sys
+import shutil
+
+from distro_info import UbuntuDistroInfo
+from logging import warning, error
+from time import localtime, strftime
+
+platform_series = ["ThinkPad", "ThinkStation", "ThinkCentre", "Lenovo"]
+
+program_name = os.path.basename(sys.argv[0])
+cur_dir = os.getcwd()
+
+if program_name == "pkg-sutton-ug":
+    codename = "sutton"
+    Codename = codename.title()
+    git_repo_project = "sutton"
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter,
+        description=f"{Codename} platform userguide package generator.",
+        epilog=f'Ex. {program_name} -s jammy -p bailee -b 1880088 -n "ThinkPad P15s Gen 1" -f xxx.pdf',
+    )
+else:
+    error("This program can not be executed.")
+    exit(1)
+
+info = UbuntuDistroInfo()
+try:
+    # for bionic
+    series = lsb_release.get_lsb_information()["CODENAME"]
+except AttributeError:
+    # for focal
+    series = lsb_release.get_os_release()["CODENAME"]
+
+parser.add_argument(
+    "-s",
+    "--series",
+    choices=info.supported(),
+    default=series,
+    help=f"Ubuntu series, such as {series} by default.",
+    required=True,
+)
+parser.add_argument(
+    "-b", "--private-bug", help="Launchpad private bug number.", type=int
+)
+
+parser.add_argument("-g", "--group", help="OEM-group")
+parser.add_argument("-p", "--platform", help="platform-codename", required=True)
+parser.add_argument(
+    "-n", "--name", help="platform-name, such as ThinkPad P15s", required=True
+)
+parser.add_argument("-f", "--filepath", help="User guide file name", required=True)
+parser.add_argument(
+    "-u", "--push-git", help="use git-push directly", action="store_true"
+)
+
+args = parser.parse_args()
+
+platform = args.platform.lower()
+Platform = platform.title()
+series = args.series
+versions = dict(zip(info.get_all(result="codename"), info.get_all(result="release")))
+version = versions[series].split(" ")[0]
+
+if codename == "sutton":
+    name = args.name.replace("\n", " ")
+    pseries = name.split()[0]
+    if pseries not in platform_series:
+        error(
+            name
+            + " is not supported. It should start with ThinkPad/ThinkCentre/ThinkStation/Lenovo."
+        )
+        exit(1)
+    filename = args.filepath
+    if args.group:
+        group = args.group.lower()
+        ug = f"""oem-{codename}.{group}-{platform}-doc"""
+    else:
+        group = ""
+        ug = f"""oem-{codename}-{platform}-doc"""
+
+if os.path.exists(ug):
+    error(ug + " already exists. Please remove or rename it.")
+    exit(1)
+
+os.mkdir(ug)
+os.chdir(ug)
+
+if not os.path.exists("docs"):
+    os.mkdir("docs")
+
+if filename.lower() == "dummy":
+    new_filename = name.replace(" ", "_") + "_UserGuide.pdf"
+    shutil.copyfile(cur_dir + "/UserGuide.pdf", "docs/" + new_filename)
+else:
+    new_filename = os.path.basename(filename.replace(" ", "_"))
+    shutil.copyfile(filename, "docs/" + new_filename)
+
+PREFIX = "~oem-solutions-group"
+git_repo = PREFIX + "/" + git_repo_project + "/+git/" + ug
+
+
+def generate_debian_package(version):
+    extra = ""
+
+    if len(group) > 0:
+        version = version + group + "1"
+    else:
+        version = version + codename + "1"
+
+    if args.private_bug:
+        lp_bug = f" (LP: #{args.private_bug})"
+    else:
+        lp_bug = ""
+
+    git_abbr = f"https://git.launchpad.net/{git_repo}"
+    git_browser = f"https://code.launchpad.net/{git_repo}"
+
+    subprocess.run(["git", "checkout", "--orphan", series])
+
+    if not os.path.exists("debian"):
+        os.mkdir("debian")
+    os.chdir("debian")
+
+    fullname = os.getenv("DEBFULLNAME", "Commercial Engineering")
+    email = os.getenv("DEBEMAIL", "commercial-engineering@canonical.com")
+    timestamp = strftime("%a, %d %b %Y %H:%M:%S %z", localtime())
+
+    with open("changelog", "w") as f:
+        f.write(
+            f"""{ug} ({version}) {series}; urgency=medium
+
+  * UserGuide package for {name}.{lp_bug}
+
+ -- {fullname} <{email}>  {timestamp}
+"""
+        )
+
+    with open("control", "w") as f:
+        f.write(
+            f"""Source: {ug}
+Section: misc
+Priority: optional
+Maintainer: Commercial Engineering <commercial-engineering@canonical.com>
+Build-Depends: debhelper-compat (= 12)
+Standards-Version: 4.5.0
+Vcs-Git: {git_abbr}
+Vcs-Browser: {git_browser}
+
+Package: {ug}
+Architecture: all
+Depends: ${{misc:Depends}}, lenovo-doc-common.{pseries.lower()}
+Description: Lenovo documents for {name}.
+ This is a UserGuide documents for {name}.\n"""
+        )
+
+    timestamp = os.getenv("COPYRIGHT_YEAR", strftime("%Y", localtime()))
+
+    with open("copyright", "w") as f:
+        f.write(
+            "Format: https://www.debian.org/doc/packaging-manuals/"
+            "copyright-format/1.0/\n"
+            f"Upstream-Name: {ug}\n"
+            f"Source: {git_browser}\n\n"
+            f"""Files: debian/*
+Copyright: {timestamp} Canonical Limited
+License: GPL-3
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; version 3 of the License only.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
+
+Files: docs/*
+Copyright: {timestamp}, Lenovo
+License: Proprietary
+ Lenovo Publications Notice
+ .
+ The Lenovo Limited Warranty and User Guide that are preinstalled on this product are
+ copyrighted materials developed by Lenovo and are not covered by any Linux Open Source agreements.
+ Lenovo may update the User Guide periodically.
+ .
+ To access the latest Lenovo Limited Warranty and User Guide, go to:
+ http://www.lenovo.com/support
+"""
+        )
+
+    with open("install", "w") as f:
+        f.write("docs/* /opt/lenovo/doc/lenovo-doc/\n")
+
+    with open("links", "w") as f:
+        # E: lenovo-doc-ace: dir-or-file-in-opt opt/lenovo/
+        f.write(
+            f"/opt/lenovo/doc/lenovo-doc/{new_filename} /usr/share/doc/{ug}/{new_filename}\n"
+        )
+        f.write(f"/opt/lenovo/doc/lenovo-doc/{new_filename} /etc/skel/{new_filename}\n")
+        # f.write(f'/usr/share/doc/lenovo-doc/{new_filename} /etc/skel/UserGuide.pdf\n')
+
+    with open("postrm", "w") as f:
+        f.write(
+            f"""#!/bin/sh
+
+set -e
+
+case "$1" in
+    remove|purge)
+        getent passwd |
+        while IFS=: read username x uid gid gecos home shell
+        do
+                # In oem image, the 1000 used for oem user.
+                if [ "$uid" -le 1000 ]; then
+                        continue
+                fi
+                if [ "$username" = root -o "$username" = "nobody" -o ! -d "$home" ]; then
+                        continue
+                fi
+                if [ -L "$home/{new_filename}" ]; then
+                        sudo -Hu "$username" rm -f $home/{new_filename}
+                fi
+        done
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0
+"""
+        )
+
+    with open("rules", "w") as f:
+        f.write(
+            """#!/usr/bin/make -f
+# -*- makefile -*-
+
+export DH_VERBOSE=1
+
+%:
+\tdh $@
+
+override_dh_compress:
+\t# Don't compress the .pdf, it's annoying and brings almost nothing
+\t# since the format is already compressed
+\tdh_compress -X.pdf -X.docx\n"""
+        )
+
+    os.chmod("rules", 0o755)
+
+    if not os.path.exists("source"):
+        os.mkdir("source")
+    os.chdir("source")
+
+    with open("format", "w") as f:
+        f.write("3.0 (native)\n")
+
+    os.chdir("..")
+    os.chdir("..")
+    subprocess.run(["git", "add", "."])
+    subprocess.run(["git", "config", "user.name", fullname])
+    subprocess.run(["git", "config", "user.email", email])
+    subprocess.run(["debcommit", "-a", "-R", "-r"])
+
+
+subprocess.run(["git", "init"])
+generate_debian_package(version)
+
+subprocess.run(["git", "remote", "add", "origin", f"lp:{git_repo}"])
+
+if args.push_git:
+    subprocess.run(["git", "push", "--set-upstream", "origin", series])
+
+print(f"'{ug}' is ready.")
