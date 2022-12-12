@@ -14,6 +14,13 @@ GIT="git -C $temp_folder"
 ubuntu_release=""
 enable_sb="no"
 
+enable_secureboot() {
+    if [ "${ubr}" != "yes" ] && [ "$enable_sb" = "yes" ]; then
+        ssh -o StrictHostKeyChecking=no "$user_on_target"@"$target_ip" sudo sb_fixup
+        ssh -o StrictHostKeyChecking=no "$user_on_target"@"$target_ip" sudo reboot
+    fi
+}
+
 clear_all() {
     rm -rf "$temp_folder"
     # remove Ubiquity in the end to match factory and Stock Ubuntu image behavior.
@@ -147,8 +154,8 @@ ubiquity ubuntu-recovery/recovery_type string dev
     else
         # get checkbox pkgs and prepare-checkbox
         # get pkgs to skip OOBE
-        if [ "$enable_sb" = "no" ]; then
-            $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-no-secureboot --depth 1
+        if [ "$enable_sb" = "yes" ]; then
+            $GIT clone  https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-install-sbhelper --depth 1
         fi
         $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-skip-storage-selecting --depth 1
         $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/pack-fish.openssh-fossa --depth 1
@@ -238,8 +245,8 @@ push_preseed() {
             "oem-fix-misc-cnl-skip-oobe"
             "oem-fix-misc-cnl-skip-storage-selecting"
         )
-        if [ "$enable_sb" = "no" ]; then
-            folders+=("oem-fix-misc-cnl-no-secureboot")
+        if [ "$enable_sb" = "yes" ]; then
+            folders+=("oem-fix-misc-cnl-install-sbhelper")
         fi
         for folder in "${folders[@]}"; do
             tar -C "$temp_folder/$folder" -zcvf "$temp_folder/$folder.tar.gz" .
@@ -427,9 +434,6 @@ sudo rsync -alv /mnt/ /cdrom/ $rsync_opts && \
 sudo cp /mnt/.disk/ubuntu_dist_channel /cdrom/.disk/ && \
 touch /tmp/SUCCSS_inject_recovery_iso
 EOF
-    if [ "$ubr" != "yes" ] && [ "$enable_sb" = "yes" ]; then
-        echo "sudo rm -f /cdrom/no_sb" >> "$temp_folder/$script_on_target_machine"
-    fi
     $SCP "$temp_folder"/"$script_on_target_machine" "$user_on_target"@"$target_ip":~/
     $SSH "$user_on_target"@"$target_ip" chmod +x "\$HOME/$script_on_target_machine"
     $SSH "$user_on_target"@"$target_ip" "\$HOME/$script_on_target_machine"
@@ -526,6 +530,7 @@ main() {
     prepare
     do_recovery
     clear_all
+    enable_secureboot
 }
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
