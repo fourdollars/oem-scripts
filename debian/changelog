@@ -1,3 +1,31 @@
+oem-scripts (1.56) jammy; urgency=medium
+
+  [ Dirk Su ]
+  * Modify option --enable-secureboot to work with sbhelper
+
+  [ pseudoc ]
+  * 1. guess series from filename 2. extract method for repeated codes
+  * fix type annotation (no functionality changes)
+
+  [ Bin Li ]
+  * Add lenovo's documents in Suggests
+  * format with black
+
+  [ pseudoc ]
+  * use oem-hw-info instead of sutton-base-config, reverting
+
+  [ Bin Li ]
+  * Add pkg-sutton-ug
+  * format with black
+  * Add tests for new pkg-sutton-meta
+
+  [ pseudoc ]
+  * run from source
+  * need to pass --group for focal metapkgs
+  * format code with black
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 12 Dec 2022 13:12:32 +0800
+
 oem-scripts (1.55) jammy; urgency=medium
 
   * Bump to 1.55 for jammy.
