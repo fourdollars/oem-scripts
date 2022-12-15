@@ -1,3 +1,9 @@
+oem-scripts (1.57) jammy; urgency=medium
+
+  * mir-bug: Fix the regression on focal.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 15 Dec 2022 16:13:06 +0800
+
 oem-scripts (1.56) jammy; urgency=medium
 
   [ Dirk Su ]
