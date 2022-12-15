@@ -481,7 +481,7 @@ def check_bug(
         exit(1)
 
 
-def check_bug_description(bug, certified_hardwares: list) -> tuple[str, str]:
+def check_bug_description(bug, certified_hardwares: list) -> (str, str):
     info("Checking bug description...")
     result = pattern2.match(bug.title)
     if not result:
