@@ -20,6 +20,7 @@ inj_recovery="false"
 gitbranch_oem_sanity="master"
 auto_create_bugs="false"
 checkbox_ppas="ppa:oem-solutions-group/pc-sanity-daily%20ppa:hardware-certification/public"
+upload_report="false"
 
 usage() {
 cat << EOF
@@ -37,7 +38,10 @@ $(basename "$0") [-t <TAG>| --cid <CID> ] -p <PROJECT> -u <USER> -k <API_TOKEN>
             [--checkbox_ppas <PPA url>]
 
 Example:
-$(basename "$0") -t fossa-beldum --target_img pc-stella-cmit-focal-amd64 --auto_create_bugs true --image_no no-provision --inj_recovery true --checkbox_ppas "ppa:hardware-certification/public ppa:oem-solutions-engineers/plainbox-provider-pc-sanity-snapshot"
+$(basename "$0") -t jellyfish-slowpoke-rpl --target_img pc-stella-jammy-amd64 \
+--auto_create_bugs true --image_no no-provision --inj_recovery true \
+--checkbox_ppas "ppa:oem-solutions-group/pc-sanity-daily \
+ppa:hardware-certification/public" --upload_report true
 
 Options:
     -t|--tag                    Platform tag, ex: fossa-arbok
@@ -60,6 +64,7 @@ Options:
     --auto_create_bug_assignee  sanity-3 parameter AUTO_CREATE_BUGS_ASSIGNEE, put the target launchpad id here.
                                 The bugs will not be automatically created if this parameter is empty. default is empty.
                                 (e.g. stanley31)
+    --upload_report             sanity-3 parameter UPLOAD_REPORT, upload test reports, true or false, default is false.
 EOF
 exit 1
 }
@@ -83,7 +88,17 @@ trigger_sanity_3() {
     local silent
     [ "$verbose" -eq 0 ] && silent="-s"
 	#get mapping of tag to skus
-    [ -z "$tag" ] || skus=$(curl ${silent} http://"$HIC_ADDR"/q?db=tag | jq -r --arg TAG "$tag" 'with_entries(select(.value | startswith($TAG))) | keys | @sh' | tr -d \')
+    if [[ $tag == jellyfish* ]]; then
+        [ -z "$tag" ] || \
+            skus=$(curl ${silent} http://"$HIC_ADDR"/q?db=tag |\
+            jq -r --arg TAG "$tag" \
+            'map_values(select(.jammy==$TAG)) | keys | @sh' | tr -d \')
+    elif [[ $tag == fossa* ]]; then
+        [ -z "$tag" ] || \
+            skus=$(curl ${silent} http://"$HIC_ADDR"/q?db=tag |\
+            jq -r --arg TAG "$tag" \
+            'map_values(select(.focal==$TAG)) | keys | @sh' | tr -d \')
+    fi
     [ -z "$CID" ] || skus="$skus $CID"
 
     for i in $(seq 1 10); do
@@ -111,9 +126,11 @@ trigger_sanity_3() {
             echo "trigger job sanity-3-testflinger-$project-$cid-staging"
             if [ $dry_run -eq 0 ];then
                 if [ -n "$auto_create_bug_assignee" ]; then
-                    curl -X POST http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&CHECKBOX_PPAS="$checkbox_ppas"\&AUTO_CREATE_BUGS="$auto_create_bugs"\&AUTO_CREATE_BUGS_ASSIGNEE="$auto_create_bug_assignee"
+                    curl -X POST \
+                    http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&CHECKBOX_PPAS="$checkbox_ppas"\&AUTO_CREATE_BUGS="$auto_create_bugs"\&AUTO_CREATE_BUGS_ASSIGNEE="$auto_create_bug_assignee"\&UPLOAD_REPORT="$upload_report"
                 else
-                    curl -X POST http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&CHECKBOX_PPAS="$checkbox_ppas"\&AUTO_CREATE_BUGS="$auto_create_bugs"
+                    curl -X POST \
+                    http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&CHECKBOX_PPAS="$checkbox_ppas"\&AUTO_CREATE_BUGS="$auto_create_bugs"\&UPLOAD_REPORT="$upload_report"
                 fi
             fi
         else
@@ -191,6 +208,10 @@ main() {
             --auto_create_bug_assignee)
                 shift
                 auto_create_bug_assignee="$1"
+            ;;
+            --upload_report)
+                shift
+                upload_report="$1"
             ;;
             --cid)
                 shift
