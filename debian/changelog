@@ -1,3 +1,13 @@
+oem-scripts (1.58) jammy; urgency=medium
+
+  [ Jeremy Szu ]
+  * Fix trigger-sanity3.sh not longer work since 22.04
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * debian/tests/oem-meta-packages, oem-meta-packages: Support jammy.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 28 Dec 2022 16:15:42 +0800
+
 oem-scripts (1.57) jammy; urgency=medium
 
   * mir-bug: Fix the regression on focal.
