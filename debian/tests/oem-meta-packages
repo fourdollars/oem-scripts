@@ -2,73 +2,49 @@
 
 cd "$AUTOPKGTEST_ARTIFACTS" || exit 1
 
-cat > platforms.json << ENDLINE
-[
-  {
-    "Customer": "Dell",
-    "Group": "N/A",
-    "Codename": "fossa-beric-icl",
-    "Platform": "Bullseye V3 14 ICL-U(SMB0)",
-    "MarketName": "Vostro 3401",
-    "PlatformLPTag": "fossa-beric-icl"
-  },
-  {
-    "Customer": "Dell",
-    "Group": "N/A",
-    "Codename": "fossa-beric-icl",
-    "Platform": "Bullseye V3 15 ICL-U(SMB0)",
-    "MarketName": "Vostro 3501",
-    "PlatformLPTag": "fossa-beric-icl"
-  },
-  {
-    "Customer": "Dell",
-    "Group": "N/A",
-    "Codename": "fossa-beric-icl",
-    "Platform": "Bullseye N3 15 ICL-U(SMB0)",
-    "MarketName": "Inspiron 3501",
-    "PlatformLPTag": "fossa-beric-icl"
-  }
-]
-ENDLINE
-
 export LAUNCHPAD_API="https://api.launchpad.net/"
+RET=0
 
+# list
 oem-meta-packages --quiet list
 
-case "$(lsb_release -cs)" in
-    (focal)
-        oem-meta-packages --quiet collect --json platforms.json --output meta-info.json # --output platforms-meta-info.json (by default)
-        if [ "x$(jq -r '."oem-somerville-beric-icl-meta".new_desc' < meta-info.json)" != "xDell Inspiron 3501, Vostro 3401/3501" ]; then
-            jq -S -M < meta-info.json
-            exit 1
-        fi
+# collect
+oem-meta-packages --series focal --quiet collect oem-somerville-tentacool-meta
+if [ "$(jq -r '."oem-somerville-tentacool-meta".oem.git.kernel_meta' < oem-somerville-tentacool-meta.json)" != "linux-generic-hwe-20.04" ]; then
+    echo "FAIL: 'oem-meta-packages --series focal --quiet collect oem-somerville-tentacool-meta' failed."
+    RET=1
+fi
 
-        oem-meta-packages --quiet collect --meta oem-somerville-beric-icl-meta  # --output oem-somerville-beric-icl-meta.json (by default)
-        if [ "x$(jq -r '."oem-somerville-beric-icl-meta".oem.git.market_name' < oem-somerville-beric-icl-meta.json)" != "xInspiron 3501, Vostro 3401/3501" ]; then
-            jq -S -M < oem-somerville-beric-icl-meta.json
-            exit 1
-        fi
+oem-meta-packages --series jammy --quiet collect oem-somerville-tentacool-meta
+if [ "$(jq -r '."oem-somerville-tentacool-meta".oem.git.kernel_meta' < oem-somerville-tentacool-meta.json)" != "linux-generic-hwe-22.04" ]; then
+    echo "FAIL: 'oem-meta-packages --series jammy --quiet collect oem-somerville-tentacool-meta' failed."
+    RET=1
+fi
 
-        oem-meta-packages --dry-run update --json meta-info.json
+oem-meta-packages --series focal --quiet collect oem-stella.cmit-camerupt-meta
+if [ "$(jq -r '."oem-stella.cmit-camerupt-meta".oem.devel.archive' < oem-stella.cmit-camerupt-meta.json)" != "cesg:stella-cmit-ouagadougou-focal-devel" ]; then
+    echo "FAIL: 'oem-meta-packages --series focal --quiet collect oem-stella.cmit-camerupt-meta' failed."
+    RET=1
+fi
 
-        sed -i 's/"staging_version":.*/"staging_version": "20.04ubuntu2",/' meta-info.json # lower the staging version to simulate
+oem-meta-packages --series jammy --quiet collect oem-stella-aron-meta
+if [ "$(jq -r '."oem-stella-aron-meta".oem.devel.archive' < oem-stella-aron-meta.json)" != "cesg:stella-jammy-devel" ]; then
+    echo "FAIL: 'oem-meta-packages --series jammy --quiet collect oem-stella-aron-meta' failed."
+    RET=1
+fi
 
-        oem-meta-packages --dry-run staging-copy --json meta-info.json
+# update
+oem-meta-packages --dry-run --series focal update oem-somerville-tentacool-meta
+oem-meta-packages --dry-run --series focal update oem-stella.cmit-camerupt-meta
+oem-meta-packages --dry-run --series jammy update oem-somerville-tentacool-meta
+oem-meta-packages --dry-run --series jammy update oem-stella-aron-meta
 
-        oem-meta-packages --dry-run staging-copy --ignore-staging-lock --json meta-info.json
+# staging-copy
+oem-meta-packages --dry-run --series focal staging-copy oem-somerville-kingdra-adl-meta 2>&1 | grep -e cesg:somerville-fossa-kingdra-adl-focal-staging -e somerville-fossa-kingdra-adl-focal-devel
+oem-meta-packages --dry-run --series focal staging-copy oem-somerville-charmander-meta 2>&1 | grep -e cesg:somerville-fossa-charmander-focal-staging -e cesg:somerville-fossa-charmander-focal-devel
+oem-meta-packages --dry-run --series focal staging-copy oem-stella.cmit-aerodactyl-meta 2>&1 | grep -e cesg:stella-cmit-ouagadougou-focal-staging -e stella-cmit-ouagadougou-focal-devel
+oem-meta-packages --dry-run --series focal staging-copy oem-sutton.newell-aaden-meta 2>&1 | grep -e cesg:sutton-newell-focal-staging -e cesg:sutton-newell-focal-devel
+oem-meta-packages --dry-run --series jammy staging-copy oem-somerville-tentacool-meta 2>&1 | grep -e cesg:somerville-jellyfish-tentacool-jammy-devel -e cesg:somerville-jellyfish-tentacool-jammy-staging
+oem-meta-packages --dry-run --series jammy staging-copy oem-sutton-balesego-meta 2>&1 | grep -e cesg:sutton-jammy-devel -e cesg:sutton-jammy-staging
 
-        for project in somerville stella sutton; do
-            meta="$(apt-cache search oem-"$project" | awk '{print $1}' | shuf | head -n 1)"
-            oem-meta-packages --dry-run update --meta "$meta" --factory
-        done
-        ;;
-    (jammy)
-        oem-meta-packages --dry-run staging-copy --meta oem-somerville-kingdra-adl-meta 2>&1 | grep -e cesg:somerville-fossa-kingdra-adl-focal-staging -e somerville-fossa-kingdra-adl-focal-devel
-        oem-meta-packages --dry-run staging-copy --meta oem-somerville-charmander-meta 2>&1 | grep -e cesg:somerville-fossa-charmander-focal-staging -e cesg:somerville-fossa-charmander-focal-devel
-        oem-meta-packages --dry-run staging-copy --meta oem-stella.cmit-aerodactyl-meta 2>&1 | grep -e cesg:stella-cmit-ouagadougou-focal-staging -e stella-cmit-ouagadougou-focal-devel
-        oem-meta-packages --dry-run staging-copy --meta oem-sutton.newell-aaden-meta 2>&1 | grep -e cesg:sutton-newell-focal-staging -e cesg:sutton-newell-focal-devel
-        ;;
-    (*)
-        exit 77
-        ;;
-esac
+exit "$RET"
