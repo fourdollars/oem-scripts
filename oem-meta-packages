@@ -248,18 +248,13 @@ staging_copy.add_argument(
 
 update = subparsers.add_parser(
     "update",
-    help="[-h] [--autopkgtest] oem-qemu-meta",
+    help="[-h] oem-qemu-meta",
     formatter_class=argparse.RawDescriptionHelpFormatter,
     epilog="""
 For example,
     oem-meta-packages --dry-run update oem-qemu-meta --kernel linux-oem-20.04
 
 Update the market name and the kernel flavour of the OEM meta package to the default kernel flavour, i.e. linux-generic-hwe-20.04.""",
-)
-update.add_argument(
-    "--autopkgtest",
-    action="store_true",
-    help="Run autopkgtest when checking the git repository.",
 )
 update.add_argument("meta", type=str, help="Specify the meta package to update.")
 update.add_argument(
@@ -1894,88 +1889,6 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> boo
             debug(f"({pkg_name}:{branch}) $ git show")
             debug(out)
 
-        # Run autopkgtest
-        if args.autopkgtest:
-            with open(f"{pkg_name}.list", "r") as f:
-                source_list = f.read().strip()
-
-            archives = set()
-            archives.add(pkg_info.oem.ppa.archive)
-
-            if project == "somerville":
-                common_archive = oem_archive.getPPAByName(name=project)
-                fingerprint = common_archive.signing_key_fingerprint
-                archives.add(f"{project}")
-            elif project == "stella" or project == "sutton":
-                common_archive = oem_archive.getPPAByName(name=f"{project}-ouagadougou")
-                fingerprint = common_archive.signing_key_fingerprint
-                archives.add(f"{project}-ouagadougou")
-
-            if fingerprint != pkg_info.oem.ppa.fingerprint:
-                fingerprint += " " + pkg_info.oem.ppa.fingerprint
-
-            for ppa in archives:
-                lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
-                ppa = ppa.replace("oem-archive/", "ppa:oem-archive/")
-                ppa = ppa.replace("/ubuntu", "")
-                while f"oem-archive/{ppa}/ubuntu" not in lists:
-                    archive = oem_archive.getPPAByName(name=ppa)
-                    if archive is None:
-                        critical(f"It can not find ppa:oem-archive/{ppa}.")
-                        exit(1)
-                    info(f"Subscribing ppa:oem-archive/{ppa}")
-                    archive.newSubscription(subscriber=lp.me)
-                    archive.lp_save()
-                    _run_command(["get-private-ppa", f"ppa:oem-archive/{ppa}"])
-                    lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
-                for url in sorted(set(lp.me.getArchiveSubscriptionURLs())):
-                    if f"oem-archive/{ppa}/ubuntu" in url:
-                        source_list += "\ndeb " + url + f" {series} main"
-
-            with open(f"autopkgtest-{pkg_name}-auto", "w") as f:
-                f.write(
-                    f"""#!/bin/bash
-
-set -euo pipefail
-IFS=$'\n\t'
-
-# shellcheck source=config.sh
-source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
-
-# Get the path of autopkgtest-oem-scripts-auto, it's same path with launchpad-api
-cur_dir=$(cd "$(dirname "$0")" || exit; pwd)
-
-if ! valid_oem_scripts_config; then
-    >&2 echo "Please execute \\`launchpad-api\\` to get the token for Launchpad API first."
-    exit 1
-fi
-
-autopkgtest-collect-credentials ppa:oem-solutions-engineers/oem-projects-meta "$@"
-
-cat << END
-install_pkgs ubuntu-oem-keyring
-chroot "\\$root" apt-key adv --keyserver keyserver.ubuntu.com --recv-key {fingerprint}
-mkdir -p "\\$root"/etc/apt/sources.list.d
-cat > "\\$root"/etc/apt/sources.list.d/custom.list << ENDLINE
-{source_list}
-ENDLINE
-chroot "\\$root" apt-get update
-cat > "\\$root/usr/sbin/update-grub" << ENDLINE
-#!/bin/sh
-true
-ENDLINE
-chmod 755 "\\$root/usr/sbin/update-grub"
-END
-"""
-                )
-            if args.debug:
-                _run_command(["cat", f"autopkgtest-{pkg_name}-auto"])
-            os.chmod(f"autopkgtest-{pkg_name}-auto", 0o755)
-            info(f"({pkg_name}:{branch}) $ run-autopkgtest lxc {series} -C")
-            _run_command(["run-autopkgtest", "lxc", series, "-C"])
-            _run_command(["git", "reset", "--hard", "HEAD"])
-            _run_command(["git", "clean", "-x", "-d", "-f"])
-
         # Don't use UNRELEASED in the real meta.
         if not bootstrap:
             _run_command(["sed", "-i", f"s/UNRELEASED/{series}/", "debian/changelog"])
@@ -2030,19 +1943,6 @@ END
                 )
                 _run_command(["git", "push", "oem-solutions-engineers"])
                 _run_command(["git", "push", "oem-solutions-engineers", tag])
-                if not args.dry_run and yes_or_ask(
-                    args.yes,
-                    f"Would you like to dput Debian source package into {pkg_info.oem.ppa.archive}?",
-                ):
-                    os.chdir(os.path.join(git_dir, ".."))
-                    _run_command(["debsign", f"{pkg_name}_{version}_source.changes"])
-                    _run_command(
-                        [
-                            "dput",
-                            pkg_info.oem.ppa.archive,
-                            f"{pkg_name}_{version}_source.changes",
-                        ]
-                    )
 
 
 def check_meta_git(pkg_name: str, pkg_info: PkgInfo, skip_bootstrap: False) -> None:
