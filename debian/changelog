@@ -1,3 +1,9 @@
+oem-scripts (1.59) jammy; urgency=medium
+
+  * oem-meta-packages: Remove deprecated autopkgtest and debsign those are processed by CI/CD jobs.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 03 Jan 2023 12:43:49 +0800
+
 oem-scripts (1.58) jammy; urgency=medium
 
   [ Jeremy Szu ]
