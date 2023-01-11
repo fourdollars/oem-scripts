@@ -1,3 +1,9 @@
+oem-scripts (1.60) jammy; urgency=medium
+
+  * oem_scripts/__init__.py: Allow the linux-oem-22.04c kernel meta.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 11 Jan 2023 13:20:17 +0800
+
 oem-scripts (1.59) jammy; urgency=medium
 
   * oem-meta-packages: Remove deprecated autopkgtest and debsign those are processed by CI/CD jobs.
