@@ -1,3 +1,10 @@
+oem-scripts (1.61) jammy; urgency=medium
+
+  [ Andy Chi ]
+  * Formatting to avoid extra newline in debian/control Description.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 12 Jan 2023 18:06:28 +0800
+
 oem-scripts (1.60) jammy; urgency=medium
 
   * oem_scripts/__init__.py: Allow the linux-oem-22.04c kernel meta.
