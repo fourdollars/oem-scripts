@@ -420,8 +420,7 @@ Depends: ${{misc:Depends}}{factory_depends}\n"""
             if codename == "sutton":
                 f.write(f"""Suggests: {doc}""")
             f.write(
-                f"""
-Description: hardware support for {Codename} {platformStr} (factory)
+                f"""Description: hardware support for {Codename} {platformStr} (factory)
  This is a factory metapackage for {Codename} {platformsStr}
  It installs packages needed to support this hardware fully. (factory)\n"""
             )
