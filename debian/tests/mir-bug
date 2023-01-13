@@ -27,6 +27,27 @@ cat > "$AUTOPKGTEST_ARTIFACTS"/fossa-tentacool.json <<ENDLINE
   "series": "focal"
 }
 ENDLINE
+cat > "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json <<ENDLINE
+{
+  "certification-hardware": [
+    "202112-29761",
+    "202112-29762",
+    "202112-29763",
+    "202112-29800",
+    "202112-29801",
+    "202112-29802"
+  ],
+  "certify-planning": [
+    1965841
+  ],
+  "metabug": 1968569,
+  "mirbug": 1981784,
+  "productnames": [
+    "XPS 13 9320"
+  ],
+  "series": "jammy"
+}
+ENDLINE
 
 export COPYRIGHT_YEAR=2022
 
@@ -42,6 +63,10 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # check/update
+mir-bug update --yes --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
+mir-bug check --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
+mir-bug update --yes --skip --tz=UTC --release "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
+mir-bug check --skip --tz=UTC --release "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
 mir-bug update --yes --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/fossa-tentacool.json
 mir-bug check --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/fossa-tentacool.json
 mir-bug update --yes --skip --tz=UTC --release "$AUTOPKGTEST_ARTIFACTS"/fossa-tentacool.json
