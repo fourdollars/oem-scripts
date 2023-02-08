@@ -184,17 +184,7 @@ menuentry "ubuntu-recovery restore" --hotkey f9 {
         if [ -s /boot/grub/common.cfg ]; then
             source /boot/grub/common.cfg
         else
-            set options="boot=casper automatic-ubiquity noprompt quiet splash"
-        fi
-
-        if [ "\\\${grub_platform}" != "efi" ]; then
-            if [ -f \\\${prefix}/nomodesetlist.txt ]; then
-                if hwmatch \\\${prefix}/nomodesetlist.txt 3; then
-                    if [ \\\${match} != 0 ]; then
-                        set options="nomodeset \\\$options"
-                    fi
-                fi
-            fi
+            set options="boot=casper automatic-ubiquity noprompt nomodeset quiet splash"
         fi
 
         #Support starting from a loopback mount (Only support ubuntu.iso for filename)
