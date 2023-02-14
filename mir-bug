@@ -394,7 +394,7 @@ def update_bug(
                     task.importance = "Critical"
                     task.lp_save()
 
-    update_bug_status(bug, pkg_name, yes)
+    update_bug_status(bug, pkg_name, yes, series)
 
     check_and_update_bug_subscriptions(lp, bug, update=True, yes=yes)
 
@@ -458,7 +458,7 @@ def check_bug(
         need_fixing = True
     if check_bug_importance(bug) is False:
         need_fixing = True
-    if check_bug_status(bug, pkg_name) is False:
+    if check_bug_status(bug, pkg_name, series) is False:
         need_fixing = True
     if check_and_update_bug_subscriptions(lp, bug) is False:
         need_fixing = True
@@ -585,7 +585,7 @@ def _expected_status(target_name: str, status: str, expected: str) -> bool:
     return True
 
 
-def check_bug_status(bug, pkg_name: str) -> bool:
+def check_bug_status(bug, pkg_name: str, series: str) -> bool:
     info("Checking bug status...")
     result = True
     saw_ubuntu_task = False
@@ -606,7 +606,7 @@ def check_bug_status(bug, pkg_name: str) -> bool:
         elif (
             task.bug_target_name == "ubuntu"
             or f"{pkg_name} (Ubuntu)" in task.bug_target_name
-            or f"{pkg_name} (Ubuntu Focal)" in task.bug_target_name
+            or f"{pkg_name} (Ubuntu {series.capitalize()})" in task.bug_target_name
         ):
             saw_ubuntu_task = True
             if args.release:
@@ -658,7 +658,7 @@ def _change_task_status(task, new_status: str, yes: bool) -> bool:
         task.lp_save()
 
 
-def update_bug_status(bug, pkg_name: str, yes: bool) -> None:
+def update_bug_status(bug, pkg_name: str, yes: bool, series: str) -> None:
     info("Updating bug status...")
     saw_ubuntu_task = False
     for bug_task in bug.bug_tasks:
@@ -670,7 +670,7 @@ def update_bug_status(bug, pkg_name: str, yes: bool) -> None:
         elif (
             bug_task.bug_target_name == "ubuntu"
             or f"{pkg_name} (Ubuntu)" in bug_task.bug_target_name
-            or f"{pkg_name} (Ubuntu Focal)" in bug_task.bug_target_name
+            or f"{pkg_name} (Ubuntu {series.capitalize()})" in bug_task.bug_target_name
         ):
             saw_ubuntu_task = True
             if args.release:
@@ -929,7 +929,9 @@ def check_and_update_git_repo(
 
     if series != "focal":
         result = pattern2.match(f"[MIR][{series}] {pkg_name}")
-        platform = result.group(2)
+        project = result.group(2)
+        platform = result.group(3)
+        group = None
         if bootstrap:
             suffix = "ubuntu"
         else:
@@ -1190,6 +1192,7 @@ def read_from_template(metaPkgName, branchName, oemCodenameNogroup, deviceName, 
         oemCodenameNogroup=oemCodenameNogroup,
         deviceName=deviceName,
         version=version,
+        series=series,
     )
 
 
