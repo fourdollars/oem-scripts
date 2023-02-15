@@ -158,11 +158,8 @@ ubiquity ubuntu-recovery/recovery_type string dev
             $GIT clone  https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-install-sbhelper --depth 1
         fi
         $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-skip-storage-selecting --depth 1
-        $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/pack-fish.openssh-fossa --depth 1
     fi
 
-    # install common tool, so that we can use oem-install to create local repository and install packages.
-    $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-oem-image-helper --depth 1 -b oem-fix-misc-cnl-oem-image-helper_fish
     # install packages related to skip oobe
     skip_oobe_branch="master"
     if [ -n "$ubuntu_release" ]; then
@@ -231,7 +228,6 @@ push_preseed() {
         $SCP -r "$temp_folder/preseed" "$user_on_target"@"$target_ip":~/push_preseed || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
     else
         folders=(
-            "pack-fish.openssh-fossa"
             "oem-fix-misc-cnl-skip-oobe"
             "oem-fix-misc-cnl-skip-storage-selecting"
         )
@@ -245,7 +241,7 @@ push_preseed() {
         done
     fi
 
-    for folder in misc_for_automation oem-fix-misc-cnl-oem-image-helper oem-fix-misc-cnl-skip-oobe; do
+    for folder in misc_for_automation oem-fix-misc-cnl-skip-oobe; do
         tar -C "$temp_folder"/$folder -zcvf "$temp_folder"/$folder.tar.gz .
         $SCP "$temp_folder/$folder".tar.gz "$user_on_target"@"$target_ip":~
         $SSH "$user_on_target"@"$target_ip" tar -C push_preseed -zxvf $folder.tar.gz || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
