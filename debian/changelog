@@ -1,3 +1,13 @@
+oem-scripts (1.62) jammy; urgency=medium
+
+  [ Jeremy Szu ]
+  * [r-f-i] Always using nomodeset in stage-2 if --ubr
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * debian/tests/mir-bug, mir-bug, oem-meta-package.mir.jinja2, oem_scripts/__init__.py: Make mir-bug support jammy.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 15 Feb 2023 10:24:18 +0800
+
 oem-scripts (1.61) jammy; urgency=medium
 
   [ Andy Chi ]
