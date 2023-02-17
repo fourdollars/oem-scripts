@@ -153,6 +153,7 @@ ubiquity ubuntu-recovery/recovery_type string dev
         mv project.cfg "$temp_folder/preseed"
 
         mkdir -p "$temp_folder/oem-fix-set-local-repo/scripts/chroot-scripts/fish/"
+        mkdir -p "$temp_folder/oem-fix-set-local-repo/scripts/chroot-scripts/os-post/"
         cat <<EOF > "$temp_folder/oem-fix-set-local-repo/scripts/chroot-scripts/fish/00-setup-local-repo"
 #!/bin/bash -ex
 # setup local repo
@@ -160,6 +161,13 @@ mkdir /tmp/cdrom_debs
 apt-ftparchive packages /cdrom/debs > /tmp/cdrom_debs/Packages
 echo 'deb [ trusted=yes ] file:/. /tmp/cdrom_debs/' >> /etc/apt/sources.list.d/$(basename "$0")_$$.list
 sudo apt-get update
+EOF
+
+        cat <<EOF > "$temp_folder/oem-fix-set-local-repo/scripts/chroot-scripts/os-post/99-remove-local-repo"
+#!/bin/bash -ex
+# remove local repo
+rm -f /etc/apt/sources.list.d/$(basename "$0")_$$.list
+sudo apt update
 EOF
     else
         # get checkbox pkgs and prepare-checkbox
