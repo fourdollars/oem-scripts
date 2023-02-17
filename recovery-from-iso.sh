@@ -151,6 +151,16 @@ ubiquity ubuntu-recovery/recovery_type string dev
         sed -i 's%ubiquity/reboot boolean false%ubiquity/reboot boolean true%' ./project.cfg
         sed -i 's%ubiquity/poweroff boolean true%ubiquity/poweroff boolean false%' ./project.cfg
         mv project.cfg "$temp_folder/preseed"
+
+        mkdir -p "$temp_folder/oem-fix-set-local-repo/scripts/chroot-scripts/fish/"
+        cat <<EOF > "$temp_folder/oem-fix-set-local-repo/scripts/chroot-scripts/fish/00-setup-local-repo"
+#!/bin/bash -ex
+# setup local repo
+mkdir /tmp/cdrom_debs
+apt-ftparchive packages /cdrom/debs > /tmp/cdrom_debs/Packages
+echo 'deb [ trusted=yes ] file:/. /tmp/cdrom_debs/' >> /etc/apt/sources.list.d/$(basename "$0")_$$.list
+sudo apt-get update
+EOF
     else
         # get checkbox pkgs and prepare-checkbox
         # get pkgs to skip OOBE
@@ -226,25 +236,24 @@ push_preseed() {
 
     if [ "${ubr}" == "yes" ]; then
         $SCP -r "$temp_folder/preseed" "$user_on_target"@"$target_ip":~/push_preseed || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
+        folders=(
+            "oem-fix-set-local-repo"
+        )
     else
         folders=(
-            "oem-fix-misc-cnl-skip-oobe"
             "oem-fix-misc-cnl-skip-storage-selecting"
         )
         if [ "$enable_sb" = "yes" ]; then
             folders+=("oem-fix-misc-cnl-install-sbhelper")
         fi
-        for folder in "${folders[@]}"; do
-            tar -C "$temp_folder/$folder" -zcvf "$temp_folder/$folder.tar.gz" .
-            $SCP "$temp_folder/$folder".tar.gz "$user_on_target"@"$target_ip":~
-            $SSH "$user_on_target"@"$target_ip" tar -C push_preseed -zxvf "$folder.tar.gz" || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
-        done
     fi
 
-    for folder in misc_for_automation oem-fix-misc-cnl-skip-oobe; do
-        tar -C "$temp_folder"/$folder -zcvf "$temp_folder"/$folder.tar.gz .
+    folders+=("misc_for_automation" "oem-fix-misc-cnl-skip-oobe")
+
+    for folder in "${folders[@]}"; do
+        tar -C "$temp_folder/$folder" -zcvf "$temp_folder/$folder".tar.gz .
         $SCP "$temp_folder/$folder".tar.gz "$user_on_target"@"$target_ip":~
-        $SSH "$user_on_target"@"$target_ip" tar -C push_preseed -zxvf $folder.tar.gz || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
+        $SSH "$user_on_target"@"$target_ip" tar -C push_preseed -zxvf "$folder".tar.gz || $SSH "$user_on_target"@"$target_ip" sudo rm -f push_preseed/SUCCSS_push_preseed
     done
 
     $SSH "$user_on_target"@"$target_ip" sudo cp -r push_preseed/* /cdrom/
