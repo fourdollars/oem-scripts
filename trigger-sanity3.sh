@@ -21,6 +21,7 @@ gitbranch_oem_sanity="master"
 auto_create_bugs="false"
 checkbox_ppas="ppa:oem-solutions-group/pc-sanity-daily%20ppa:hardware-certification/public"
 upload_report="false"
+inj_recovery_img_from="ps5"
 
 usage() {
 cat << EOF
@@ -41,7 +42,8 @@ Example:
 $(basename "$0") -t jellyfish-slowpoke-rpl --target_img pc-stella-jammy-amd64 \
 --auto_create_bugs true --image_no no-provision --inj_recovery true \
 --checkbox_ppas "ppa:oem-solutions-group/pc-sanity-daily \
-ppa:hardware-certification/public" --upload_report true
+ppa:hardware-certification/public" --upload_report true \
+--inj_recovery_img_from ps5
 
 Options:
     -t|--tag                    Platform tag, ex: fossa-arbok
@@ -65,6 +67,7 @@ Options:
                                 The bugs will not be automatically created if this parameter is empty. default is empty.
                                 (e.g. stanley31)
     --upload_report             sanity-3 parameter UPLOAD_REPORT, upload test reports, true or false, default is false.
+    --inj_recovery_img_from     where to download the image from, tpe or ps5, default is ps5.
 EOF
 exit 1
 }
@@ -127,10 +130,10 @@ trigger_sanity_3() {
             if [ $dry_run -eq 0 ];then
                 if [ -n "$auto_create_bug_assignee" ]; then
                     curl -X POST \
-                    http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&CHECKBOX_PPAS="$checkbox_ppas"\&AUTO_CREATE_BUGS="$auto_create_bugs"\&AUTO_CREATE_BUGS_ASSIGNEE="$auto_create_bug_assignee"\&UPLOAD_REPORT="$upload_report"
+                    http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&CHECKBOX_PPAS="$checkbox_ppas"\&AUTO_CREATE_BUGS="$auto_create_bugs"\&AUTO_CREATE_BUGS_ASSIGNEE="$auto_create_bug_assignee"\&UPLOAD_REPORT="$upload_report"\&INJ_RECOVERY_IMG_FROM="$inj_recovery_img_from"
                 else
                     curl -X POST \
-                    http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&CHECKBOX_PPAS="$checkbox_ppas"\&AUTO_CREATE_BUGS="$auto_create_bugs"\&UPLOAD_REPORT="$upload_report"
+                    http://"$user":"$token"@"$JENKINS_ADDR"/job/sanity-3-testflinger-"$project"-"$cid"-staging/buildWithParameters\?EXCLUDE_TASK="$exclude_task"\&TARGET_IMG="$target_img"\&IMAGE_NO="$image_no"\&PLAN="$plan"\&CMD_BEFOR_RUN_PLAN="$cmd_before_run_plan"\&INJ_RECOVERY="$inj_recovery"\&GITBRANCH_OEM_SANITY="$gitbranch_oem_sanity"\&CHECKBOX_PPAS="$checkbox_ppas"\&AUTO_CREATE_BUGS="$auto_create_bugs"\&UPLOAD_REPORT="$upload_report"\&INJ_RECOVERY_IMG_FROM="$inj_recovery_img_from"
                 fi
             fi
         else
@@ -212,6 +215,10 @@ main() {
             --upload_report)
                 shift
                 upload_report="$1"
+            ;;
+            --inj_recovery_img_from)
+                shift
+                inj_recovery_img_from="$1"
             ;;
             --cid)
                 shift
