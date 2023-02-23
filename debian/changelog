@@ -1,3 +1,20 @@
+oem-scripts (1.63) jammy; urgency=medium
+
+  [ Dirk Su ]
+  * Remove pack-fish.openssh-fossa and oem-image-helper from preseed
+  * Setup local repo for ubr
+
+  [ Andy Chi ]
+  * Remove local repo for ubr
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * debian/tests/lp-bug, lp-bug: Make cqa-verify support jammy, reuse _run_command, and make cqa-verify return error when the archive is not supported.
+
+  [ Jeremy Szu ]
+  * [trigger-sanity3.sh] supports INJ_RECOVERY_IMG_FROM
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 23 Feb 2023 14:55:38 +0800
+
 oem-scripts (1.62) jammy; urgency=medium
 
   [ Jeremy Szu ]
