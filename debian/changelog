@@ -1,3 +1,14 @@
+oem-scripts (1.64) jammy; urgency=medium
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * oem-meta-package.sru.jinja2: Use people.canonical.com/~oem-enablement instead.
+
+  [ Jeremy Szu ]
+  * pkg-oem-meta: Fix missing-separator-between-items and required-field in sutton
+  * pkg-oem-meta: Fix wrong indention
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 07 Mar 2023 21:56:11 +0800
+
 oem-scripts (1.63) jammy; urgency=medium
 
   [ Dirk Su ]
