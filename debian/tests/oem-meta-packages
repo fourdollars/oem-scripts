@@ -34,10 +34,10 @@ if [ "$(jq -r '."oem-stella-aron-meta".oem.devel.archive' < oem-stella-aron-meta
 fi
 
 # update
-oem-meta-packages --dry-run --series focal update oem-somerville-tentacool-meta
-oem-meta-packages --dry-run --series focal update oem-stella.cmit-camerupt-meta
-oem-meta-packages --dry-run --series jammy update oem-somerville-tentacool-meta
-oem-meta-packages --dry-run --series jammy update oem-stella-aron-meta
+oem-meta-packages --dry-run --series focal update oem-somerville-tentacool-meta --kernel linux-generic-hwe-20.04
+oem-meta-packages --dry-run --series focal update oem-stella.cmit-camerupt-meta --kernel linux-generic-hwe-20.04
+oem-meta-packages --dry-run --series jammy update oem-somerville-tentacool-meta --kernel linux-generic-hwe-22.04
+oem-meta-packages --dry-run --series jammy update oem-stella-aron-meta --kernel linux-generic-hwe-22.04
 
 # staging-copy
 oem-meta-packages --dry-run --series focal staging-copy oem-somerville-kingdra-adl-meta 2>&1 | grep -e cesg:somerville-fossa-kingdra-adl-focal-staging -e somerville-fossa-kingdra-adl-focal-devel
