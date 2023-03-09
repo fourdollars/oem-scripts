@@ -1,3 +1,11 @@
+oem-scripts (1.65) jammy; urgency=medium
+
+  * oem-meta-packages: Make it able to read the meta json file to collect the information or update the meta package.
+  * debian/tests/oem-meta-packages, oem-meta-packages: Fix the problem when updating for linux-generic-hwe-22.04.
+  * oem-meta-packages: Make 'update' and 'collect' follow the series in the meta json file.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 09 Mar 2023 10:39:47 +0800
+
 oem-scripts (1.64) jammy; urgency=medium
 
   [ Shih-Yuan Lee (FourDollars) ]
