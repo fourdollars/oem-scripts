@@ -377,7 +377,10 @@ def update_bug(
         yes, "Do you want to update the bug title?"
     ):
         bug_modified = True
-        bug.title = f"[MIR] {pkg_name}"
+        if series == "focal":
+            bug.title = f"[MIR] {pkg_name}"
+        else:
+            bug.title = f"[MIR][{series}] {pkg_name}"
 
     if bug_modified:
         bug.lp_save()
@@ -560,7 +563,10 @@ def check_bug_title(bug, pkg_name: str, series: str) -> bool:
         return True
     elif bug.title == f"[MIR][{series}] {pkg_name}":
         return True
-    error(f"The bug title shall be '[MIR] {pkg_name}' but it is '{bug.title}'.")
+    if series == "focal":
+        error(f"The bug title shall be '[MIR] {pkg_name}' but it is '{bug.title}'.")
+    else:
+        error(f"The bug title shall be '[MIR][{series}] {pkg_name}' but it is '{bug.title}'.")
     return False
 
 
