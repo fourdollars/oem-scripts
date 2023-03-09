@@ -104,6 +104,7 @@ class PkgInfo(BaseModel):
     oem: OemGroup
     old_desc: str
     new_desc: str
+    product_names: list
 
 
 meta_pattern = re.compile(r"oem-([^-]*)-(.*)-meta")
@@ -146,15 +147,6 @@ parser.add_argument(
 )
 parser.add_argument("--dry-run", help="Dry run the process.", action="store_true")
 parser.add_argument("--yes", help="Say yes for all prompts.", action="store_true")
-parser.add_argument(
-    "--skip", help="Skip some projects or some meta packages.", type=str, default=""
-)
-parser.add_argument("--only", help="Specified the meta package. Skip others.", type=str)
-parser.add_argument(
-    "--since",
-    help="Begin from the specified meta package. Skip previous meta packages.",
-    type=str,
-)
 parser.add_argument("--apt-dir", type=str, help="specify the dir for apt")
 series = lsb_release.get_os_release()["CODENAME"]
 parser.add_argument(
@@ -177,7 +169,8 @@ Collect the information of OEM metapackages in PPAs and devel/staging archives."
 )
 
 collect.add_argument(
-    "meta", help="Specify the meta package to collect the information."
+    "meta",
+    help="Specify the meta package name or the meta json file to collect the information.",
 )
 collect.add_argument(
     "-o",
@@ -256,7 +249,11 @@ For example,
 
 Update the market name and the kernel flavour of the OEM meta package to the default kernel flavour, i.e. linux-generic-hwe-20.04.""",
 )
-update.add_argument("meta", type=str, help="Specify the meta package to update.")
+update.add_argument(
+    "meta",
+    type=str,
+    help="Specify the meta package name or the meta json file to update the meta package.",
+)
 update.add_argument(
     "--kernel",
     choices=ALLOWED_KERNEL_META_LIST,
@@ -295,20 +292,25 @@ if args.apt_dir:
             debug(line.strip())
     apt_pkg.init_system()
 
+
+def get_animal(series: str) -> str:
+    return list(
+        filter(
+            lambda x: series in x,
+            map(
+                lambda x: x.lower(),
+                map(lambda x: x.codename, udi.supported(result="object")),
+            ),
+        )
+    )[0].split(" ")[1]
+
+
 udi = UbuntuDistroInfo()
 if args.series:
     if not udi.valid(args.series):
         raise Exception(f"'{args.series}' is not a valid codename.")
     series = args.series
-animal = list(
-    filter(
-        lambda x: series in x,
-        map(
-            lambda x: x.lower(),
-            map(lambda x: x.codename, udi.supported(result="object")),
-        ),
-    )
-)[0].split(" ")[1]
+animal = get_animal(series)
 
 
 def yes_or_ask(yes: bool, message: str) -> bool:
@@ -379,7 +381,16 @@ def _grouping_market_names(market_names: list, maxsplit=1) -> str:
         return ", ".join(f"{name} {'/'.join(models)}" for name, models in tmp.items())
 
 
-def deal_with_description(git_dir, old, new) -> bool:
+def deal_with_description(git_dir, old, new, product_names, project) -> bool:
+    if project == "somerville":
+        customer = "Dell"
+    elif project == "stella":
+        customer = "HP"
+    elif project == "sutton":
+        customer = "Lenovo"
+    else:
+        print(f"{project} is not supported.")
+        exit(1)
     if not old or not new:
         return False
     os.chdir(git_dir)
@@ -392,6 +403,76 @@ def deal_with_description(git_dir, old, new) -> bool:
             changed = True
             lines[i] = line.replace(old, new)
     info(f'"{old}" will be replaced by "{new}".')
+    if len(product_names) > 0:
+        newlines = []
+        old_desc = False
+        for line in lines:
+            if line.startswith(" This is a metapackage for") and line.endswith(
+                "It installs\n"
+            ):
+                old_desc = True
+            elif line.endswith("packages needed to support this hardware fully.\n"):
+                if old_desc is True:
+                    changed = True
+                    if len(product_names) > 1:
+                        newlines.append(f" This is a metapackage for {customer} PCs:\n")
+                    else:
+                        newlines.append(f" This is a metapackage for {customer} PC:\n")
+                    for product_name in product_names:
+                        if customer not in product_name:
+                            newlines.append(f"  * {customer} {product_name}\n")
+                        else:
+                            newlines.append(f"  * {product_name}\n")
+                newlines.append(line)
+            elif line.startswith(" This is a factory metapackage for"):
+                old_desc = True
+            elif line.endswith(
+                "packages needed to support this hardware fully. (factory)\n"
+            ):
+                if old_desc is True:
+                    changed = True
+                    if len(product_names) > 1:
+                        newlines.append(
+                            f" This is a factory metapackage for {customer} PCs:\n"
+                        )
+                    else:
+                        newlines.append(
+                            f" This is a factory metapackage for {customer} PC:\n"
+                        )
+                    for product_name in product_names:
+                        if customer not in product_name:
+                            newlines.append(f"  * {customer} {product_name}\n")
+                        else:
+                            newlines.append(f"  * {product_name}\n")
+                newlines.append(line)
+            else:
+                newlines.append(line)
+        lines = newlines
+        newlines = []
+        for line in lines:
+            if line.startswith(f" This is a metapackage for {customer} PC"):
+                if len(product_names) > 1:
+                    newlines.append(f" This is a metapackage for {customer} PCs:\n")
+                else:
+                    newlines.append(f" This is a metapackage for {customer} PC:\n")
+            elif line.startswith(f" This is a factory metapackage for {customer} PC"):
+                if len(product_names) > 1:
+                    newlines.append(
+                        f" This is a factory metapackage for {customer} PCs:\n"
+                    )
+                else:
+                    newlines.append(
+                        f" This is a factory metapackage for {customer} PC:\n"
+                    )
+            elif line.startswith(" * "):
+                # Filter out product name not in the list
+                for product_name in product_names:
+                    if f"{product_name}\n" in line:
+                        newlines.append(line)
+                        break
+            else:
+                newlines.append(line)
+        lines = newlines
     with open(file_path, "w") as control:
         control.writelines(lines)
     _run_command(["git", "add", "debian/control"])
@@ -419,11 +500,16 @@ def deal_with_kernel_flavour(pkg_name, branch, git_dir) -> bool:
 
     debug(f"XB-Ubuntu-OEM-Kernel-Flavour: {kernel_flavour}")
 
-    if args.kernel == "linux-generic-hwe-20.04":
+    if (
+        args.kernel.startswith("linux-generic")
+        and args.kernel in ALLOWED_KERNEL_META_LIST
+    ):
         if kernel_flavour == "default":
             return False
         kernel_flavour = "default"
-    elif args.kernel.startswith("linux-oem-20.04"):
+    elif (
+        args.kernel.startswith("linux-oem") and args.kernel in ALLOWED_KERNEL_META_LIST
+    ):
         if kernel_flavour == "oem":
             return False
         kernel_flavour = "oem"
@@ -697,11 +783,16 @@ def deal_with_grub_flavour(pkg_name, branch, git_dir) -> bool:
                     grub_flavour = line[len("GRUB_FLAVOUR_ORDER=") :].strip()
                     break
 
-    if args.kernel == "linux-generic-hwe-20.04":
+    if (
+        args.kernel.startswith("linux-generic")
+        and args.kernel in ALLOWED_KERNEL_META_LIST
+    ):
         if grub_flavour == "generic":
             return False
         grub_flavour = "generic"
-    elif args.kernel.startswith("linux-oem-20.04"):
+    elif (
+        args.kernel.startswith("linux-oem") and args.kernel in ALLOWED_KERNEL_META_LIST
+    ):
         if grub_flavour == "oem":
             return False
         grub_flavour = "oem"
@@ -1551,17 +1642,46 @@ def collect_pkg_info(
             exit(1)
 
         json_data = json.loads(
-            f"""[{{
+            f"""{{
 "Customer": "{customer}",
 "Group": "{group}",
 "Codename": "{codename}",
 "Platform": "",
 "MarketName": "",
 "PlatformLPTag": "{tag}"
-}}]"""
+}}"""
         )
+        json_data["ProductNames"] = []
     else:
-        json_data = json.load(data)
+        project = data.get("project")
+        codename = data.get("platform")
+        group = data.get("group")
+        if project == "somerville":
+            customer = "Dell"
+            tag = animal + "-" + data.get("platform")
+        elif project == "stella":
+            customer = "HP"
+            tag = ""
+        elif project == "sutton":
+            customer = "Lenovo"
+            tag = ""
+        else:
+            print(f"{data} is not supported.")
+            exit(1)
+
+        json_data = json.loads(
+            f"""{{
+"Customer": "{customer}",
+"Group": "{group}",
+"Codename": "{codename}",
+"Platform": "",
+"MarketName": "",
+"PlatformLPTag": "{tag}"
+}}"""
+        )
+
+        if "productnames" in data:
+            json_data["ProductNames"] = data["productnames"]
 
     debug(json.dumps(json_data, indent=4, sort_keys=True))
 
@@ -1569,42 +1689,35 @@ def collect_pkg_info(
     stella = dict()
     sutton = dict()
 
-    for item in json_data:
-        customer = item["Customer"].lower()
-        platform = item["Platform"].lower()
-        codename = item["Codename"].lower()
-        group = item["Group"].lower()
-        market_name = item["MarketName"]
-        lp_tag = item["PlatformLPTag"].lower()
-        if "dell" in customer:
-            if "somerville" in args.skip:
-                continue
-            platform = remove_prefix(lp_tag, f"{animal}-")
-            lst = somerville.get(platform, [])
+    customer = json_data["Customer"].lower()
+    platform = json_data["Platform"].lower()
+    codename = json_data["Codename"].lower()
+    group = json_data["Group"].lower()
+    market_name = json_data["MarketName"]
+    lp_tag = json_data["PlatformLPTag"].lower()
+    if "dell" in customer:
+        platform = remove_prefix(lp_tag, f"{animal}-")
+        lst = somerville.get(platform, [])
+        lst.append(market_name)
+        somerville[platform] = lst
+    elif "hp" in customer:
+        if series == "focal":
+            lst = stella.get(f"{group}-{codename}", [])
             lst.append(market_name)
-            somerville[platform] = lst
-        elif "hp" in customer:
-            if "stella" in args.skip:
-                continue
-            if series == "focal":
-                lst = stella.get(f"{group}-{codename}", [])
-                lst.append(market_name)
-                stella[f"{group}-{codename}"] = lst
-            else:
-                lst = stella.get(codename, [])
-                lst.append(market_name)
-                stella[codename] = lst
-        elif "lenovo" in customer:
-            if "sutton" in args.skip:
-                continue
-            if series == "focal":
-                lst = sutton.get(f"{group}-{codename}", [])
-                lst.append(market_name)
-                sutton[f"{group}-{codename}"] = lst
-            else:
-                lst = sutton.get(codename, [])
-                lst.append(market_name)
-                sutton[codename] = lst
+            stella[f"{group}-{codename}"] = lst
+        else:
+            lst = stella.get(codename, [])
+            lst.append(market_name)
+            stella[codename] = lst
+    elif "lenovo" in customer:
+        if series == "focal":
+            lst = sutton.get(f"{group}-{codename}", [])
+            lst.append(market_name)
+            sutton[f"{group}-{codename}"] = lst
+        else:
+            lst = sutton.get(codename, [])
+            lst.append(market_name)
+            sutton[codename] = lst
 
     debug(f"Somerville market names {somerville}")
     debug(f"Stella market names {stella}")
@@ -1618,18 +1731,14 @@ def collect_pkg_info(
     for codename, v in somerville.items():
         pkg_name = "oem-somerville-" + codename + "-meta"
 
-        if args.only and pkg_name != args.only:
-            warning(f"Skip {pkg_name}")
-            continue
-
-        if pkg_name in args.skip:
-            warning(f"Skip {pkg_name}")
-            continue
-
         meta = OemMetaPkg(pkg_name, index, config)
 
         pkgInfo[pkg_name] = PkgInfo(
-            bootstrap=meta.bootstrap, oem=meta.oem, old_desc="", new_desc=""
+            bootstrap=meta.bootstrap,
+            oem=meta.oem,
+            old_desc="",
+            new_desc="",
+            product_names=json_data["ProductNames"],
         )
 
         if pkg_name in pkgNamesInArchive and "".join(v):
@@ -1656,12 +1765,6 @@ def collect_pkg_info(
             pkg_name = "oem-stella." + k + "-meta"
         else:
             pkg_name = "oem-stella-" + k + "-meta"
-        if args.only and pkg_name != args.only:
-            warning(f"Skip {pkg_name}")
-            continue
-        if pkg_name in args.skip:
-            warning(f"Skip {pkg_name}")
-            continue
         if series == "focal":
             group, codename = k.split("-", 1)
         else:
@@ -1670,7 +1773,11 @@ def collect_pkg_info(
         meta = OemMetaPkg(pkg_name, index, config)
 
         pkgInfo[pkg_name] = PkgInfo(
-            bootstrap=meta.bootstrap, oem=meta.oem, old_desc="", new_desc=""
+            bootstrap=meta.bootstrap,
+            oem=meta.oem,
+            old_desc="",
+            new_desc="",
+            product_names=json_data["ProductNames"],
         )
 
         if pkg_name in pkgNamesInArchive and "".join(v):
@@ -1707,12 +1814,6 @@ def collect_pkg_info(
             pkg_name = "oem-sutton." + k + "-meta"
         else:
             pkg_name = "oem-sutton-" + k + "-meta"
-        if args.only and pkg_name != args.only:
-            warning(f"Skip {pkg_name}")
-            continue
-        if pkg_name in args.skip:
-            warning(f"Skip {pkg_name}")
-            continue
         if series == "focal":
             group, codename = k.split("-", 1)
         else:
@@ -1721,7 +1822,11 @@ def collect_pkg_info(
         meta = OemMetaPkg(pkg_name, index, config)
 
         pkgInfo[pkg_name] = PkgInfo(
-            bootstrap=meta.bootstrap, oem=meta.oem, old_desc="", new_desc=""
+            bootstrap=meta.bootstrap,
+            oem=meta.oem,
+            old_desc="",
+            new_desc="",
+            product_names=json_data["ProductNames"],
         )
 
         if pkg_name in pkgNamesInArchive and "".join(v):
@@ -1757,30 +1862,9 @@ def collect_pkg_info(
     return pkgInfo
 
 
-def load_pkg_info(data) -> dict:
-    pkgInfo = dict()
-    data = json.load(data)
-    for meta in data.keys():
-        pkgInfo[meta] = PkgInfo(
-            bootstrap=BootstrapGroup(**data[meta]["bootstrap"]),
-            oem=OemGroup(**data[meta]["oem"]),
-            old_desc=data[meta]["old_desc"],
-            new_desc=data[meta]["new_desc"],
-        )
-
-    debug(json.dumps(pkgInfo, indent=4, sort_keys=True, cls=CustomEncoder))
-    return pkgInfo
-
-
 def process_update_task(pkgInfo) -> None:
     debug(pkgInfo.keys())
     for pkg_name in sorted(pkgInfo.keys()):
-        if args.since:
-            if pkg_name != args.since:
-                warning(f"Skip {pkg_name}")
-                continue
-            else:
-                args.since = None
         check_meta_git(pkg_name, pkgInfo[pkg_name], skip_bootstrap=True)
 
 
@@ -1841,7 +1925,13 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> boo
         git_dir = os.path.join(tmpdir, pkg_name)
 
         # Deal with different changes
-        if deal_with_description(git_dir, pkg_info.old_desc, pkg_info.new_desc):
+        if deal_with_description(
+            git_dir,
+            old=pkg_info.old_desc,
+            new=pkg_info.new_desc,
+            product_names=pkg_info.product_names,
+            project=project,
+        ):
             messages.append("market name")
         if deal_with_kernel_flavour(pkg_name, branch, git_dir):
             messages.append("kernel flavour")
@@ -2035,9 +2125,23 @@ elif args.subcommand == "update":
     r = requests.get(
         config["archive"] + "/dists/", auth=(config["username"], config["password"])
     )
-    pkgInfo = collect_pkg_info(
-        args.meta, check_private=True, index=r.text, config=config
-    )
+    if os.path.exists(args.meta):
+        with open(args.meta) as data:
+            meta_json = json.load(data)
+        if "series" in meta_json and meta_json["series"] != series:
+            if args.series:
+                warning(
+                    f'`--series {series}` is overidden as `--series {meta_json["series"]}` by the meta json file.'
+                )
+            series = meta_json["series"]
+            animal = get_animal(series)
+        pkgInfo = collect_pkg_info(
+            meta_json, check_private=True, index=r.text, config=config
+        )
+    else:
+        pkgInfo = collect_pkg_info(
+            args.meta, check_private=True, index=r.text, config=config
+        )
     process_update_task(pkgInfo)
 elif args.subcommand == "collect":
     oem_scripts_config_ini = os.path.join(
@@ -2049,9 +2153,23 @@ elif args.subcommand == "collect":
     r = requests.get(
         config["archive"] + "/dists/", auth=(config["username"], config["password"])
     )
-    pkgInfo = collect_pkg_info(
-        args.meta, check_private=True, index=r.text, config=config
-    )
+    if os.path.exists(args.meta):
+        with open(args.meta) as data:
+            meta_json = json.load(data)
+        if "series" in meta_json and meta_json["series"] != series:
+            if args.series:
+                warning(
+                    f'`--series {series}` is overidden as `--series {meta_json["series"]}` by the meta json file.'
+                )
+            series = meta_json["series"]
+            animal = get_animal(series)
+        pkgInfo = collect_pkg_info(
+            meta_json, check_private=True, index=r.text, config=config
+        )
+    else:
+        pkgInfo = collect_pkg_info(
+            args.meta, check_private=True, index=r.text, config=config
+        )
     if args.output:
         args.output.write(
             json.dumps(pkgInfo, indent=4, sort_keys=True, cls=CustomEncoder) + "\n"
