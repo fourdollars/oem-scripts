@@ -566,7 +566,9 @@ def check_bug_title(bug, pkg_name: str, series: str) -> bool:
     if series == "focal":
         error(f"The bug title shall be '[MIR] {pkg_name}' but it is '{bug.title}'.")
     else:
-        error(f"The bug title shall be '[MIR][{series}] {pkg_name}' but it is '{bug.title}'.")
+        error(
+            f"The bug title shall be '[MIR][{series}] {pkg_name}' but it is '{bug.title}'."
+        )
     return False
 
 

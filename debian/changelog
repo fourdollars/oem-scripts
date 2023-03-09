@@ -1,3 +1,13 @@
+oem-scripts (1.66) jammy; urgency=medium
+
+  [ Bin Li ]
+  * mir-bug: Fixed the bug title when using '--ready'
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * mir-bug: Follow the series in the meta json file for the bug description.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 09 Mar 2023 18:05:06 +0800
+
 oem-scripts (1.65) jammy; urgency=medium
 
   * oem-meta-packages: Make it able to read the meta json file to collect the information or update the meta package.
