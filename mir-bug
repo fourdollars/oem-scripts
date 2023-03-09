@@ -365,7 +365,7 @@ def update_bug(
 ) -> None:
     bug = lp.bugs[bug_number]
     info(f'Updating LP: #{bug_number} - "{bug.title}" ...')
-    desc, pkg_name = check_bug_description(bug, certified_hardwares)
+    desc, pkg_name = check_bug_description(bug, certified_hardwares, series=series)
     bug_modified = False
     task_modified = False
 
@@ -454,7 +454,7 @@ def check_bug(
     bug = lp.bugs[bug_number]
     info(f'Checking LP: #{bug_number} - "{bug.title}" ...')
     need_fixing = False
-    desc, pkg_name = check_bug_description(bug, certified_hardwares)
+    desc, pkg_name = check_bug_description(bug, certified_hardwares, series=series)
     if desc:
         need_fixing = True
     if check_bug_title(bug, pkg_name, series) is False:
@@ -484,10 +484,9 @@ def check_bug(
         exit(1)
 
 
-def check_bug_description(bug, certified_hardwares: list) -> (str, str):
+def check_bug_description(bug, certified_hardwares: list, series: str) -> (str, str):
     info("Checking bug description...")
-    result = pattern2.match(bug.title)
-    if not result:
+    if series == "focal":
         result = pattern.match(bug.title)
         if not result:
             critical(f"LP: #{bug.id} '{bug.title}' is NOT MATCHED")
@@ -504,6 +503,7 @@ def check_bug_description(bug, certified_hardwares: list) -> (str, str):
         metaPkgName = f"oem-{result.group(1)}-{result.group(2)}-meta"
         series = "focal"
     else:
+        result = pattern2.match(bug.title)
         series = result.group(1)
         project = result.group(2)
         platform = result.group(3)
