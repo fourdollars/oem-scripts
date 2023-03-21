@@ -1,3 +1,9 @@
+oem-scripts (1.67) jammy; urgency=medium
+
+  * mir-bug: Make the 'update' able to change the kernel flavour.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 21 Mar 2023 14:47:55 +0800
+
 oem-scripts (1.66) jammy; urgency=medium
 
   [ Bin Li ]
