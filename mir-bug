@@ -856,13 +856,24 @@ def check_and_update_bug_attachments(
         _run_command(git_command)
         git_dir = os.path.join(tmpdir, pkg_name)
         os.chdir(git_dir)
+        if args.release:
+            # Change debian/changelog back to UNRELEASED
+            lines = None
+            changelog = os.path.join(tmpdir, pkg_name, "debian", "changelog")
+            with open(changelog, "r") as f:
+                lines = f.readlines()
+
+            version = UbuntuDistroInfo().version(series).split(" ")[0]
+            lines[0] = f"{pkg_name} ({version}~ubuntu1) UNRELEASED; urgency=medium\n"
+            with open(changelog, "w") as f:
+                f.writelines(lines)
         _run_command(["dpkg-buildpackage", "-S", "-us", "-uc"])
         os.chdir(tmpdir)
         dsc = glob(f"{pkg_name}*.dsc")[0]
         prog = re.compile(fr"{pkg_name}_(.*).dsc")
         result = prog.match(dsc)
-        version = result.group(1)
-        debdiff = f"{pkg_name}_{version}.debdiff"
+        debian_version = result.group(1)
+        debdiff = f"{pkg_name}_{debian_version}.debdiff"
         # It should generate some debdiff so the return code should be 1 unless comparing to oem-qemu-meta itself.
         debug(f"TZ={args.tz}")
         content, _, _ = _run_command(
