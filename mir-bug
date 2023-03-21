@@ -85,7 +85,8 @@ create.add_argument(
 )
 
 update = subparsers.add_parser(
-    "update", help="[-h] [--ready] [--skip] [--tz=UTC-8] [--yes] PLATFORM_JSON"
+    "update",
+    help="[-h] [--ready] [--skip] [--tz=UTC-8] [--yes] [--kernel-flavour oem|default] PLATFORM_JSON",
 )
 update.add_argument(
     "json",
@@ -97,6 +98,11 @@ update.add_argument(
     "--skip",
     help="Skip updating bootstrap branch of Git repository.",
     action="store_true",
+)
+update.add_argument(
+    "--kernel-flavour",
+    help="Set the kernel flavour in debian/control.",
+    choices=["oem", "default"],
 )
 update.add_argument(
     "--tz", help="Specify the value for TZ. (UTC-8 by default)", default="UTC-8"
@@ -111,7 +117,8 @@ update.add_argument(
 )
 
 check = subparsers.add_parser(
-    "check", help="[-h] [--ready] [--release] [--skip] [--tz=UTC-8] PLATFORM_JSON"
+    "check",
+    help="[-h] [--ready] [--release] [--skip] [--tz=UTC-8] [--kernel-flavour oem|default] PLATFORM_JSON",
 )
 check.add_argument(
     "json",
@@ -120,6 +127,11 @@ check.add_argument(
 )
 check.add_argument(
     "--skip", help="Skip checking oem branch of Git repository.", action="store_true"
+)
+check.add_argument(
+    "--kernel-flavour",
+    help="Set the kernel flavour in debian/control.",
+    choices=["oem", "default"],
 )
 check.add_argument(
     "--tz", help="Specify the value for TZ. (UTC-8 by default)", default="UTC-8"
@@ -1110,6 +1122,7 @@ def check_and_update_git_repo(
         shutil.copytree(new_dir, ".", dirs_exist_ok=True)
 
         if bootstrap:
+            # Update debian/changelog
             lines = None
             changelog = os.path.join(tmpdir, pkg_name, "debian", "changelog")
             with open(changelog, "r") as f:
@@ -1130,7 +1143,20 @@ def check_and_update_git_repo(
 
             with open(changelog, "w") as f:
                 f.writelines(lines)
-
+            # Update XB-Ubuntu-OEM-Kernel-Flavour in debian/control
+            if args.kernel_flavour:
+                lines = None
+                control = os.path.join(tmpdir, pkg_name, "debian", "control")
+                with open(control, "r") as f:
+                    lines = f.readlines()
+                for i, line in enumerate(lines):
+                    if line.startswith("XB-Ubuntu-OEM-Kernel-Flavour:"):
+                        lines[
+                            i
+                        ] = f"XB-Ubuntu-OEM-Kernel-Flavour: {args.kernel_flavour}\n"
+                        break
+                with open(control, "w") as f:
+                    f.writelines(lines)
         # Remove deprecated autopkgtest file
         deprecated_test = os.path.join(tmpdir, pkg_name, "debian", "tests", pkg_name)
         if os.path.exists(deprecated_test):
