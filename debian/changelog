@@ -1,3 +1,9 @@
+oem-scripts (1.68) jammy; urgency=medium
+
+  * mir-bug: Change debian/changelog back to UNRELEASED when checking or updating the bug attachment when the OEM metapackage is going to be released.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 22 Mar 2023 11:55:24 +0800
+
 oem-scripts (1.67) jammy; urgency=medium
 
   * mir-bug: Make the 'update' able to change the kernel flavour.
