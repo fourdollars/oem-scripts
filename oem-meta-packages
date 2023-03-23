@@ -2054,47 +2054,47 @@ if args.subcommand == "list":
         print(name)
 elif args.subcommand == "subscribe":
     if args.meta:
-        name = args.meta
-        info(f"Checking the subscriptions for {name}...")
-        source = lp.distributions["ubuntu"].getSourcePackage(name=name)
-        if SUBSCRIBER in map(lambda x: x.subscriber.name, source.getSubscriptions()):
-            info(f"ubuntu/{name} has subscribed '{SUBSCRIBER}'.")
-            exit(0)
-        warning(f"ubuntu/{name} didn't subscribe '{SUBSCRIBER}' yet.")
-        if yes_or_ask(
-            args.yes, f"Would you like to subscribe '{SUBSCRIBER}' for ubuntu/{name}?"
-        ):
-            try:
-                # When a person is subscribed to a source package, one actually subscribe all bugs for it.
-                source.addBugSubscription(subscriber=lp.people[SUBSCRIBER])
-            except lazr.restfulclient.errors.Unauthorized as e:
-                error(
-                    f"{lp.me.name} does not have permission to subscribe '{SUBSCRIBER}'."
-                )
-                if args.verbose:
-                    print(e)
-                exit(1)
-        exit(0)
-    for name in get_oem_meta_packages(cache):
+        sources_in_set = [args.meta]
+    else:
+        ds = lp.distributions["ubuntu"].getSeries(name_or_version=series)
+        packageset = lp.packagesets.getByName(
+            distroseries=ds, name="canonical-oem-metapackages"
+        )
+        sources_in_set = sorted(set(packageset.getSourcesIncluded()))
+    valid_member = False
+    try:
+        for member in lp.people[SUBSCRIBER].members:
+            if lp.me == member:
+                valid_member = True
+                break
+        else:
+            warning(
+                f"{lp.me.name} does not have the permission to subscribe '{SUBSCRIBER}'."
+            )
+    # Note: lp.credentials.access_token will be an instance of launchpadlib.credentials.AnonymousAccessToken.
+    except lazr.restfulclient.errors.Unauthorized:
+        warning(f"Anonymous does not have the permission to subscribe '{SUBSCRIBER}'.")
+    ret = 0
+    for name in sources_in_set:
         info(f"Checking the subscriptions for {name}...")
         source = lp.distributions["ubuntu"].getSourcePackage(name=name)
         if SUBSCRIBER in map(lambda x: x.subscriber.name, source.getSubscriptions()):
             info(f"ubuntu/{name} has subscribed '{SUBSCRIBER}'.")
             continue
-        warning(f"ubuntu/{name} didn't subscribe '{SUBSCRIBER}' yet.")
-        if yes_or_ask(
-            args.yes, f"Would you like to subscribe '{SUBSCRIBER}' for ubuntu/{name}?"
+        if (
+            valid_member
+            and not args.dry_run
+            and yes_or_ask(
+                args.yes,
+                f"Would you like to subscribe '{SUBSCRIBER}' for ubuntu/{name}?",
+            )
         ):
-            try:
-                # When a person is subscribed to a source package, one actually subscribe all bugs for it.
-                source.addBugSubscription(subscriber=lp.people[SUBSCRIBER])
-            except lazr.restfulclient.errors.Unauthorized as e:
-                error(
-                    f"{lp.me.name} does not have permission to subscribe '{SUBSCRIBER}'."
-                )
-                if args.verbose:
-                    print(e)
-                exit(1)
+            # When a person is subscribed to a source package, one actually subscribe all bugs for it.
+            source.addBugSubscription(subscriber=lp.people[SUBSCRIBER])
+        else:
+            error(f"ubuntu/{name} didn't subscribe '{SUBSCRIBER}' yet.")
+            ret = 1
+    exit(ret)
 elif args.subcommand == "unsubscribe":
     source = lp.distributions["ubuntu"].getSourcePackage(name=args.pkgName)
     subscriptions = source.getSubscriptions()
