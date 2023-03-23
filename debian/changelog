@@ -1,3 +1,9 @@
+oem-scripts (1.69) jammy; urgency=medium
+
+  * oem-meta-packages: Make the 'subscribe' subcommand traverse all packages in the 'canonical-oem-metapackages' packageset directly.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 23 Mar 2023 13:02:09 +0800
+
 oem-scripts (1.68) jammy; urgency=medium
 
   * mir-bug: Change debian/changelog back to UNRELEASED when checking or updating the bug attachment when the OEM metapackage is going to be released.
