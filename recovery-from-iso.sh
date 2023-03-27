@@ -174,6 +174,8 @@ EOF
         # get pkgs to skip OOBE
         if [ "$enable_sb" = "yes" ]; then
             $GIT clone  https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-install-sbhelper --depth 1
+        else
+            $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-no-secureboot --depth 1
         fi
         $GIT clone https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-fix-misc-cnl-skip-storage-selecting --depth 1
     fi
@@ -253,6 +255,8 @@ push_preseed() {
         )
         if [ "$enable_sb" = "yes" ]; then
             folders+=("oem-fix-misc-cnl-install-sbhelper")
+        else
+            folders+=("oem-fix-misc-cnl-no-secureboot")
         fi
     fi
 
