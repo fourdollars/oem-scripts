@@ -6,8 +6,9 @@ jenkins_job_build_no="lastSuccessfulBuild"
 script_on_target_machine="inject_recovery_from_iso.sh"
 additional_grub_for_ubuntu_recovery="99_ubuntu_recovery"
 user_on_target="ubuntu"
-SSH="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-SCP="scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+SSH="ssh $SSH_OPTS"
+SCP="scp $SSH_OPTS"
 #TAR="tar -C $temp_folder"
 temp_folder="$(mktemp -d -p "$PWD")"
 GIT="git -C $temp_folder"
@@ -29,7 +30,7 @@ clear_all() {
 }
 trap clear_all EXIT
 # shellcheck disable=SC2046
-eval set -- $(getopt -o "su:c:j:b:t:h" -l "local-iso:,sync,url:,jenkins-credential:,jenkins-job:,jenkins-job-build-no:,oem-share-url:,oem-share-credential:,target-ip:,ubr,enable-secureboot,help" -- "$@")
+eval set -- $(getopt -o "su:c:j:b:t:h" -l "local-iso:,sync,url:,jenkins-credential:,jenkins-job:,jenkins-job-build-no:,oem-share-url:,oem-share-credential:,target-ip:,ubr,enable-secureboot,inject-ssh-key:,help" -- "$@")
 
 usage() {
     set +x
@@ -112,6 +113,9 @@ OPTIONS:
 
     --ubr
       DUT which using ubuntu recovery (volatile-task).
+
+    --inject-ssh-key
+      Path to ssh key to inject into the target machine.
 
     -h | --help
       Print this message
@@ -452,6 +456,16 @@ prepare() {
     inject_preseed
 }
 
+inject_ssh_key() {
+    while(:); do
+        echo "Attempting to inject ssh key"
+        if [ "$(sshpass -p u ssh-copy-id $SSH_OPTS -f -i "$ssh_key" "$user_on_target@$target_ip")" ] ; then
+            break
+        fi
+        sleep 180
+    done
+}
+
 poll_recovery_status() {
     while(:); do
         if [ "$($SSH "$user_on_target"@"$target_ip"  systemctl is-active ubiquity)" = "inactive" ] ; then
@@ -472,6 +486,9 @@ do_recovery() {
         $SSH "$user_on_target"@"$target_ip" sudo dell-restore-system -y &
     fi
     sleep 300 # sleep to make sure the target system has been rebooted to recovery mode.
+    if [ -n "$ssh_key" ]; then
+        inject_ssh_key
+    fi
     poll_recovery_status
 }
 
@@ -519,6 +536,10 @@ main() {
                 ;;
             --enable-secureboot)
                 enable_sb="yes"
+                ;;
+            --inject-ssh-key)
+                shift
+                ssh_key="$1"
                 ;;
             -h | --help)
                 usage 0
