@@ -116,7 +116,32 @@ cat > jellyfish-cais.json <<ENDLINE
 }
 ENDLINE
 oem-meta-packages create jellyfish-cais.json
-mv oem-sutton-cais-meta jellyfish-cais-meta
+mv oem-sutton-cais-meta jellyfish-cais-meta-1
+
+cat > jellyfish-cais.json <<ENDLINE
+{
+  "biosids": [
+    "M4G",
+    "M4H"
+  ],
+  "bvn": "LENOVO",
+  "certified": true,
+  "kernel_meta": "linux-oem-22.04a",
+  "metabug": 1987085,
+  "mirbug": 1997646,
+  "platform": "cais",
+  "productnames": [
+    "ThinkStation P360 Tiny",
+    "ThinkStation P360 Huge"
+  ],
+  "project": "sutton",
+  "pvr": "ThinkStation",
+  "series": "jammy",
+  "short_description": "ThinkStation P360 Tiny/Huge"
+}
+ENDLINE
+oem-meta-packages create jellyfish-cais.json
+mv oem-sutton-cais-meta jellyfish-cais-meta-2
 
 # update
 oem-meta-packages --dry-run --series focal update oem-somerville-tentacool-meta --kernel linux-generic-hwe-20.04
