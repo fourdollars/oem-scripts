@@ -239,6 +239,22 @@ staging_copy.add_argument(
     "--tag", help="Specify the tag when creating the cloudberry bug.", type=str
 )
 
+create = subparsers.add_parser(
+    "create",
+    help="[-h] platform.json",
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog="""
+For example,
+    oem-meta-packages create platform.json
+
+Create the initial Git branch for the OEM metapackage.""",
+)
+create.add_argument(
+    "platform",
+    type=argparse.FileType("r", encoding="UTF-8"),
+    help="Specify the plaform json file to create the OEM metapackage.",
+)
+
 update = subparsers.add_parser(
     "update",
     help="[-h] oem-qemu-meta",
@@ -2115,6 +2131,68 @@ elif args.subcommand == "unsubscribe":
                         print(e)
                     exit(1)
             exit(0)
+elif args.subcommand == "create":
+    platform_json = json.load(args.platform)
+    series = platform_json["series"]
+    if series != "focal" and series != "jammy":
+        error(f"{series} is not supported yet.")
+        exit(1)
+    project = platform_json["project"]
+    platform = platform_json["platform"]
+    group = platform_json.get("group", "")
+    if project == "somerville":
+        commands = ["pkg-somerville-meta", "-p", platform]
+    elif project == "stella":
+        if series == "focal":
+            commands = ["pkg-stella-meta", "-p", platform, "-g", group]
+        else:
+            commands = ["pkg-stella-meta", "-p", platform]
+    elif project == "sutton":
+        if series == "focal":
+            commands = ["pkg-sutton-meta", "-p", platform, "-g", group]
+        else:
+            commands = ["pkg-sutton-meta", "-p", platform]
+    else:
+        error(f"{project} is not supported yet.")
+        exit(1)
+    commands.extend(["--series", series])
+    kernel_meta = platform_json["kernel_meta"]
+    if kernel_meta not in ALLOWED_KERNEL_META_LIST:
+        error(f"{kernel_meta} is not supported yet.")
+        exit(1)
+    commands.extend(["--kernel", kernel_meta])
+    private_bug = platform_json["metabug"]
+    commands.extend(["--private-bug", str(private_bug)])
+    if "mirbug" in platform_json:
+        commands.extend(["--public-bug", str(platform_json["mirbug"])])
+    if platform_json.get("certified", False) is True:
+        if platform_json.get("short_description"):
+            commands.extend(["--market-name", platform_json["short_description"]])
+        for product_name in platform_json["productnames"]:
+            commands.extend(["--product-name", product_name])
+    if project == "somerville" or project == "stella":
+        for bios_id in platform_json["biosids"]:
+            commands.append(bios_id)
+    elif project == "sutton":
+        if "bvn" in platform_json and "pvr" in platform_json:
+            bvn = platform_json["bvn"]
+            pvr = platform_json["pvr"]
+            biosids = platform_json["biosids"]
+            unknown = type(biosids)
+            if unknown is str:
+                bios_ver = biosids
+                commands.append(f"bvn{bvn}:bvr{bios_ver}:pvr{pvr}")
+            elif unknown is list:
+                for bios_ver in platform_json["biosids"]:
+                    commands.append(f"bvn{bvn}:bvr{bios_ver}:pvr{pvr}")
+            else:
+                error("f{unknown} type is not supported in 'biosids'.")
+                exit(1)
+        else:
+            for bios_ver in platform_json["biosids"]:
+                commands.append(bios_ver)
+    output, _, _ = _run_command(commands)
+    print(output)
 elif args.subcommand == "update":
     oem_scripts_config_ini = os.path.join(
         os.environ["HOME"], ".config/oem-scripts/config.ini"

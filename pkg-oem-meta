@@ -62,7 +62,7 @@ except AttributeError:
 if series == "focal":
     default_kernel_meta = "linux-oem-20.04"
 elif series == "jammy":
-    default_kernel_meta = "linux-oem-22.04a"
+    default_kernel_meta = "linux-oem-22.04"
 
 parser.add_argument(
     "-k",
