@@ -1,3 +1,18 @@
+oem-scripts (1.70) jammy; urgency=medium
+
+  [ Dirk Su ]
+  * Add oem-fix-misc-cnl-no-secureboot back when enable_sb = no
+
+  [ Paul Larson ]
+  * Add --inject-ssh-key option to recovery-from-iso.sh
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * pkg-oem-meta: Make the default kernel of jammy as linux-oem-22.04.
+  * debian/tests/oem-meta-packages, oem-meta-packages: Add the 'create' subcommand to create the initial OEM metapackage by the platform json.
+  * debian/tests/oem-meta-packages: Add more tests.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 18 Apr 2023 21:21:42 +0800
+
 oem-scripts (1.69) jammy; urgency=medium
 
   * oem-meta-packages: Make the 'subscribe' subcommand traverse all packages in the 'canonical-oem-metapackages' packageset directly.
