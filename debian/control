@@ -39,6 +39,7 @@ Depends:
  python3-distro-info,
  python3-distutils-extra,
  python3-jinja2,
+ python3-jira,
  python3-mechanize,
  python3-pydantic,
  python3-requests,
