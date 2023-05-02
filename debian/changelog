@@ -1,3 +1,10 @@
+oem-scripts (1.71) jammy; urgency=medium
+
+  [ Andy Chi ]
+  * Add python3-jira as depends
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 03 May 2023 04:44:26 +0800
+
 oem-scripts (1.70) jammy; urgency=medium
 
   [ Dirk Su ]
