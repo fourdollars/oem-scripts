@@ -55,16 +55,16 @@ EOF
 
 get_token()
 {
-    [ "x$debug" = "x1" ] && echo "oauth_consumer_key=${oauth_consumer_key}"
+    [ -n "$debug" ] && echo "oauth_consumer_key=${oauth_consumer_key}"
 
     oauth=$(http --ignore-stdin --form post ${LAUNCHPAD_URL}/+request-token oauth_consumer_key="$oauth_consumer_key" oauth_signature_method=PLAINTEXT oauth_signature="&")
-    [ "x$debug" = "x1" ] && echo "$oauth"
+    [ -n "$debug" ] && echo "$oauth"
 
     eval "${oauth/&*/}"
-    [ "x$debug" = "x1" ] && echo "oauth_token=${oauth_token:=}"
+    [ -n "$debug" ] && echo "oauth_token=${oauth_token:=}"
 
     eval "${oauth/*&/}"
-    [ "x$debug" = "x1" ] && echo "oauth_token_secret=${oauth_token_secret:=}"
+    [ -n "$debug" ] && echo "oauth_token_secret=${oauth_token_secret:=}"
 
     echo "Please open ${LAUNCHPAD_URL}/+authorize-token?oauth_token=$oauth_token&allow_permission=DESKTOP_INTEGRATION to authorize the token."
 
@@ -75,13 +75,13 @@ get_token()
         elif [ "$body" = "Invalid OAuth signature." ]; then
             break
         else
-            [ "x$debug" = "x1" ] && echo "$body"
+            [ -n "$debug" ] && echo "$body"
             oauth=${body/&lp.context=*/}
             eval "${oauth/&*/}"
-            [ "x$debug" = "x1" ] && echo "oauth_token=${oauth_token}"
+            [ -n "$debug" ] && echo "oauth_token=${oauth_token}"
 
             eval "${oauth/*&/}"
-            [ "x$debug" = "x1" ] && echo "oauth_token_secret=${oauth_token_secret}"
+            [ -n "$debug" ] && echo "oauth_token_secret=${oauth_token_secret}"
             break
         fi
     done
@@ -93,6 +93,9 @@ parse_api()
         return
     fi
     case "$1" in
+        (${LAUNCHPAD_URL}*)
+            echo "${LAUNCHPAD_API}devel/${1/${LAUNCHPAD_URL}\//}"
+            ;;
         (${LAUNCHPAD_API}*)
             echo "$1"
             ;;
@@ -124,6 +127,17 @@ get_api()
     fi
     shift
     http --check-status --ignore-stdin --follow GET "$api" "$(get_auth_header)" "$@" || (usage_auth_failed ; usage ; false)
+}
+
+download_url()
+{
+    url=$(parse_api "$1")
+    if [ -z "$url" ]; then
+        return
+    fi
+	FILE=$(basename "$url")
+    shift
+    http --check-status --ignore-stdin --output "$FILE" --follow GET "$url" "$(get_auth_header)" || exit 1
 }
 
 patch_api()
@@ -168,6 +182,10 @@ case "$1" in
     ("get"|"GET")
         shift
         get_api "$@"
+        ;;
+    ("download"|"DOWNLOAD")
+        shift
+        download_url "$@"
         ;;
     ("patch"|"PATCH")
         shift
