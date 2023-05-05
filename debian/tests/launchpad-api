@@ -7,6 +7,16 @@ if launchpad-api get bugs/2 2>&1; then
     exit 1
 fi
 
+BUILD=$(launchpad-api get ~xinyi-team/+livefs/ubuntu/jammy/beta/ | jq-lp .completed_builds_collection_link | jq -r '.entries | .[0] | .self_link')
+URL=$(launchpad-api get "$BUILD" ws.op==getFileUrls | jq -r '.[0]')
+launchpad-api download "$URL"
+if [ -s "$(basename "$URL")" ]; then
+    ls -l "$(basename "$URL")"
+else
+    echo "'launchpad-api download $URL' failed."
+    exit 1
+fi
+
 launchpad-api patch bugs/100 tags:='["focal"]'
 
 if [ "$(launchpad-api get bugs/100 | jq -r '.tags|join(" ")')" != "focal" ]; then
