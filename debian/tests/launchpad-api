@@ -9,7 +9,7 @@ fi
 
 BUILD=$(launchpad-api get ~xinyi-team/+livefs/ubuntu/jammy/beta/ | jq-lp .completed_builds_collection_link | jq -r '.entries | .[0] | .self_link')
 URL=$(launchpad-api get "$BUILD" ws.op==getFileUrls | jq -r '.[0]')
-launchpad-api download "$URL"
+launchpad-api download "$URL" 2>&1
 if [ -s "$(basename "$URL")" ]; then
     ls -l "$(basename "$URL")"
 else
