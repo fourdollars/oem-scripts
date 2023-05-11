@@ -49,7 +49,9 @@ git clone -q lp:~oem-solutions-engineers/pc-enablement/+git/oem-"${PROJECT}"-pro
 trap 'cleanup $?' EXIT
 cd "${DIR}"/meta || exit 255
 for b in $(git branch -r); do
-    [[ "$b" != origin/* ]] && continue
+    if ! git show "${b}":debian/modaliases > /dev/null 2>&1; then
+        continue
+    fi
     git show "${b}":debian/modaliases| grep -i "${PLATFORM_CODENAME}" && \
         echo "$PLATFORM_CODENAME duplicated with $b" && exit 255
     git show "${b}":debian/modaliases| grep -ie "${@//,/\\|}" && \
