@@ -1,4 +1,11 @@
 #!/bin/bash
+# Description: Check if the given ssid(s) and platform codename are duplicated
+#   with the existing branches in the project.
+# Exit code:
+#  0: no duplicate
+#  1: duplicate with either ssid or platform codename
+#  2: duplicate with both ssid and platform codename
+#  3: other errors
 
 function usage()
 {
@@ -12,7 +19,7 @@ function usage()
     echo "Example:"
     echo "  bash $(basename "$0") --project=stella --pc=audino \"886D,8870\""
     echo "  bash $(basename "$0") --project=stella --pc=grimer \"870B,870C\""
-    exit 1
+    exit 3
 }
 
 DIR=$(mktemp -d -p "$PWD")
@@ -45,16 +52,73 @@ if { [ "$PROJECT" != "stella" ] &&
     usage
 fi
 
+# check_duplicate
+# Parameters:
+#   $1: [str] branch name
+#   $2: [','.join(list[str])] ssids
+#   $3: [str] platform codename
+# Returns:
+#   0: no duplicate
+#   1: duplicate with either ssid or platform codename
+#   2: duplicate with both
+function check_duplicate() {
+    local raw ssids codenames ret all_matched
+
+    ret=0
+    raw=$(git show "$1":debian/modaliases 2> /dev/null)
+
+    if [ -z "$raw" ]; then
+        return $ret
+    fi
+
+    ssids=$(echo "$raw" | awk '{print $2}')
+    codenames=$(echo "$raw" | awk '{print $4}' | uniq)
+
+    all_matched=1
+    for ssid in ${2//,/ }; do
+        matched_ssid=$(echo "$ssids" | grep -ie "$ssid")
+        if [ -z "$matched_ssid" ]; then
+            all_matched=0
+        else
+            echo "${1//origin\//}: $ssid is duplicated with $matched_ssid"
+            ret=1
+        fi
+    done
+
+    for codename in $codenames; do
+        if echo "$codename" | grep -ie "\<$3\>" &> /dev/null; then
+            echo "${1//origin\//}: $3 is duplicated with $codename"
+            ret=$((ret + 1))
+            break
+        fi
+    done
+
+    if [ "$ret" -eq 2 ] && [ "$all_matched" -eq 0 ]; then
+        ret=1
+    fi
+
+    return $ret
+}
+
 git clone -q lp:~oem-solutions-engineers/pc-enablement/+git/oem-"${PROJECT}"-projects-meta "$DIR"/meta 2> /dev/null
 trap 'cleanup $?' EXIT
-cd "${DIR}"/meta || exit 255
+cd "${DIR}"/meta || exit 3
+
+NON_FATAL=0
 for b in $(git branch -r); do
-    if ! git show "${b}":debian/modaliases > /dev/null 2>&1; then
-        continue
+    check_duplicate "$b" "$*" "$PLATFORM_CODENAME"
+    exit_code=$?
+    if [ "$exit_code" -eq 1 ]; then
+        exit 1
     fi
-    git show "${b}":debian/modaliases| grep -i "${PLATFORM_CODENAME}" && \
-        echo "$PLATFORM_CODENAME duplicated with $b" && exit 255
-    git show "${b}":debian/modaliases| grep -ie "${@//,/\\|}" && \
-        echo "$* duplicated with $b" && exit 255
+    if [ "$exit_code" -eq 2 ]; then
+        NON_FATAL=1
+    fi
 done
+
+if [ "$NON_FATAL" -eq 1 ]; then
+    >&2 echo "WARNING: Some ssids or platform codenames are duplicated."
+    exit 2
+fi
+
 echo "SSID(s) $* are avalible for ${PROJECT} project."
