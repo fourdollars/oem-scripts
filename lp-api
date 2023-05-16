@@ -202,6 +202,21 @@ case "$1" in
         debug=1
         get_api devel/people/+me
         ;;
+    (.*)
+        resource=$(jq -r "$@")
+        case "$resource" in
+            ("https://api"*)
+                get_api "$resource"
+                ;;
+            ("https://launchpad"*)
+                download_url "$resource"
+                ;;
+            (*)
+                echo "'$resource' is not supported."
+                exit 1
+                ;;
+        esac
+        ;;
     (*)
         usage
         ;;

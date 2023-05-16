@@ -1,0 +1,79 @@
+#!/bin/bash
+
+export LAUNCHPAD_API="https://api.staging.launchpad.net/"
+
+# Keep backward compatibility
+launchpad-api get people/+me
+
+# LP: #2 doesn't exist so it should return failed.
+if lp-api get bugs/2 2>&1; then
+    exit 1
+fi
+
+BUILD=$(lp-api get ~xinyi-team/+livefs/ubuntu/jammy/beta/ | lp-api .completed_builds_collection_link | jq -r '.entries | .[0] | .self_link')
+URL=$(lp-api get "$BUILD" ws.op==getFileUrls | jq -r '.[0]')
+lp-api download "$URL" 2>&1
+if [ -s "$(basename "$URL")" ]; then
+    ls -l "$(basename "$URL")"
+else
+    echo "'lp-api download $URL' failed."
+    exit 1
+fi
+
+lp-api patch bugs/100 tags:='["focal"]'
+
+if [ "$(lp-api get bugs/100 | jq -r '.tags|join(" ")')" != "focal" ]; then
+    echo "lp-api patch failed."
+    exit 1
+fi
+
+lp-api patch bugs/100 tags:='["lp-translations"]'
+if [ "$(lp-api get bugs/100 | jq -r '.tags|join(" ")')" != "lp-translations" ]; then
+    echo "lp-api patch failed."
+    exit 1
+fi
+
+timestamp=$(date +%s)
+lp-api post bugs/100 ws.op=newMessage content="Hello World $timestamp"
+if [ "$(lp-api get bugs/100/messages | jq -r '.entries | .[-1].content')" != "Hello World $timestamp" ]; then
+    echo "lp-api post failed."
+    exit 1
+fi
+
+export LAUNCHPAD_TOKEN="::"
+
+if [ "$(lp-api get bugs/1 | jq -r .web_link)" != "https://bugs.staging.launchpad.net/bugs/1" ]; then
+    exit 1
+fi
+
+export LAUNCHPAD_API="https://api.launchpad.net/"
+if [ "$(lp-api get bugs/1 | jq -r .web_link)" != "https://bugs.launchpad.net/bugs/1" ]; then
+    exit 1
+fi
+
+unset LAUNCHPAD_API
+if [ "$(lp-api get bugs/1 | jq -r .web_link)" != "https://bugs.launchpad.net/bugs/1" ]; then
+    exit 1
+fi
+
+if [ "$(lp-api get ${LAUNCHPAD_API}/devel/bugs/1 | jq -r .date_created)" != "2004-08-20T00:00:00+00:00" ]; then
+    exit 1
+fi
+
+if [ "$(lp-api get devel/bugs/1 | jq -r .date_created)" != "2004-08-20T00:00:00+00:00" ]; then
+    exit 1
+fi
+
+if [ "$(lp-api get /devel/bugs/1 | jq -r .date_created)" != "2004-08-20T00:00:00+00:00" ]; then
+    exit 1
+fi
+
+if [ "$(lp-api get /bugs/1 | jq -r .date_created)" != "2004-08-20T00:00:00+00:00" ]; then
+    exit 1
+fi
+
+if [ "$(lp-api get bugs/1 | jq -r .date_created)" != "2004-08-20T00:00:00+00:00" ]; then
+    exit 1
+fi
+
+exit

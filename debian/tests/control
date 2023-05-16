@@ -12,8 +12,7 @@ Depends: @, ubuntu-dev-tools, git-buildpackage
 Tests:
  bug-bind,
  get-private-ppa,
- jq-lp,
- launchpad-api,
+ lp-api,
  lp-bug,
  pkg-list,
  review-merge-proposal,
