@@ -1,5 +1,3 @@
-autopkgtest-collect-credentials /usr/bin
-autopkgtest-oem-scripts-auto /usr/bin
 check-ssid-duplicated.sh /usr/bin
 config.sh /usr/share/oem-scripts
 dkms-helper /usr/bin

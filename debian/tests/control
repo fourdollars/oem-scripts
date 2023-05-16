@@ -1,9 +1,4 @@
 Tests:
- autopkgtest-collect-credentials,
- autopkgtest-oem-scripts-auto
-Depends: @, shellcheck
-
-Tests:
  pkg-somerville-meta,
  pkg-stella-meta,
  pkg-sutton-meta
