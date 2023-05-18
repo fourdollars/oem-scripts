@@ -1,7 +1,5 @@
 #!/bin/bash
 
-export LAUNCHPAD_API="https://api.staging.launchpad.net/"
-
 # Keep backward compatibility
 launchpad-api get people/+me
 
@@ -19,6 +17,8 @@ else
     echo "'lp-api download $URL' failed."
     exit 1
 fi
+
+export LAUNCHPAD_API="https://api.staging.launchpad.net/"
 
 lp-api patch bugs/100 tags:='["focal"]'
 
