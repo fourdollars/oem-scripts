@@ -1,3 +1,13 @@
+oem-scripts (1.75) jammy; urgency=medium
+
+  [ pseudoc ]
+  * check-ssid-duplicated.sh:
+   - fix(check-ssid): skip non origin branches
+   - improve(check-ssid): suppress git fatal errors
+   - enhance(check-ssid): exit codes for states
+
+ -- Shih-Yuan Lee (FourDollars) <fourdollars@gmail.com>  Thu, 18 May 2023 10:23:38 +0800
+
 oem-scripts (1.74) jammy; urgency=medium
 
   * debian/tests/launchpad-api, launchpad-api: Use the --download option of httpie when using download.
