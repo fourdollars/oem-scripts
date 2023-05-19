@@ -1,3 +1,19 @@
+oem-scripts (1.76) jammy; urgency=medium
+
+  * debian/install,
+    debian/links,
+    debian/tests/control,
+    debian/tests/lp-api,
+    lp-api: Rename from launchpad-api to lp-api, drop jq-lp and integrate the function of jq-lp into lp-api itself.
+  * autopkgtest-collect-credentials,
+    autopkgtest-oem-scripts-auto,
+    debian/install,
+    debian/tests/control: Abandon autopkgtest-collect-credentials and autopkgtest-oem-scripts-auto that we don't use them anymore.
+  * debian/tests/lp-api: Use Launchpad staging server when it needs to modify some data.
+  * lp-api: Revise the manual for lp-api.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 19 May 2023 09:29:56 +0800
+
 oem-scripts (1.75) jammy; urgency=medium
 
   [ pseudoc ]
