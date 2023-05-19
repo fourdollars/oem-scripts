@@ -2,8 +2,8 @@
 # https://help.launchpad.net/API/SigningRequests
 # https://api.launchpad.net/
 # Usage:
-#  launchpad-api get devel/people/+me
-#  launchpad-api get devel/people/+me ws.op==getArchiveSubscriptionURLs
+#  lp-api get people/+me
+#  lp-api get people/+me ws.op==getArchiveSubscriptionURLs
 # NOTE:
 # When it return "HTTP/1.1 401 Unauthorized" and no URL just show "You need to be logged in to view this URL."
 # Please remove the config.ini and try again.
@@ -33,12 +33,12 @@ If you think it's the authentication issue, you can try to backup/remove
 the config.ini, get authentication token and try again.
 If it still failed, it could be a server side issue.
 
-launchpad-api is just a shell script wrapper for https://api.launchpad.net/.
+lp-api is just a shell script wrapper for https://api.launchpad.net/.
 
 Ex:
 
   $ mv ~/.config/oem-scripts/config.ini ~/.config/oem-scripts/config.ini.backup
-  $ launchpad-api get devel/people/+me
+  $ lp-api get people/+me
   $ # try your command after reset token by using above commands.
 
 EOF
@@ -48,8 +48,8 @@ usage()
 {
     >&2 cat <<EOF
 === Useage:
-  $ launchpad-api get devel/people/+me # same as "launchpad-api test"
-  $ launchpad-api get devel/people/+me ws.op==getArchiveSubscriptionURLs
+  $ lp-api get people/+me # same as "lp-api test"
+  $ lp-api get people/+me ws.op==getArchiveSubscriptionURLs
 EOF
 }
 
@@ -196,11 +196,26 @@ case "$1" in
         post_api "$@"
         ;;
     ("test")
-        get_api devel/people/+me
+        get_api people/+me
         ;;
     ("debug")
         debug=1
-        get_api devel/people/+me
+        get_api people/+me
+        ;;
+    (.*)
+        resource=$(jq -r "$@")
+        case "$resource" in
+            ("https://api"*)
+                get_api "$resource"
+                ;;
+            ("https://launchpad"*)
+                download_url "$resource"
+                ;;
+            (*)
+                echo "'$resource' is not supported."
+                exit 1
+                ;;
+        esac
         ;;
     (*)
         usage

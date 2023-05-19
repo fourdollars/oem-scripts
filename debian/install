@@ -1,13 +1,12 @@
-autopkgtest-collect-credentials /usr/bin
-autopkgtest-oem-scripts-auto /usr/bin
 check-ssid-duplicated.sh /usr/bin
 config.sh /usr/share/oem-scripts
 dkms-helper /usr/bin
+get-oem-info.sh /usr/bin
 get-private-ppa /usr/bin
-jq-lp /usr/bin
-launchpad-api /usr/bin
 live-build-image-chroot.sh /usr/bin
+lp-api /usr/bin
 lp-dl-attm /usr/bin
+modinfo2json.py /usr/bin
 obj-*/bin/autoISO /usr/sbin
 oem-meta-package.mir.jinja2 /usr/share/oem-scripts
 oem-meta-package.sru.jinja2 /usr/share/oem-scripts
@@ -18,5 +17,3 @@ setup4test.sh /usr/bin
 stap-build-mymodule.sh /usr/bin
 stap-dbgsym.sh /usr/bin
 trigger-sanity3.sh /usr/bin
-modinfo2json.py /usr/bin
-get-oem-info.sh /usr/bin
