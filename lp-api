@@ -202,7 +202,11 @@ case "$1" in
         debug=1
         get_api people/+me
         ;;
-    (.*)
+    (.*|-r)
+        # Keep the backward compatibility for jq-lp
+        if [ "$1" = "-r" ] && [[ "$2" =~ \.* ]]; then
+            shift
+        fi
         resource=$(jq -r "$@")
         case "$resource" in
             ("https://api"*)
