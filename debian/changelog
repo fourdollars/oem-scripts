@@ -1,3 +1,9 @@
+oem-scripts (1.77) jammy; urgency=medium
+
+  * debian/tests/lp-api, lp-api: Keep the backward compatibility for jq-lp.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 23 May 2023 20:03:34 +0800
+
 oem-scripts (1.76) jammy; urgency=medium
 
   * debian/install,
