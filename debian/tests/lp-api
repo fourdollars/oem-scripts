@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Keep backward compatibility
-launchpad-api get people/+me
+# Check the backward compatibility for launchpad-api and jq-lp
+launchpad-api get people/+me | jq-lp -r .preferred_email_address_link
 
 # LP: #2 doesn't exist so it should return failed.
 if lp-api get bugs/2 2>&1; then
