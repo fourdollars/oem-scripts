@@ -114,7 +114,19 @@ function check_duplicate() {
 
 DIR="$WORKING_DIR/$PROJECT-meta"
 if [ ! -d "$DIR" ]; then
-    git clone -q lp:~oem-solutions-engineers/pc-enablement/+git/oem-"${PROJECT}"-projects-meta "$DIR" &> /dev/null
+    # retry git clone if it fails for 10 times
+    # (sometimes the git clone fails due to network issue)
+    for _ in {1..10}; do
+        if git clone -q lp:~oem-solutions-engineers/pc-enablement/+git/oem-"${PROJECT}"-projects-meta "$DIR" &> /dev/null; then
+            break
+        fi
+        if [ "$_" -eq 10 ]; then
+            >&2 echo "ERROR: git clone failed."
+        else
+            >&2 echo "WARNING: git clone failed. Retrying..."
+        fi
+    done
+
     cd "$DIR" || exit 3
 else
     cd "$DIR" || exit 3
