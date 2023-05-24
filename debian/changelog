@@ -1,3 +1,13 @@
+oem-scripts (1.78) jammy; urgency=medium
+
+  [ pseudoc ]
+  * check-ssid-duplicated.sh:
+    - fix(check-ssid): exact match
+    - enhance(check-ssid): batch calls
+    - improve(check-ssid): retry git clone
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 24 May 2023 19:26:31 +0800
+
 oem-scripts (1.77) jammy; urgency=medium
 
   * debian/tests/lp-api, lp-api: Keep the backward compatibility for jq-lp.
