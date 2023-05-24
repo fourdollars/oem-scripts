@@ -1,6 +1,11 @@
 #!/bin/bash
 # Description: Check if the given ssid(s) and platform codename are duplicated
 #   with the existing branches in the project.
+#
+# Environment variables:
+#  WORKING_DIR: [str] working directory to clone the project meta
+#               (default: a temp directory that will be removed after execution)
+#
 # Exit code:
 #  0: no duplicate
 #  1: duplicate with either ssid or platform codename
@@ -22,13 +27,12 @@ function usage()
     exit 3
 }
 
-DIR=$(mktemp -d -p "$PWD")
 PROJECT=""
 PLATFORM_CODENAME=""
 
 function cleanup(){
     cd - > /dev/null 2>&1 || true
-    rm -rf "$DIR"
+    rm -rf "$WORKING_DIR"
 }
 
 [[ "$#" -ne 3 ]] && usage
@@ -44,6 +48,13 @@ for _ in {1..2}; do
     esac
     shift
 done
+
+if [ -z "$WORKING_DIR" ]; then
+    WORKING_DIR=$(mktemp -d -p "$PWD")
+    trap 'cleanup $?' EXIT
+elif [ ! -d "$WORKING_DIR" ]; then
+    mkdir -p "$WORKING_DIR"
+fi
 
 if { [ "$PROJECT" != "stella" ] &&
    [ "$PROJECT" != "somerville" ] &&
@@ -101,9 +112,14 @@ function check_duplicate() {
     return $ret
 }
 
-git clone -q lp:~oem-solutions-engineers/pc-enablement/+git/oem-"${PROJECT}"-projects-meta "$DIR"/meta 2> /dev/null
-trap 'cleanup $?' EXIT
-cd "${DIR}"/meta || exit 3
+DIR="$WORKING_DIR/$PROJECT-meta"
+if [ ! -d "$DIR" ]; then
+    git clone -q lp:~oem-solutions-engineers/pc-enablement/+git/oem-"${PROJECT}"-projects-meta "$DIR" &> /dev/null
+    cd "$DIR" || exit 3
+else
+    cd "$DIR" || exit 3
+    git fetch -q origin &> /dev/null
+fi
 
 NON_FATAL=0
 for b in $(git branch -r); do
