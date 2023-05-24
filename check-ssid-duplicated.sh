@@ -1,6 +1,11 @@
 #!/bin/bash
 # Description: Check if the given ssid(s) and platform codename are duplicated
 #   with the existing branches in the project.
+#
+# Environment variables:
+#  WORKING_DIR: [str] working directory to clone the project meta
+#               (default: a temp directory that will be removed after execution)
+#
 # Exit code:
 #  0: no duplicate
 #  1: duplicate with either ssid or platform codename
@@ -22,13 +27,12 @@ function usage()
     exit 3
 }
 
-DIR=$(mktemp -d -p "$PWD")
 PROJECT=""
 PLATFORM_CODENAME=""
 
 function cleanup(){
     cd - > /dev/null 2>&1 || true
-    rm -rf "$DIR"
+    rm -rf "$WORKING_DIR"
 }
 
 [[ "$#" -ne 3 ]] && usage
@@ -45,6 +49,13 @@ for _ in {1..2}; do
     shift
 done
 
+if [ -z "$WORKING_DIR" ]; then
+    WORKING_DIR=$(mktemp -d -p "$PWD")
+    trap 'cleanup $?' EXIT
+elif [ ! -d "$WORKING_DIR" ]; then
+    mkdir -p "$WORKING_DIR"
+fi
+
 if { [ "$PROJECT" != "stella" ] &&
    [ "$PROJECT" != "somerville" ] &&
    [ "$PROJECT" != "sutton" ]; } ||
@@ -57,12 +68,13 @@ fi
 #   $1: [str] branch name
 #   $2: [','.join(list[str])] ssids
 #   $3: [str] platform codename
+#   $4: [str] project name
 # Returns:
 #   0: no duplicate
 #   1: duplicate with either ssid or platform codename
 #   2: duplicate with both
 function check_duplicate() {
-    local raw ssids codenames ret all_matched
+    local raw ssids metapkg_names ret all_matched
 
     ret=0
     raw=$(git show "$1":debian/modaliases 2> /dev/null)
@@ -72,7 +84,7 @@ function check_duplicate() {
     fi
 
     ssids=$(echo "$raw" | awk '{print $2}')
-    codenames=$(echo "$raw" | awk '{print $4}' | uniq)
+    metapkg_names=$(echo "$raw" | awk '{print $4}' | uniq)
 
     all_matched=1
     for ssid in ${2//,/ }; do
@@ -85,9 +97,9 @@ function check_duplicate() {
         fi
     done
 
-    for codename in $codenames; do
-        if echo "$codename" | grep -ie "\<$3\>" &> /dev/null; then
-            echo "${1//origin\//}: $3 is duplicated with $codename"
+    for metapkg_name in $metapkg_names; do
+        if [ "$metapkg_name" == "oem-$4-$3-meta" ]; then
+            echo "${1//origin\//}: $3 is duplicated with $metapkg_name"
             ret=$((ret + 1))
             break
         fi
@@ -100,13 +112,30 @@ function check_duplicate() {
     return $ret
 }
 
-git clone -q lp:~oem-solutions-engineers/pc-enablement/+git/oem-"${PROJECT}"-projects-meta "$DIR"/meta 2> /dev/null
-trap 'cleanup $?' EXIT
-cd "${DIR}"/meta || exit 3
+DIR="$WORKING_DIR/$PROJECT-meta"
+if [ ! -d "$DIR" ]; then
+    # retry git clone if it fails for 10 times
+    # (sometimes the git clone fails due to network issue)
+    for _ in {1..10}; do
+        if git clone -q lp:~oem-solutions-engineers/pc-enablement/+git/oem-"${PROJECT}"-projects-meta "$DIR" &> /dev/null; then
+            break
+        fi
+        if [ "$_" -eq 10 ]; then
+            >&2 echo "ERROR: git clone failed."
+        else
+            >&2 echo "WARNING: git clone failed. Retrying..."
+        fi
+    done
+
+    cd "$DIR" || exit 3
+else
+    cd "$DIR" || exit 3
+    git fetch -q origin &> /dev/null
+fi
 
 NON_FATAL=0
 for b in $(git branch -r); do
-    check_duplicate "$b" "$*" "$PLATFORM_CODENAME"
+    check_duplicate "$b" "$*" "$PLATFORM_CODENAME" "$PROJECT"
     exit_code=$?
     if [ "$exit_code" -eq 1 ]; then
         exit 1
