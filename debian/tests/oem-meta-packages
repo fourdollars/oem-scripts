@@ -9,6 +9,38 @@ RET=0
 oem-meta-packages --quiet list
 
 # collect
+cat > fossa-bronn.json <<ENDLINE
+{
+  "certification-hardware": [
+    "202002-27725",
+    "202002-27726"
+  ],
+  "certified": true,
+  "certify-planning": [
+    1902074
+  ],
+  "group": "",
+  "hardware": [
+    "202002-27725",
+    "202002-27726"
+  ],
+  "metabug": 1897549,
+  "mirbug": 1897551,
+  "platform": "bronn",
+  "productnames": [
+    "Precision 5750"
+  ],
+  "project": "somerville",
+  "series": "focal",
+  "short_description": "Precision 12345"
+}
+ENDLINE
+oem-meta-packages --series focal --quiet collect fossa-bronn.json -o oem-somerville-bronn-meta.json
+if [ "$(jq -r '."oem-somerville-bronn-meta".new_desc' < oem-somerville-bronn-meta.json)" != "Dell Precision 12345" ]; then
+    echo "FAIL: 'oem-meta-packages --series focal --quiet collect fossa-bronn.json -o oem-somerville-bronn-meta.json' failed."
+    RET=1
+fi
+
 oem-meta-packages --series focal --quiet collect oem-somerville-tentacool-meta
 if [ "$(jq -r '."oem-somerville-tentacool-meta".oem.git.kernel_meta' < oem-somerville-tentacool-meta.json)" != "linux-generic-hwe-20.04" ]; then
     echo "FAIL: 'oem-meta-packages --series focal --quiet collect oem-somerville-tentacool-meta' failed."
