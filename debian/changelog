@@ -1,3 +1,9 @@
+oem-scripts (1.79) jammy; urgency=medium
+
+  * debian/tests/oem-meta-packages, oem-meta-packages: Make collect_pkg_info able to collect the short_description as the new_desc.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 30 May 2023 17:55:55 +0800
+
 oem-scripts (1.78) jammy; urgency=medium
 
   [ pseudoc ]
