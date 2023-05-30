@@ -1764,7 +1764,9 @@ def collect_pkg_info(
             pkgInfo[pkg_name].old_desc = f"Somerville {codename.title()} platform"
             pkgInfo[pkg_name].new_desc = new_desc
 
-        if meta.bootstrap.git.market_name:
+        if type(data) is not str and data.get("short_description"):
+            market_name = data.get("short_description")
+        elif meta.bootstrap.git.market_name:
             market_name = meta.bootstrap.git.market_name
         elif meta.oem.git.market_name:
             market_name = meta.oem.git.market_name
@@ -1808,7 +1810,9 @@ def collect_pkg_info(
                 pkgInfo[pkg_name].old_desc = f"Stella {codename.title()} platform"
             pkgInfo[pkg_name].new_desc = new_desc
 
-        if meta.bootstrap.git.market_name:
+        if type(data) is not str and data.get("short_description"):
+            market_name = data.get("short_description")
+        elif meta.bootstrap.git.market_name:
             market_name = meta.bootstrap.git.market_name
         elif meta.oem.git.market_name:
             market_name = meta.oem.git.market_name
@@ -1857,7 +1861,9 @@ def collect_pkg_info(
                 pkgInfo[pkg_name].old_desc = f"Sutton {codename.title()} platform"
             pkgInfo[pkg_name].new_desc = new_desc
 
-        if meta.bootstrap.git.market_name:
+        if type(data) is not str and data.get("short_description"):
+            market_name = data.get("short_description")
+        elif meta.bootstrap.git.market_name:
             market_name = meta.bootstrap.git.market_name
         elif meta.oem.git.market_name:
             market_name = meta.oem.git.market_name
