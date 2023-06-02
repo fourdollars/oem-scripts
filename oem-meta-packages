@@ -262,7 +262,7 @@ create.add_argument(
 
 update = subparsers.add_parser(
     "update",
-    help="[-h] oem-qemu-meta",
+    help="[-h] oem-qemu-meta --kernel KERNEL",
     formatter_class=argparse.RawDescriptionHelpFormatter,
     epilog="""
 For example,
@@ -278,7 +278,6 @@ update.add_argument(
 update.add_argument(
     "--kernel",
     choices=ALLOWED_KERNEL_META_LIST,
-    default="linux-generic-hwe-20.04",
     help="Specify the kernel meta to update.",
 )
 update.add_argument(
@@ -1955,6 +1954,9 @@ def process_update_task(pkgInfo) -> None:
 
 def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> bool:
     result = meta_pattern.match(pkg_name)
+
+    if not args.kernel:
+        args.kernel = pkg_info.oem.git.kernel_meta
 
     if not result:
         return
