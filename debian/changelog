@@ -1,3 +1,10 @@
+oem-scripts (1.80) jammy; urgency=medium
+
+  * debian/tests/oem-meta-packages, oem-meta-packages: Add the '--use-cache' argument to use the json from https://people.canonical.com/~oem-enablement/oem-meta-packages/.
+  * oem-meta-packages: Remove the default kernel meta from the 'update' subcommand and follow the kernel meta in git branch if it is not provided.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 05 Jun 2023 17:20:09 +0800
+
 oem-scripts (1.79) jammy; urgency=medium
 
   * debian/tests/oem-meta-packages, oem-meta-packages: Make collect_pkg_info able to collect the short_description as the new_desc.
