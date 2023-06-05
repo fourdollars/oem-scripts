@@ -150,6 +150,11 @@ parser.add_argument("--yes", help="Say yes for all prompts.", action="store_true
 parser.add_argument("--apt-dir", type=str, help="specify the dir for apt")
 series = lsb_release.get_os_release()["CODENAME"]
 parser.add_argument(
+    "--use-cache",
+    help=f"Use cache from https://people.canonical.com/~oem-enablement/oem-meta-packages/oem-{{somerville,stella,sutton}}-*-meta-{series}.json to speed up the process. (experimental)",
+    action="store_true",
+)
+parser.add_argument(
     "--series",
     help=f"Specify the series codename, such as focal or jammy. ('{series}' by default)",
 )
@@ -257,7 +262,7 @@ create.add_argument(
 
 update = subparsers.add_parser(
     "update",
-    help="[-h] oem-qemu-meta",
+    help="[-h] oem-qemu-meta --kernel KERNEL",
     formatter_class=argparse.RawDescriptionHelpFormatter,
     epilog="""
 For example,
@@ -273,7 +278,6 @@ update.add_argument(
 update.add_argument(
     "--kernel",
     choices=ALLOWED_KERNEL_META_LIST,
-    default="linux-generic-hwe-20.04",
     help="Specify the kernel meta to update.",
 )
 update.add_argument(
@@ -1634,6 +1638,8 @@ def collect_pkg_info(
             print(f"{data} is not supported.")
             exit(1)
 
+        meta_name = data
+
         if "." in result.group(1):
             project, group = result.group(1).split(".")
         else:
@@ -1672,6 +1678,10 @@ def collect_pkg_info(
         project = data.get("project")
         codename = data.get("platform")
         group = data.get("group")
+        if data.get("series") == "focal" and project != "somerville":
+            meta_name = f"oem-{project}.{group}-{codename}-meta"
+        else:
+            meta_name = f"oem-{project}-{codename}-meta"
         if project == "somerville":
             customer = "Dell"
             tag = animal + "-" + data.get("platform")
@@ -1698,6 +1708,58 @@ def collect_pkg_info(
 
         if "productnames" in data:
             json_data["ProductNames"] = data["productnames"]
+
+    if args.use_cache:
+        json_url = f"https://people.canonical.com/~oem-enablement/oem-meta-packages/{meta_name}-{series}.json"
+        req = requests.get(json_url)
+        if req.status_code != 200:
+            error("Fetching {json_url} failed.")
+            exit(1)
+        payload = json.loads(req.text)
+        pkgInfo = dict()
+        pkgInfo[meta_name] = PkgInfo(
+            bootstrap=payload[meta_name]["bootstrap"],
+            oem=payload[meta_name]["oem"],
+            old_desc=payload[meta_name]["old_desc"],
+            new_desc=payload[meta_name]["new_desc"],
+            product_names=payload[meta_name]["product_names"],
+        )
+
+        if type(data) is not str and data.get("short_description"):
+            market_name = data.get("short_description")
+        elif payload[meta_name]["bootstrap"]["git"]["market_name"]:
+            market_name = payload[meta_name]["bootstrap"]["git"]["market_name"]
+        elif payload[meta_name]["oem"]["git"]["market_name"]:
+            market_name = payload[meta_name]["oem"]["git"]["market_name"]
+        else:
+            market_name = ""
+
+        if project == "somerville":
+            branding = "Dell"
+        elif project == "stella":
+            branding = "HP"
+        elif project == "sutton":
+            branding = "Lenovo"
+        else:
+            error("f{project} is not supported yet.")
+            exit(1)
+
+        if not pkgInfo[meta_name].new_desc and market_name:
+            if branding in market_name:
+                pkgInfo[meta_name].new_desc = market_name
+            else:
+                pkgInfo[meta_name].new_desc = f"{branding} {market_name}"
+            if group:
+                pkgInfo[
+                    meta_name
+                ].old_desc = (
+                    f"{project.title()} {group.title()} {codename.title()} platform"
+                )
+            else:
+                pkgInfo[
+                    meta_name
+                ].old_desc = f"{project.title()} {codename.title()} platform"
+        return pkgInfo
 
     debug(json.dumps(json_data, indent=4, sort_keys=True))
 
@@ -1892,6 +1954,9 @@ def process_update_task(pkgInfo) -> None:
 
 def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> bool:
     result = meta_pattern.match(pkg_name)
+
+    if not args.kernel:
+        args.kernel = pkg_info.oem.git.kernel_meta
 
     if not result:
         return
@@ -2206,9 +2271,13 @@ elif args.subcommand == "update":
     oem_scripts_config = ConfigParser()
     oem_scripts_config.read(oem_scripts_config_ini)
     config = oem_scripts_config["private"]
-    r = requests.get(
-        config["archive"] + "/dists/", auth=(config["username"], config["password"])
-    )
+    if args.use_cache:
+        text = None
+    else:
+        r = requests.get(
+            config["archive"] + "/dists/", auth=(config["username"], config["password"])
+        )
+        text = r.text
     if os.path.exists(args.meta):
         with open(args.meta) as data:
             meta_json = json.load(data)
@@ -2220,11 +2289,11 @@ elif args.subcommand == "update":
             series = meta_json["series"]
             animal = get_animal(series)
         pkgInfo = collect_pkg_info(
-            meta_json, check_private=True, index=r.text, config=config
+            meta_json, check_private=True, index=text, config=config
         )
     else:
         pkgInfo = collect_pkg_info(
-            args.meta, check_private=True, index=r.text, config=config
+            args.meta, check_private=True, index=text, config=config
         )
     process_update_task(pkgInfo)
 elif args.subcommand == "collect":

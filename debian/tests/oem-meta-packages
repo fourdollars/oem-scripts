@@ -9,6 +9,17 @@ RET=0
 oem-meta-packages --quiet list
 
 # collect
+if ! timeout 10s oem-meta-packages --quiet --series focal --use-cache collect oem-somerville-aipom-adl-meta; then
+    echo "FAIL: Timeout after 10s for 'oem-meta-packages --quiet --series focal --use-cache collect oem-somerville-aipom-adl-meta'."
+    RET=1
+fi
+if [ -f oem-somerville-aipom-adl-meta.json ] && [ "$(jq -r '."oem-somerville-aipom-adl-meta".new_desc' < oem-somerville-aipom-adl-meta.json)" = "Dell OptiPlex 5400 AIO, 7400 AIO" ]; then
+    jq '."oem-somerville-aipom-adl-meta"' < oem-somerville-aipom-adl-meta.json
+else
+    echo "FAIL: oem-somerville-aipom-adl-meta.json is expected to be generated after 'oem-meta-packages --quiet --series focal --use-cache collect oem-somerville-aipom-adl-meta'."
+    RET=1
+fi
+
 cat > fossa-bronn.json <<ENDLINE
 {
   "certification-hardware": [
@@ -35,9 +46,9 @@ cat > fossa-bronn.json <<ENDLINE
   "short_description": "Precision 12345"
 }
 ENDLINE
-oem-meta-packages --series focal --quiet collect fossa-bronn.json -o oem-somerville-bronn-meta.json
-if [ "$(jq -r '."oem-somerville-bronn-meta".new_desc' < oem-somerville-bronn-meta.json)" != "Dell Precision 12345" ]; then
-    echo "FAIL: 'oem-meta-packages --series focal --quiet collect fossa-bronn.json -o oem-somerville-bronn-meta.json' failed."
+oem-meta-packages --series focal --quiet collect fossa-bronn.json -o random.json
+if [ "$(jq -r '."oem-somerville-bronn-meta".new_desc' < random.json)" != "Dell Precision 12345" ]; then
+    echo "FAIL: 'oem-meta-packages --series focal --quiet collect fossa-bronn.json -o random.json' failed."
     RET=1
 fi
 
@@ -176,17 +187,17 @@ oem-meta-packages create jellyfish-cais.json
 mv oem-sutton-cais-meta jellyfish-cais-meta-2
 
 # update
-oem-meta-packages --dry-run --series focal update oem-somerville-tentacool-meta --kernel linux-generic-hwe-20.04
-oem-meta-packages --dry-run --series focal update oem-stella.cmit-camerupt-meta --kernel linux-generic-hwe-20.04
-oem-meta-packages --dry-run --series jammy update oem-somerville-tentacool-meta --kernel linux-generic-hwe-22.04
-oem-meta-packages --dry-run --series jammy update oem-stella-aron-meta --kernel linux-generic-hwe-22.04
+oem-meta-packages --dry-run --use-cache --series focal update oem-somerville-tentacool-meta --kernel linux-generic-hwe-20.04
+oem-meta-packages --dry-run --use-cache --series focal update oem-stella.cmit-camerupt-meta --kernel linux-generic-hwe-20.04
+oem-meta-packages --dry-run --use-cache --series jammy update oem-somerville-tentacool-meta --kernel linux-generic-hwe-22.04
+oem-meta-packages --dry-run --use-cache --series jammy update oem-stella-aron-meta --kernel linux-generic-hwe-22.04
 
 # staging-copy
-oem-meta-packages --dry-run --series focal staging-copy oem-somerville-kingdra-adl-meta 2>&1 | grep -e cesg:somerville-fossa-kingdra-adl-focal-staging -e somerville-fossa-kingdra-adl-focal-devel
-oem-meta-packages --dry-run --series focal staging-copy oem-somerville-charmander-meta 2>&1 | grep -e cesg:somerville-fossa-charmander-focal-staging -e cesg:somerville-fossa-charmander-focal-devel
-oem-meta-packages --dry-run --series focal staging-copy oem-stella.cmit-aerodactyl-meta 2>&1 | grep -e cesg:stella-cmit-ouagadougou-focal-staging -e stella-cmit-ouagadougou-focal-devel
-oem-meta-packages --dry-run --series focal staging-copy oem-sutton.newell-aaden-meta 2>&1 | grep -e cesg:sutton-newell-focal-staging -e cesg:sutton-newell-focal-devel
-oem-meta-packages --dry-run --series jammy staging-copy oem-somerville-tentacool-meta 2>&1 | grep -e cesg:somerville-jellyfish-tentacool-jammy-devel -e cesg:somerville-jellyfish-tentacool-jammy-staging
-oem-meta-packages --dry-run --series jammy staging-copy oem-sutton-balesego-meta 2>&1 | grep -e cesg:sutton-jammy-devel -e cesg:sutton-jammy-staging
+oem-meta-packages --dry-run --use-cache --series focal staging-copy oem-somerville-kingdra-adl-meta 2>&1 | grep -e cesg:somerville-fossa-kingdra-adl-focal-staging -e somerville-fossa-kingdra-adl-focal-devel
+oem-meta-packages --dry-run --use-cache --series focal staging-copy oem-somerville-charmander-meta 2>&1 | grep -e cesg:somerville-fossa-charmander-focal-staging -e cesg:somerville-fossa-charmander-focal-devel
+oem-meta-packages --dry-run --use-cache --series focal staging-copy oem-stella.cmit-aerodactyl-meta 2>&1 | grep -e cesg:stella-cmit-ouagadougou-focal-staging -e stella-cmit-ouagadougou-focal-devel
+oem-meta-packages --dry-run --use-cache --series focal staging-copy oem-sutton.newell-aaden-meta 2>&1 | grep -e cesg:sutton-newell-focal-staging -e cesg:sutton-newell-focal-devel
+oem-meta-packages --dry-run --use-cache --series jammy staging-copy oem-somerville-tentacool-meta 2>&1 | grep -e cesg:somerville-jellyfish-tentacool-jammy-devel -e cesg:somerville-jellyfish-tentacool-jammy-staging
+oem-meta-packages --dry-run --use-cache --series jammy staging-copy oem-sutton-balesego-meta 2>&1 | grep -e cesg:sutton-jammy-devel -e cesg:sutton-jammy-staging
 
 exit "$RET"
