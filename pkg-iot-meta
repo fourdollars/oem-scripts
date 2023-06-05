@@ -1,0 +1,234 @@
+#! /usr/bin/env python3
+
+import argparse
+import lsb_release
+import os
+import subprocess
+import sys
+
+from distro_info import UbuntuDistroInfo
+from logging import warning, error
+from time import localtime, strftime
+
+program_name = os.path.basename(sys.argv[0])
+
+if program_name == "pkg-iot-meta":
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="IoT platform meta package generator.",
+        epilog=f"Ex. {program_name} -s focal --project-name=lyoncore",
+    )
+else:
+    error("This program can not be executed.")
+    exit(1)
+
+info = UbuntuDistroInfo()
+try:
+    # for bionic
+    series = lsb_release.get_lsb_information()["CODENAME"]
+except AttributeError:
+    # for focal
+    series = lsb_release.get_os_release()["CODENAME"]
+
+parser.add_argument(
+    "-s",
+    "--series",
+    choices=info.supported(),
+    default=series,
+    help=f"Ubuntu series, such as {series} by default.",
+)
+parser.add_argument("--project-name", help="project-name", required=True)
+args = parser.parse_args()
+
+series = args.series
+versions = dict(zip(info.get_all(result="codename"), info.get_all(result="release")))
+version = versions[series].split(" ")[0]
+
+project_name = args.project_name
+brand = project_name
+meta = "oem-" + project_name + "-meta"
+
+if os.path.exists(meta):
+    error(meta + " already exists. Please remove or rename it.")
+    exit(1)
+
+os.mkdir(meta)
+os.chdir(meta)
+
+git_repo = (
+    "~" + project_name + "-team/" + project_name + "/+git/oem-" + project_name + "-meta"
+)
+
+
+def generate_debian_package(version):
+    extra = ""
+
+    release = series
+    version = version + "ubuntu1"
+    branch = project_name + "-" + series
+
+    git_abbr = f"https://git.launchpad.net/{git_repo} -b {branch}"
+    git_browser = f"https://code.launchpad.net/{git_repo}/+ref/{branch}"
+
+    subprocess.run(["git", "checkout", "--orphan", branch])
+
+    source_file = "oem-%s-meta.list" % (project_name)
+    archive = "archive.canonical.com"
+    source_list = f"""\
+deb http://{project_name}.{archive}/ {series} {project_name}
+# deb-src http://{project_name}.{archive}/ {series} {project_name}
+"""
+
+    with open(source_file, "w") as f:
+        f.write(source_list)
+
+    if not os.path.exists("debian"):
+        os.mkdir("debian")
+    os.chdir("debian")
+
+    gbp_conf = f"""[DEFAULT]
+pristine-tar = False
+debian-branch = {branch}
+debian-tag = {branch}_%(version)s
+"""
+    with open("gbp.conf", "w") as f:
+        f.write(gbp_conf)
+
+    fullname = os.getenv("DEBFULLNAME", "Commercial Engineering")
+    email = os.getenv("DEBEMAIL", "commercial-engineering@canonical.com")
+    if fullname == "Commercial Engineering":
+        warning(
+            "DEBFULLNAME shall not be 'Commercial Engineering'. Please use your own fullname."
+        )
+    if email == "commercial-engineering@canonical.com":
+        warning(
+            "DEBEMAIL shall not be 'commercial-engineering@canonical.com'. Please use your own email."
+        )
+    timestamp = strftime("%a, %d %b %Y %H:%M:%S %z", localtime())
+
+    with open("changelog", "w") as f:
+        f.write(
+            f"""{meta} ({version}) {release}; urgency=medium
+
+  * Meta package for {project_name} project.
+
+ -- {fullname} <{email}>  {timestamp}
+"""
+        )
+
+    with open("control", "w") as f:
+        f.write(
+            f"""Source: {meta}
+Section: misc
+Priority: optional
+Maintainer: Commercial Engineering <commercial-engineering@canonical.com>
+Build-Depends: debhelper-compat (= 12)
+Standards-Version: 4.5.0
+Vcs-Git: {git_abbr}
+Vcs-Browser: {git_browser}
+
+Package: {meta}
+Architecture: all
+Depends: ${{misc:Depends}}, ubuntu-oem-keyring{extra}
+Description: hardware support for {project_name} project
+ This is a metapackage for {project_name} project
+ It installs packages needed to support this hardware fully.\n"""
+        )
+
+    timestamp = os.getenv("COPYRIGHT_YEAR", strftime("%Y", localtime()))
+
+    with open("copyright", "w") as f:
+        f.write(
+            "Format: https://www.debian.org/doc/packaging-manuals/"
+            "copyright-format/1.0/\n"
+            f"Upstream-Name: {meta}\n"
+            f"Source: {git_browser}\n\n"
+            f"""Files: *
+Copyright: {timestamp} Canonical Limited
+License: GPL-3
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; version 3 of the License only.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
+"""
+        )
+
+    with open("install", "w") as f:
+        f.write(f"{source_file} /etc/apt/sources.list.d/\n")
+
+    with open("rules", "w") as f:
+        f.write(
+            """#!/usr/bin/make -f
+# -*- makefile -*-
+
+export DH_VERBOSE=1
+
+%:
+\tdh $@\n"""
+        )
+
+    os.chmod("rules", 0o755)
+
+    if not os.path.exists("source"):
+        os.mkdir("source")
+    os.chdir("source")
+
+    with open("format", "w") as f:
+        f.write("3.0 (native)\n")
+
+    os.chdir("..")
+
+    if not os.path.exists("tests"):
+        os.mkdir("tests")
+    os.chdir("tests")
+    with open("control", "w") as f:
+        f.write(
+            """Tests: meta
+Depends: @
+Restrictions: needs-root
+"""
+        )
+    with open("meta", "w") as f:
+        f.write(
+            """#!/bin/bash
+
+exec 2>&1
+set -euo pipefail
+IFS=$'\\n\\t'
+
+apt-get update
+apt-get full-upgrade --yes
+
+apt-get update
+apt-get full-upgrade --yes
+"""
+        )
+
+        f.write(f"\napt-get autoremove --purge --yes {meta}\n")
+    os.chdir("..")
+
+    os.chdir("..")
+    subprocess.run(["git", "add", "."])
+    subprocess.run(["git", "config", "user.name", fullname])
+    subprocess.run(["git", "config", "user.email", email])
+    subprocess.run(["debcommit", "-a", "-R"])
+
+
+subprocess.run(["git", "init"])
+generate_debian_package(version)
+
+subprocess.run(
+    ["git", "remote", "add", "origin", f"git+ssh://git.launchpad.net/{git_repo}"]
+)
+
+print(f"'{meta}' is ready.")
