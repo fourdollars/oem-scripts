@@ -50,6 +50,7 @@ cat > "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json <<ENDLINE
 ENDLINE
 
 export COPYRIGHT_YEAR=2022
+ERR=0
 
 cleanup() {
     echo "= cleanup ="
@@ -63,14 +64,34 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # check/update
+mir-bug update --yes --skip "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
+payload=$(lp-api get bugs/1981784)
+for link in $(lp-api .subscriptions_collection_link <<< "$payload" | jq -r '.entries|.[]|.self_link'); do
+    case "$(basename "$link")" in
+        (ubuntu-sponsors|ubuntu-desktop)
+            echo "FAIL: '$link' shall not be subscribed by 'mir-bug update --yes --skip'."
+            ERR=1
+            ;;
+    esac
+done
+mir-bug update --yes --skip --ready "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
+payload=$(lp-api get bugs/1981784)
+for link in $(lp-api .subscriptions_collection_link <<< "$payload" | jq -r '.entries|.[]|.self_link'); do
+    case "$(basename "$link")" in
+        (ubuntu-sponsors|ubuntu-desktop)
+            echo "FAIL: '$link' shall not be subscribed by 'mir-bug update --yes --skip --ready'."
+            ERR=1
+            ;;
+    esac
+done
 mir-bug update --yes --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
 mir-bug check --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
-mir-bug update --yes --skip --tz=UTC --release "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
-mir-bug check --skip --tz=UTC --release "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
+mir-bug update --yes --skip --tz=UTC --ready --release "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
+mir-bug check --skip --tz=UTC --ready --release "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
 mir-bug update --yes --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/fossa-tentacool.json
 mir-bug check --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/fossa-tentacool.json
-mir-bug update --yes --skip --tz=UTC --release "$AUTOPKGTEST_ARTIFACTS"/fossa-tentacool.json
-mir-bug check --skip --tz=UTC --release "$AUTOPKGTEST_ARTIFACTS"/fossa-tentacool.json
+mir-bug update --yes --skip --tz=UTC --ready --release "$AUTOPKGTEST_ARTIFACTS"/fossa-tentacool.json
+mir-bug check --skip --tz=UTC --ready --release "$AUTOPKGTEST_ARTIFACTS"/fossa-tentacool.json
 
 # create
 mir-bug create -o bug_id somerville bronn "some Dell platforms" --series focal
@@ -94,3 +115,5 @@ rm bug_id
 # collect
 mir-bug collect "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs.json
 mir-bug collect --ubuntu-certified "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs-ubuntu-certified.json
+
+exit "$ERR"
