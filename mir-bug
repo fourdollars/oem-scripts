@@ -1257,6 +1257,26 @@ def handle_bug(lp, args, handler, overwrite_args=None):
                 if task.bug_target_name == "certify-planning":
                     if task.status != "Fix Released":
                         certified = False
+        series = args.json["series"]
+        if series == "focal" and args.json["project"] != "soemrville":
+            meta_name = f"oem-{args.json['project']}.{args.json['group']}-{args.json['platform']}-meta"
+        else:
+            meta_name = f"oem-{args.json['project']}-{args.json['platform']}-meta"
+        json_url = f"https://people.canonical.com/~oem-enablement/oem-meta-packages/{meta_name}-{series}.json"
+        req = requests.get(json_url)
+        if req.status_code != 200:
+            error("Fetching {json_url} failed.")
+            exit(1)
+        payload = json.loads(req.text)
+        err = 0
+        for k, v in payload[meta_name]["tests"].items():
+            if v != "dd443db8729e33c1e20b2d57cc52e152":
+                error(
+                    f"{k} failed for {meta_name} on https://people.canonical.com/~oem-enablement/oem-meta-packages/."
+                )
+                err = 1
+        if err != 0:
+            exit(err)
 
     certified_hardwares = args.json["certification-hardware"] if certified else []
     bug_number = args.json["mirbug"]
