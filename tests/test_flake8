@@ -9,6 +9,7 @@ flake8 --ignore E501,W503,E203 \
     oem-getiso \
     oem-meta-packages \
     pkg-list \
+    pkg-iot-meta \
     pkg-oem-meta \
     review-merge-proposal \
     setup.py \
