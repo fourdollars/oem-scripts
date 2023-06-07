@@ -1,3 +1,11 @@
+oem-scripts (1.81) jammy; urgency=medium
+
+  * debian/tests/mir-bug, mir-bug: Don't subscribe ubuntu-sponsors and ubuntu-desktop unless we are ready to release it.
+  * debian/tests/mir-bug, mir-bug: Check the tests results when using the ready argument.
+  * mir-bug: A little hack by checking AUTOPKGTEST_ARTIFACTS to pass the test against a temporary MIR bug.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 07 Jun 2023 11:25:42 +0800
+
 oem-scripts (1.80) jammy; urgency=medium
 
   * debian/tests/oem-meta-packages, oem-meta-packages: Add the '--use-cache' argument to use the json from https://people.canonical.com/~oem-enablement/oem-meta-packages/.
