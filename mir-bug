@@ -735,7 +735,7 @@ def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool
     subscriptions = []
     for subscription in bug.subscriptions:
         subscriptions.append(subscription.person.name)
-        if not args.ready:
+        if not args.ready or not args.release:
             for subscriber in ("ubuntu-sponsors", "ubuntu-desktop"):
                 if subscriber == subscription.person.name:
                     if subscription.canBeUnsubscribedByUser():
@@ -750,7 +750,7 @@ def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool
                         warning(
                             f"'{subscriber}' should not be in the subscriptions, and {lp.me.name} doesn't have the permission to unsubscribe it."
                         )
-    if args.ready:
+    if args.ready and args.release:
         for subscriber in SUBSCRIBER_LIST:
             if subscriber not in subscriptions:
                 error(f"'{subscriber}' is not in the subscriptions.")
@@ -1147,7 +1147,11 @@ def check_and_update_git_repo(
                     0
                 ] = f"{pkg_name} ({version}~ubuntu1) UNRELEASED; urgency=medium\n"
 
-            if f"(LP: #{bug.id})" not in lines[2] and lines[2].startswith(
+            if os.getenv("AUTOPKGTEST_ARTIFACTS", None) and lines[2].startswith(
+                "  * Meta package for"
+            ):
+                pass  # Pass the test against a temporary MIR bug.
+            elif f"(LP: #{bug.id})" not in lines[2] and lines[2].startswith(
                 "  * Meta package for"
             ):
                 lines[2] = "  " + lines[2].strip() + f" (LP: #{bug.id})\n"
@@ -1257,6 +1261,26 @@ def handle_bug(lp, args, handler, overwrite_args=None):
                 if task.bug_target_name == "certify-planning":
                     if task.status != "Fix Released":
                         certified = False
+        series = args.json["series"]
+        if series == "focal" and args.json["project"] != "soemrville":
+            meta_name = f"oem-{args.json['project']}.{args.json['group']}-{args.json['platform']}-meta"
+        else:
+            meta_name = f"oem-{args.json['project']}-{args.json['platform']}-meta"
+        json_url = f"https://people.canonical.com/~oem-enablement/oem-meta-packages/{meta_name}-{series}.json"
+        req = requests.get(json_url)
+        if req.status_code != 200:
+            error("Fetching {json_url} failed.")
+            exit(1)
+        payload = json.loads(req.text)
+        err = 0
+        for k, v in payload[meta_name]["tests"].items():
+            if v != "dd443db8729e33c1e20b2d57cc52e152":
+                error(
+                    f"{k} failed for {meta_name} on https://people.canonical.com/~oem-enablement/oem-meta-packages/."
+                )
+                err = 1
+        if err != 0:
+            exit(err)
 
     certified_hardwares = args.json["certification-hardware"] if certified else []
     bug_number = args.json["mirbug"]
