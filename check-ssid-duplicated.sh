@@ -97,8 +97,26 @@ function check_duplicate() {
         fi
     done
 
+    function join { local IFS="-"; echo "$*"; }
+
+    local parts n_parts
     for metapkg_name in $metapkg_names; do
-        if [ "$metapkg_name" == "oem-$4-$3-meta" ]; then
+        # shellcheck disable=SC2206
+        parts=( ${metapkg_name//-/ } )
+        n_parts=${#parts[@]}
+
+        # oem-<project.group?>-<codename>-meta
+        if [ "$n_parts" -lt 4 ]                             \
+            || [ "${parts[0]}" != "oem" ]                   \
+            || [ "${parts[$((n_parts - 1))]}" != "meta" ]   \
+            || [[ "${parts[1]}" != "$4"* ]];
+        then
+            >&2 echo "ERROR: $metapkg_name is not a valid metapackage name."
+            continue
+        fi
+
+        # Slice and join, ( oem somerville three eyes raven meta ) => three-eyes-raven
+        if [ "$(join "${parts[@]:2:$((n_parts - 3))}")" == "$3" ]; then
             echo "${1//origin\//}: $3 is duplicated with $metapkg_name"
             ret=$((ret + 1))
             break
