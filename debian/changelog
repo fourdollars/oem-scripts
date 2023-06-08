@@ -1,3 +1,15 @@
+oem-scripts (1.82) jammy; urgency=medium
+
+  [ Aristo Chen ]
+  * pkg-iot-meta:
+    - Add pkg-iot-meta to create meta package for IoT project
+
+  [ pseudoc ]
+  * check-ssid-duplicated.sh:
+    - check-ssid-duplicated.sh: feat(check-ssid): ignore project's group name
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 08 Jun 2023 08:02:13 +0800
+
 oem-scripts (1.81) jammy; urgency=medium
 
   * debian/tests/mir-bug, mir-bug: Don't subscribe ubuntu-sponsors and ubuntu-desktop unless we are ready to release it.
