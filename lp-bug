@@ -38,7 +38,8 @@ examples:
     lp-bug copy --output=target_bug_id SOURCE_BUG_ID
     lp-bug cleanup BUG_ID
     lp-bug cqa-verify [BUG_ID]
-    lp-bug attach --name=attachmentName --comment=bugComment FILE_PATH BUG_ID""",
+    lp-bug attach --name=attachmentName --comment=bugComment FILE_PATH BUG_ID
+    lp-bug sync --header=commentHeader fromBugID toBugID""",
 )
 
 parser.add_argument("-d", "--debug", help="print debug messages", action="store_true")
@@ -93,6 +94,14 @@ attach.add_argument("--name", help="Specify name of the attachment")
 attach.add_argument("--comment", help="The input message for the comment")
 attach.add_argument("filepath", help="The file path to upload to the bug")
 attach.add_argument("bugID", help="Specify bug number to attach the file", type=int)
+
+sync = subparsers.add_parser(
+    "sync",
+    help="[-h] [--header=commentHeader] fromBugID toBugID",
+)
+sync.add_argument("--header", help="Add comment header in target bug")
+sync.add_argument("fromBugID", help="The source bug for syncing comment")
+sync.add_argument("toBugID", help="The target bug for syncing comment")
 
 args = parser.parse_args()
 
@@ -368,6 +377,47 @@ def attach_file_to_bug(
     bt.lp_save()
 
 
+def sync_bug_comments(
+    lp, header: str, from_bug_number: int, to_bug_number: int
+) -> None:
+    from_bug = lp.bugs[from_bug_number]
+    to_bug = lp.bugs[to_bug_number]
+    to_bug_bt = to_bug.bug_tasks[0]
+
+    from_bug_messages = [
+        msg for msg in from_bug.messages if msg and msg.content != "\n"
+    ][1:]
+    for msg in from_bug_messages:
+        content = msg.content
+        person = msg.owner_link.split("/")[-1].strip("~")
+        synced = False
+
+        if content.startswith("["):
+            continue
+
+        for m in to_bug.messages:
+            to_content = m.content
+
+            if content in to_content:
+                synced = True
+                break
+
+        if not synced:
+            comment_header = f"[sync from {from_bug_number} to {to_bug_number}]"
+
+            if header:
+                comment_header = "[" + header + "]" + "\n" + comment_header + "\n"
+            else:
+                comment_header = comment_header + "\n"
+
+            commenter = f"{person} commented:" + "\n"
+
+            new_content = comment_header + commenter + content
+            debug(new_content)
+            to_bug_bt.bug.newMessage(content=new_content)
+            to_bug_bt.lp_save()
+
+
 if args.subcommand:
     login = LaunchpadLogin()
     lp = login.lp
@@ -384,6 +434,13 @@ elif args.subcommand == "cqa-verify":
 elif args.subcommand == "attach":
     attach_file_to_bug(
         lp, args.filepath, args.bugID, name=args.name, comment=args.comment
+    )
+elif args.subcommand == "sync":
+    sync_bug_comments(
+        lp,
+        header=args.header,
+        from_bug_number=args.fromBugID,
+        to_bug_number=args.toBugID,
     )
 else:
     parser.print_help()
