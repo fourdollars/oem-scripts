@@ -22,7 +22,7 @@ trap cleanup EXIT INT TERM
 # create
 mir-bug create -o bug_id somerville bronn "some Dell platforms" --series focal
 BUG_ID=$(cat bug_id)
-launchpad-api get bugs/"$BUG_ID" > "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json"
+lp-api get bugs/"$BUG_ID" > "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json"
 jq -r .title < "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json" | grep "\[MIR\] oem-somerville-bronn-meta"
 jq -r .description < "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json" | grep focal
 jq -r .description < "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json" | grep 20.04
@@ -31,7 +31,7 @@ rm bug_id
 
 mir-bug create -o bug_id somerville tentacool "some Dell platforms" --series jammy
 BUG_ID=$(cat bug_id)
-launchpad-api get bugs/"$BUG_ID" > "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json"
+lp-api get bugs/"$BUG_ID" > "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json"
 jq -r .title < "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json" | grep "\[MIR\]\[jammy\] oem-somerville-tentacool-meta"
 jq -r .description < "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json" | grep jammy
 jq -r .description < "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json" | grep 22.04
