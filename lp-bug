@@ -154,6 +154,13 @@ def _yes_or_ask(yes: bool, message: str) -> bool:
             return False
 
 
+project_information_type_map = {
+    "somerville": "Proprietary",
+    "stella": "Proprietary",
+    "sutton": "Proprietary",
+}
+
+
 def copy_bug(lp, bug_number: int, target: str, public: bool, output=None) -> None:
     bug = lp.bugs[bug_number]
     if target:
@@ -163,6 +170,8 @@ def copy_bug(lp, bug_number: int, target: str, public: bool, output=None) -> Non
 
     if public:
         information_type = "Public"
+    elif target in project_information_type_map:
+        information_type = project_information_type_map[target]
     else:
         information_type = bug.information_type
 
