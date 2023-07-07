@@ -39,7 +39,8 @@ examples:
     lp-bug cleanup BUG_ID
     lp-bug cqa-verify [BUG_ID]
     lp-bug attach --name=attachmentName --comment=bugComment FILE_PATH BUG_ID
-    lp-bug sync --header=commentHeader fromBugID toBugID""",
+    lp-bug sync --header=commentHeader fromBugID toBugID
+    lp-bug tag --append --bug=BUG_ID TAG1 TAG2...""",
 )
 
 parser.add_argument("-d", "--debug", help="print debug messages", action="store_true")
@@ -102,6 +103,14 @@ sync = subparsers.add_parser(
 sync.add_argument("--header", help="Add comment header in target bug")
 sync.add_argument("fromBugID", help="The source bug for syncing comment")
 sync.add_argument("toBugID", help="The target bug for syncing comment")
+
+tag = subparsers.add_parser(
+    "tag",
+    help="[-h] [-a|--append] --bug=BUG_ID TAG1 TAG2...",
+)
+tag.add_argument("-a", "--append", action="store_true", help="Append tags to the bug")
+tag.add_argument("--bug", help="Bug ID for updating tags")
+tag.add_argument("tags", nargs="*", help="Tags to update to the bug")
 
 args = parser.parse_args()
 
@@ -427,6 +436,15 @@ def sync_bug_comments(
             to_bug_bt.lp_save()
 
 
+def tag_bug(lp, bug_number: int, append: bool, tags: list) -> None:
+    bug = lp.bugs[bug_number]
+    new_tags = tags
+    if append:
+        new_tags = new_tags + bug.tags
+    bug.tags = new_tags
+    bug.lp_save()
+
+
 if args.subcommand:
     login = LaunchpadLogin()
     lp = login.lp
@@ -451,5 +469,7 @@ elif args.subcommand == "sync":
         from_bug_number=args.fromBugID,
         to_bug_number=args.toBugID,
     )
+elif args.subcommand == "tag":
+    tag_bug(lp, bug_number=args.bug, append=args.append, tags=args.tags)
 else:
     parser.print_help()
