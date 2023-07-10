@@ -4,6 +4,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 export LAUNCHPAD_API="https://api.staging.launchpad.net/"
+export COPYRIGHT_YEAR=2021
 
 # Change the working folder to avoid reading the template files under the source code folder.
 cd /tmp
@@ -11,6 +12,8 @@ cd /tmp
 cat > fossa-varys.json <<ENDLINE
 {
   "group": "",
+  "metabug": 1908047,
+  "mirbug": 1937243,
   "platform": "varys",
   "productnames": [
     "Precision 5550"
@@ -26,7 +29,7 @@ cleanup() {
         rm bugid
     fi
     if [ -f "$BUG_ID.json" ]; then
-        jq -C -S < "$BUG_ID.json"
+        jq -S -M < "$BUG_ID.json"
         rm "$BUG_ID.json"
         lp-bug cleanup --yes "$BUG_ID"
     fi
@@ -36,7 +39,7 @@ trap cleanup EXIT INT TERM
 
 bootstrap-meta create-sru-bug fossa-varys.json --kernel linux-oem-20.04 --output bugid
 BUG_ID=$(cat bugid)
-launchpad-api get "bugs/$BUG_ID" > "$BUG_ID.json"
+lp-api get "bugs/$BUG_ID" > "$BUG_ID.json"
 jq -r .description < "$BUG_ID.json" | grep "Precision 5550"
 jq -r .description < "$BUG_ID.json" | grep linux-oem-20.04
 jq -r '.tags|join(" ")' < "$BUG_ID.json" | grep oem-meta-packages
@@ -47,20 +50,22 @@ if bootstrap-meta create-sru-bug fossa-varys.json --kernel linux-oem-20.04 --out
 fi
 
 bootstrap-meta update-sru-bug fossa-varys.json --kernel linux-oem-20.04b --yes
-launchpad-api get "bugs/$BUG_ID" > "$BUG_ID.json"
+lp-api get "bugs/$BUG_ID" > "$BUG_ID.json"
 jq -r .description < "$BUG_ID.json" | grep linux-oem-20.04b
 
 bootstrap-meta update-sru-bug fossa-varys.json --kernel linux-oem-20.04c --yes --ready
-launchpad-api get "bugs/$BUG_ID" > "$BUG_ID.json"
+lp-api get "bugs/$BUG_ID" > "$BUG_ID.json"
 jq -r .description < "$BUG_ID.json" | grep linux-oem-20.04c
 jq -r '.tags|join(" ")' < "$BUG_ID.json" | grep oem-needs-upload
 
-bootstrap-meta update-sru-bug fossa-varys.json --kernel linux-oem-20.04d --yes --release
-launchpad-api get "bugs/$BUG_ID" > "$BUG_ID.json"
-jq -r .description < "$BUG_ID.json" | grep linux-oem-20.04d
+bootstrap-meta update-sru-bug fossa-varys.json --kernel linux-generic-hwe-20.04 --yes --release
+lp-api get "bugs/$BUG_ID" > "$BUG_ID.json"
+jq -r .description < "$BUG_ID.json" | grep linux-generic-hwe-20.04
 jq -r '.tags|join(" ")' < "$BUG_ID.json" | grep oem-done-upload
 
-if bootstrap-meta update-sru-git fossa-varys.json --kernel linux-oem-20.04d --yes --dryrun; then
+if bootstrap-meta update-sru-git fossa-varys.json --kernel linux-oem-20.04d --dryrun; then
     echo "It is expected to return failed."
     exit 1
 fi
+
+bootstrap-meta update-sru-git fossa-varys.json --kernel linux-generic-hwe-20.04 --dryrun

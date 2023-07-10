@@ -110,10 +110,12 @@ update.add_argument(
 update.add_argument(
     "--ready",
     action="store_true",
-    help="Update the bug to Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.",
+    help="Update the oem-priority bug to Fix Committed, and wait for an OEM metapackages uploader to upload the package.",
 )
 update.add_argument(
-    "--release", action="store_true", help="Update the bug for release."
+    "--release",
+    action="store_true",
+    help="Also affects 'Ubuntu', and subscribe 'ubuntu-sponsors'.",
 )
 
 check = subparsers.add_parser(
@@ -719,11 +721,11 @@ def update_bug_status(bug, pkg_name: str, yes: bool, series: str) -> None:
                 _change_task_status(bug_task, "Incomplete", yes)
         else:
             warning(f"{bug_task.bug_target_name} {bug_task.status}")
-    if args.ready and saw_ubuntu_task is False:
+    if args.release and args.ready and saw_ubuntu_task is False:
         bug.addTask(target=lp.projects["Ubuntu"])
         for bug_task in bug.bug_tasks:
             if bug_task.bug_target_name == "ubuntu":
-                _change_task_status(bug_task, "Confirmed", yes)
+                _change_task_status(bug_task, "In Progress", yes)
 
 
 def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool:

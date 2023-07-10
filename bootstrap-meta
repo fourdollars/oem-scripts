@@ -28,7 +28,7 @@ import re
 import shutil
 
 from copy import copy
-from logging import info, debug, warning, error, critical
+from logging import info, warning, error, critical
 from oem_scripts import (
     ALLOWED_KERNEL_META_LIST,
     SUBSCRIBER_LIST,
@@ -148,7 +148,13 @@ class BootstrapMeta(object):
             raise Exception("Not supported")
 
     def search_meta_bug(
-        self, pattern, yes, output=None, update_bug=False, update_git=False
+        self,
+        pattern,
+        yes,
+        dryrun=False,
+        output=None,
+        update_bug=False,
+        update_git=False,
     ):
         if update_bug and update_git:
             critical("This should not happen.")
@@ -172,7 +178,7 @@ class BootstrapMeta(object):
             bug = task.bug
             if pattern.match(bug.title):
                 found = True
-                if yes_or_ask(
+                if dryrun or yes_or_ask(
                     yes,
                     f'{question_prefix} LP: #{bug.id} - "{bug.title}" for {self.kernel_meta}?',
                 ):
@@ -184,7 +190,7 @@ class BootstrapMeta(object):
                 bug = task.bug
                 if pattern.match(bug.title):
                     found = True
-                    if yes_or_ask(
+                    if dryrun or yes_or_ask(
                         yes,
                         f'{question_prefix} LP: #{bug.id} - "{bug.title}" for {self.kernel_meta}?',
                     ):
@@ -275,9 +281,13 @@ class BootstrapMetaSRU(BootstrapMeta):
         task = bug.addTask(target=lp.projects[f"ubuntu/+source/{self.meta}"])
         task.lp_save()
 
-    def update(self, release=False, ready=False, yes=False):
+    def update(self, release=False, ready=False, yes=False, dryrun=False):
         bug = self.search_meta_bug(
-            pattern=self.pattern, yes=yes, output=self.output, update_bug=True
+            pattern=self.pattern,
+            yes=yes,
+            dryrun=dryrun,
+            output=self.output,
+            update_bug=True,
         )
         bug.title = f"Update the hardware support for {self.market_name} in {self.meta}"
         bug.description = self._read_from_template()
@@ -420,7 +430,9 @@ class BootstrapMetaGit(BootstrapMeta):
             )
         if mir:
             pattern = re.compile(rf".*[MIR] {self.meta}")
-        bug = self.search_meta_bug(pattern=pattern, yes=yes, update_git=True)
+        bug = self.search_meta_bug(
+            pattern=pattern, yes=yes, dryrun=dryrun, update_git=True
+        )
         info(f'LP: #{bug.id} "{bug.title}"')
         if self.group:
             branch = f"{self.group}.{self.platform}-focal-ubuntu"
@@ -429,6 +441,7 @@ class BootstrapMetaGit(BootstrapMeta):
         kernel_flavour, _, market_name, ids = _get_items_from_git(
             self.project, branch, self.meta
         )
+        meta_bug = self.json.get("metabug", "")
         with TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
             # Generated the meta package by pkg-oem-meta
@@ -443,6 +456,8 @@ class BootstrapMetaGit(BootstrapMeta):
                     self.platform,
                     "--public-bug",
                     str(bug.id),
+                    "--private-bug",
+                    str(meta_bug),
                     "--market-name",
                     self.market_name,
                 ]
@@ -463,6 +478,8 @@ class BootstrapMetaGit(BootstrapMeta):
                     self.platform,
                     "--public-bug",
                     str(bug.id),
+                    "--private-bug",
+                    str(meta_bug),
                     "--market-name",
                     self.market_name,
                 ]
@@ -483,6 +500,8 @@ class BootstrapMetaGit(BootstrapMeta):
                     self.platform,
                     "--public-bug",
                     str(bug.id),
+                    "--private-bug",
+                    str(meta_bug),
                     "--market-name",
                     self.market_name,
                 ]
@@ -505,6 +524,7 @@ class BootstrapMetaGit(BootstrapMeta):
             shutil.rmtree(os.path.join(new_dir, ".git"))
             os.remove(os.path.join(new_dir, "debian", "changelog"))
 
+            # Checkout git branch
             git_repo = f"git+ssh://{lp.me.name}@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{self.project}-projects-meta"
             git_command = (
                 "git",
@@ -520,48 +540,6 @@ class BootstrapMetaGit(BootstrapMeta):
             os.chdir(os.path.join(tmpdir, self.meta))
             shutil.copytree(new_dir, ".", dirs_exist_ok=True)
 
-            lines = None
-            found = False
-            changelog = os.path.join(tmpdir, self.meta, "debian", "changelog")
-            with open(changelog, "r") as f:
-                lines = f.readlines()
-
-            for idx, line in enumerate(lines):
-                if f"(LP: #{bug.id})" in line:
-                    found = True
-                    lines[
-                        idx
-                    ] = f"  * Update the hardware support for {self.market_name}. (LP: #{bug.id})\n"
-
-            if found:
-                with open(changelog, "w") as f:
-                    f.writelines(lines)
-            else:
-                dist, _, _ = _run_command(
-                    [
-                        "dpkg-parsechangelog",
-                        "--show-field",
-                        "Distribution",
-                        "-l",
-                        "debian/changelog",
-                    ]
-                )
-                if dist == "UNRELEASED":
-                    _run_command(
-                        [
-                            "dch",
-                            f"Update the hardware support for {self.market_name}. (LP: #{bug.id})",
-                        ]
-                    )
-                else:
-                    _run_command(
-                        [
-                            "dch",
-                            "-i",
-                            f"Update the hardware support for {self.market_name}. (LP: #{bug.id})",
-                        ]
-                    )
-
             # Remove deprecated autopkgtest file
             deprecated_test = os.path.join(
                 tmpdir, self.meta, "debian", "tests", self.meta
@@ -572,11 +550,55 @@ class BootstrapMetaGit(BootstrapMeta):
             # Remove deprecated debian/compat
             deprecated_compat = os.path.join(tmpdir, self.meta, "debian", "compat")
             if os.path.exists(deprecated_compat):
-                _run_command(["git", "rm", f"debian/compat"])
+                _run_command(["git", "rm", "debian/compat"])
+
+            out, _, _ = _run_command(["git", "diff"])
+            if out:
+                # Dealing with debian/changelog
+                lines = None
+                found = False
+                changelog = os.path.join(tmpdir, self.meta, "debian", "changelog")
+                with open(changelog, "r") as f:
+                    lines = f.readlines()
+
+                for idx, line in enumerate(lines):
+                    if f"(LP: #{bug.id})" in line:
+                        found = True
+                        lines[
+                            idx
+                        ] = f"  * Update the hardware support for {self.market_name}. (LP: #{bug.id})\n"
+
+                if found:
+                    with open(changelog, "w") as f:
+                        f.writelines(lines)
+                else:
+                    dist, _, _ = _run_command(
+                        [
+                            "dpkg-parsechangelog",
+                            "--show-field",
+                            "Distribution",
+                            "-l",
+                            "debian/changelog",
+                        ]
+                    )
+                    if dist == "UNRELEASED":
+                        _run_command(
+                            [
+                                "dch",
+                                f"Update the hardware support for {self.market_name}. (LP: #{bug.id})",
+                            ]
+                        )
+                    else:
+                        _run_command(
+                            [
+                                "dch",
+                                "-i",
+                                f"Update the hardware support for {self.market_name}. (LP: #{bug.id})",
+                            ]
+                        )
 
             # Check git status
             if args.debug:
-                debug("$ git status")
                 out, _, _ = _run_command(["git", "status"])
                 print(out)
 
