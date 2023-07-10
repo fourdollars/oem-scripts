@@ -1,3 +1,26 @@
+oem-scripts (1.83) jammy; urgency=medium
+
+  [ Aristo Chen ]
+  * Disable release-upgrades by default for IoT projects
+
+  [ Bin Li ]
+  * Support ThinkEdge
+
+  [ Kai-Chuan Hsieh ]
+  * lp-bug: add sync subcommend for syncing comments
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * debian/tests/mir-bug, mir-bug: Only also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' when releasing.
+
+  [ Kai-Chuan Hsieh ]
+  * lp-bug: Add project information_type map
+  * lp-bug: Add tag subcommand for tagging bug
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * bootstrap-meta, debian/tests/bootstrap-meta: Fix the SRU process on focal.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 10 Jul 2023 09:58:23 +0800
+
 oem-scripts (1.82) jammy; urgency=medium
 
   [ Aristo Chen ]
