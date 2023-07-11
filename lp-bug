@@ -40,7 +40,8 @@ examples:
     lp-bug cqa-verify [BUG_ID]
     lp-bug attach --name=attachmentName --comment=bugComment FILE_PATH BUG_ID
     lp-bug sync --header=commentHeader fromBugID toBugID
-    lp-bug tag --append --bug=BUG_ID TAG1 TAG2...""",
+    lp-bug tag --append --bug=BUG_ID TAG1 TAG2...
+    lp-bug update -s Status -i Importance -a Assignee BUG_ID""",
 )
 
 parser.add_argument("-d", "--debug", help="print debug messages", action="store_true")
@@ -111,6 +112,27 @@ tag = subparsers.add_parser(
 tag.add_argument("-a", "--append", action="store_true", help="Append tags to the bug")
 tag.add_argument("--bug", help="Bug ID for updating tags")
 tag.add_argument("tags", nargs="*", help="Tags to update to the bug")
+
+update = subparsers.add_parser(
+    "update",
+    help="[-h] [-a|--assignee=Assignee] [-s|--status=Status] [-i|--importance=Importance] [-t|--title=Title] BUGID",
+)
+update.add_argument(
+    "-a",
+    "--assignee",
+    help="Update assignee of the bug, it is lp name Unassigned|kchsieh|huntu207|...etc",
+)
+update.add_argument(
+    "-s",
+    "--status",
+    help="Update status of the bug, the value is New|Confirmed|Incomplete|...etc",
+)
+update.add_argument(
+    "-i",
+    "--importance",
+    help="Update importance of the bug, the value is Undecided|Critical|High|Medium...etc",
+)
+update.add_argument("bug", help="Specify bug number to update the first task")
 
 args = parser.parse_args()
 
@@ -445,6 +467,27 @@ def tag_bug(lp, bug_number: int, append: bool, tags: list) -> None:
     bug.lp_save()
 
 
+def update_bug(
+    lp, bug_number: int, status: str, assignee: str, importance: str
+) -> None:
+    bug = lp.bugs[bug_number]
+    bt = bug.bug_tasks[0]
+
+    if status:
+        bt.status = status
+
+    if assignee:
+        if assignee == "Unassigned":
+            bt.assignee = None
+        else:
+            bt.assignee = "https://api.launchpad.net/devel/~" + assignee
+
+    if importance:
+        bt.importance = importance
+
+    bt.lp_save()
+
+
 if args.subcommand:
     login = LaunchpadLogin()
     lp = login.lp
@@ -471,5 +514,13 @@ elif args.subcommand == "sync":
     )
 elif args.subcommand == "tag":
     tag_bug(lp, bug_number=args.bug, append=args.append, tags=args.tags)
+elif args.subcommand == "update":
+    update_bug(
+        lp,
+        bug_number=args.bug,
+        status=args.status,
+        assignee=args.assignee,
+        importance=args.importance,
+    )
 else:
     parser.print_help()
