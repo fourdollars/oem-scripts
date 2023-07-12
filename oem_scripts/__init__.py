@@ -41,8 +41,6 @@ ALLOWED_KERNEL_META_LIST = (
     "linux-generic",
 )
 
-SUBSCRIBER_LIST = ("oem-solutions-engineers", "ubuntu-sponsors", "ubuntu-desktop")
-
 TAG_LIST = ["oem-meta-packages", "oem-priority", f"oem-scripts-{__version__}"]
 
 

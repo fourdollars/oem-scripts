@@ -31,7 +31,6 @@ from copy import copy
 from logging import info, warning, error, critical
 from oem_scripts import (
     ALLOWED_KERNEL_META_LIST,
-    SUBSCRIBER_LIST,
     TAG_LIST,
     _get_items_from_git,
     _run_command,
@@ -295,8 +294,8 @@ class BootstrapMetaSRU(BootstrapMeta):
 
         subscriptions = list(map(lambda x: x.person.name, bug.subscriptions))
         tags = copy(bug.tags)
-        if ready or release:
-            for subscriber in SUBSCRIBER_LIST:
+        if ready and release:
+            for subscriber in ("oem-solutions-engineers", "ubuntu-sponsors"):
                 if subscriber not in subscriptions:
                     bug.subscribe(person=lp.people[subscriber])
         if "oem-solutions-engineers" not in subscriptions:
