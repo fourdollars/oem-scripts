@@ -35,7 +35,7 @@ parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
     epilog="""
 examples:
-    lp-bug copy --output=target_bug_id SOURCE_BUG_ID
+    lp-bug copy --target=project --output=file_store_created_bugid SOURCE_BUG_ID
     lp-bug cleanup BUG_ID
     lp-bug cqa-verify [BUG_ID]
     lp-bug attach --name=attachmentName --comment=bugComment FILE_PATH BUG_ID
@@ -115,7 +115,7 @@ tag.add_argument("tags", nargs="*", help="Tags to update to the bug")
 
 update = subparsers.add_parser(
     "update",
-    help="[-h] [-a|--assignee=Assignee] [-s|--status=Status] [-i|--importance=Importance] [-t|--title=Title] BUGID",
+    help="[-h] [-a|--assignee=Assignee] [-s|--status=Status] [-i|--importance=Importance] BUGID",
 )
 update.add_argument(
     "-a",
