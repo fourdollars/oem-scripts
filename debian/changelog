@@ -1,3 +1,13 @@
+oem-scripts (1.84) jammy; urgency=medium
+
+  [ Kai-Chuan Hsieh ]
+  * lp-bug: Add update subcommand to update the first task
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * bootstrap-meta, debian/tests/mir-bug, mir-bug, oem_scripts/__init__.py: Remove the usage of SUBSCRIBER_LIST and refactor mir-bug to merge the check_bug_status and update_bug_status functions.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 13 Jul 2023 15:27:48 +0800
+
 oem-scripts (1.83) jammy; urgency=medium
 
   [ Aristo Chen ]
