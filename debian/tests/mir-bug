@@ -67,7 +67,7 @@ mir-bug update --yes --skip "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
 payload=$(lp-api get bugs/"$BUG_ID")
 for link in $(lp-api .subscriptions_collection_link <<< "$payload" | jq -r '.entries|.[]|.self_link'); do
     case "$(basename "$link")" in
-        (ubuntu-sponsors|ubuntu-desktop)
+        (ubuntu-sponsors|ubuntu-desktop|ubuntu-archive)
             echo "FAIL: '$link' shall not be subscribed by 'mir-bug update --yes --skip'."
             ERR=1
             ;;
@@ -77,7 +77,7 @@ mir-bug update --yes --skip --ready "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool
 payload=$(lp-api get bugs/"$BUG_ID")
 for link in $(lp-api .subscriptions_collection_link <<< "$payload" | jq -r '.entries|.[]|.self_link'); do
     case "$(basename "$link")" in
-        (ubuntu-sponsors|ubuntu-desktop)
+        (ubuntu-sponsors|ubuntu-desktop|ubuntu-archive)
             echo "FAIL: '$link' shall not be subscribed by 'mir-bug update --yes --skip --ready'."
             ERR=1
             ;;

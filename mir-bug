@@ -37,7 +37,6 @@ from distro_info import UbuntuDistroInfo
 from glob import glob
 from logging import debug, info, warning, error, critical
 from oem_scripts import (
-    SUBSCRIBER_LIST,
     TAG_LIST,
     _get_items_from_git,
     _run_command,
@@ -115,7 +114,7 @@ update.add_argument(
 update.add_argument(
     "--release",
     action="store_true",
-    help="Also affects 'Ubuntu', and subscribe 'ubuntu-sponsors'.",
+    help="Also affects 'Ubuntu', and subscribe 'ubuntu-archive'.",
 )
 
 check = subparsers.add_parser(
@@ -141,10 +140,12 @@ check.add_argument(
 check.add_argument(
     "--ready",
     action="store_true",
-    help="Check if the bug is Fix Committed, also affects 'Ubuntu', and subscribe 'ubuntu-sponsors' and 'ubuntu-desktop'.",
+    help="Check if the oem-priority bug is Fix Committed, and doesn't also affect 'Ubuntu', and doesn't subscribe 'ubuntu-archive', 'ubuntu-sponsors' and 'ubuntu-desktop'.",
 )
 check.add_argument(
-    "--release", action="store_true", help="Check if the bug is ready to release."
+    "--release",
+    action="store_true",
+    help="Check if the bug is ready to release and subscribed 'ubuntu-archive'.",
 )
 
 collect = subparsers.add_parser("collect", help="[-h] [--ubuntu-certified] jsonFile")
@@ -411,7 +412,7 @@ def update_bug(
                     task.importance = "Critical"
                     task.lp_save()
 
-    update_bug_status(bug, pkg_name, yes, series)
+    check_and_update_bug_status(bug, pkg_name, series, yes=yes, update=True)
 
     check_and_update_bug_subscriptions(lp, bug, update=True, yes=yes)
 
@@ -475,7 +476,7 @@ def check_bug(
         need_fixing = True
     if check_bug_importance(bug) is False:
         need_fixing = True
-    if check_bug_status(bug, pkg_name, series) is False:
+    if check_and_update_bug_status(bug, pkg_name, series, update=False) is False:
         need_fixing = True
     if check_and_update_bug_subscriptions(lp, bug) is False:
         need_fixing = True
@@ -598,97 +599,61 @@ def check_bug_importance(bug) -> bool:
     return result
 
 
-def _expected_status(target_name: str, status: str, expected: str) -> bool:
-    if status != expected:
+def _expected_task_status(bug_task, expected_status: str) -> bool:
+    if bug_task.status != expected_status:
         error(
-            f"The '{target_name}' status is expected to be '{expected}' instead of '{status}'."
+            f"The '{bug_task.bug_target_name}' status is expected to be '{expected_status}' instead of '{bug_task.status}'."
         )
         return False
     return True
 
 
-def check_bug_status(bug, pkg_name: str, series: str) -> bool:
-    info("Checking bug status...")
-    result = True
-    saw_ubuntu_task = False
-    for task in bug.bug_tasks:
-        if task.bug_target_name == "oem-priority":
-            if args.ready:
-                if (
-                    _expected_status(task.bug_target_name, task.status, "Fix Committed")
-                    is False
-                ):
-                    result = False
-            else:
-                if (
-                    _expected_status(task.bug_target_name, task.status, "In Progress")
-                    is False
-                ):
-                    result = False
-        elif (
-            task.bug_target_name == "ubuntu"
-            or f"{pkg_name} (Ubuntu)" in task.bug_target_name
-            or f"{pkg_name} (Ubuntu {series.capitalize()})" in task.bug_target_name
-        ):
-            saw_ubuntu_task = True
-            if args.release:
-                if (
-                    _expected_status(task.bug_target_name, task.status, "In Progress")
-                    is False
-                ):
-                    result = False
-            elif args.ready:
-                if (
-                    _expected_status(task.bug_target_name, task.status, "Confirmed")
-                    is False
-                ):
-                    result = False
-            else:
-                if (
-                    _expected_status(task.bug_target_name, task.status, "Incomplete")
-                    is False
-                ):
-                    result = False
-        else:
-            critical(f"It is unexpected to have '{task.bug_target_name}' task")
-    if args.ready and saw_ubuntu_task is False:
-        result = False
-        error("There is no 'ubuntu' status.")
-    return result
-
-
-def _ok_to_change_status(
-    target_name: str, orig_status: str, new_status: str, yes: bool
-) -> bool:
-    if orig_status == new_status:
+def _ok_to_change_task_status(bug_task, new_status: str, yes: bool) -> bool:
+    if bug_task.status == new_status:
         return False
     if yes_or_ask(
         yes,
-        f"Would you like to change the '{target_name}' status from '{orig_status}' to '{new_status}'?",
+        f"Would you like to change the '{bug_task.bug_target_name}' status from '{bug_task.status}' to '{new_status}'?",
     ):
         return True
     return False
 
 
-def _change_task_status(task, new_status: str, yes: bool) -> bool:
-    if _expected_status(
-        task.bug_target_name, task.status, new_status
-    ) is False and _ok_to_change_status(
-        task.bug_target_name, task.status, new_status, yes
-    ):
-        task.status = new_status
-        task.lp_save()
+def _check_and_change_task_status(
+    task, new_status: str, yes=False, update=False
+) -> bool:
+    if update:
+        if not _expected_task_status(task, new_status) and _ok_to_change_task_status(
+            task, new_status, yes
+        ):
+            task.status = new_status
+            task.lp_save()
+        return True
+    else:
+        return _expected_task_status(task, new_status)
 
 
-def update_bug_status(bug, pkg_name: str, yes: bool, series: str) -> None:
-    info("Updating bug status...")
+def check_and_update_bug_status(
+    bug, pkg_name: str, series: str, yes=False, update=False
+) -> None:
+    if update:
+        info("Updating bug status...")
+    else:
+        info("Checking bug status...")
+    result = True
     saw_ubuntu_task = False
     for bug_task in bug.bug_tasks:
         if bug_task.bug_target_name == "oem-priority":
             if args.ready:
-                _change_task_status(bug_task, "Fix Committed", yes)
+                if not _check_and_change_task_status(
+                    bug_task, "Fix Committed", yes=yes, update=update
+                ):
+                    result = False
             else:
-                _change_task_status(bug_task, "In Progress", yes)
+                if not _check_and_change_task_status(
+                    bug_task, "In Progress", yes=yes, update=update
+                ):
+                    result = False
         elif (
             bug_task.bug_target_name == "ubuntu"
             or f"{pkg_name} (Ubuntu)" in bug_task.bug_target_name
@@ -696,10 +661,16 @@ def update_bug_status(bug, pkg_name: str, yes: bool, series: str) -> None:
         ):
             saw_ubuntu_task = True
             if args.release:
-                _change_task_status(bug_task, "In Progress", yes)
+                if not _check_and_change_task_status(
+                    bug_task, "In Progress", yes=yes, update=update
+                ):
+                    result = False
             elif args.ready:
-                _change_task_status(bug_task, "Confirmed", yes)
-            elif yes_or_ask(
+                if not _check_and_change_task_status(
+                    bug_task, "Confirmed", yes=yes, update=update
+                ):
+                    result = False
+            elif update and yes_or_ask(
                 yes,
                 f"Would you like to delete the '{bug_task.bug_target_name}' bug_task? (Don't affect '{bug_task.bug_target_display_name}')",
             ):
@@ -710,22 +681,36 @@ def update_bug_status(bug, pkg_name: str, yes: bool, series: str) -> None:
                         f"{bug_task.bug_target_name} can not be deleted, so changing the status to Incomplete instead."
                     )
                     debug(e)
-                    _change_task_status(bug_task, "Incomplete", yes)
+                    _check_and_change_task_status(
+                        bug_task, "Incomplete", yes=yes, update=update
+                    )
                 except lazr.restfulclient.errors.Unauthorized as e:
                     warning(
                         f"{bug_task.bug_target_name} can not be deleted, so changing the status to Incomplete instead."
                     )
                     debug(e)
-                    _change_task_status(bug_task, "Incomplete", yes)
+                    _check_and_change_task_status(
+                        bug_task, "Incomplete", yes=yes, update=update
+                    )
             else:
-                _change_task_status(bug_task, "Incomplete", yes)
+                if not _check_and_change_task_status(
+                    bug_task, "Incomplete", yes=yes, update=update
+                ):
+                    result = False
         else:
-            warning(f"{bug_task.bug_target_name} {bug_task.status}")
-    if args.release and args.ready and saw_ubuntu_task is False:
+            warning(
+                f"It is unexpected to see the '{bug_task.bug_target_name}' task and the '{bug_task.status}' status."
+            )
+    if update and args.release and args.ready and saw_ubuntu_task is False:
         bug.addTask(target=lp.projects["Ubuntu"])
         for bug_task in bug.bug_tasks:
             if bug_task.bug_target_name == "ubuntu":
-                _change_task_status(bug_task, "In Progress", yes)
+                _check_and_change_task_status(
+                    bug_task, "In Progress", yes=True, update=True
+                )
+    if not update and not args.release and not args.ready and saw_ubuntu_task:
+        result = False
+    return result
 
 
 def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool:
@@ -738,7 +723,7 @@ def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool
     for subscription in bug.subscriptions:
         subscriptions.append(subscription.person.name)
         if not args.ready or not args.release:
-            for subscriber in ("ubuntu-sponsors", "ubuntu-desktop"):
+            for subscriber in ("ubuntu-archive", "ubuntu-sponsors", "ubuntu-desktop"):
                 if subscriber == subscription.person.name:
                     if subscription.canBeUnsubscribedByUser():
                         error(f"'{subscriber}' should not be in the subscriptions.")
@@ -753,7 +738,7 @@ def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool
                             f"'{subscriber}' should not be in the subscriptions, and {lp.me.name} doesn't have the permission to unsubscribe it."
                         )
     if args.ready and args.release:
-        for subscriber in SUBSCRIBER_LIST:
+        for subscriber in ("oem-solutions-engineers", "ubuntu-archive"):
             if subscriber not in subscriptions:
                 error(f"'{subscriber}' is not in the subscriptions.")
                 if update and yes_or_ask(
