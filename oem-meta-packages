@@ -1006,6 +1006,7 @@ class BootstrapFromPPA(OemMetaPkgInfo):
         self.archive = "ppa:canonical-oem-metapackage-uploaders/oem-metapackage-staging"
         self.fingerprint = "EA7BFBE3B33B9D51D225430EC83677AEDFC29884"
         with TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
             _run_command(
                 [
                     "setup-apt-dir.sh",
@@ -1140,6 +1141,7 @@ class BootstrapFromUbuntuArchive(OemMetaPkgInfo):
     def get_info(self):
         self.archive = f"ubuntu:{series}|{series}-updates"
         with TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
             _run_command(
                 [
                     "setup-apt-dir.sh",
@@ -1333,6 +1335,7 @@ class OemFromPPA(OemMetaPkgInfo):
 
     def get_kernel_flavour_meta(self):
         with TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
             _run_command(
                 [
                     "setup-apt-dir.sh",
@@ -1395,6 +1398,7 @@ class OemFromPrivateArchive(OemMetaPkgInfo):
     def get_info(self):
         self.fingerprint = self._config["fingerprint"]
         with TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
             self.get_version_archive(tmpdir)
             if self.version:
                 self.get_kernel_flavour_meta(tmpdir)
@@ -1543,6 +1547,7 @@ class OemFromPublicArchive(OemMetaPkgInfo):
     def get_info(self):
         self.fingerprint = "59AC787C2A8C78BA5ECA0B2ED4D1EAED36962F69"
         with TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
             self.get_version_archive(tmpdir)
             self.get_kernel_flavour_meta(tmpdir)
 
@@ -2011,8 +2016,8 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> boo
     )
 
     with TemporaryDirectory() as tmpdir:
-        messages = list()
         os.chdir(tmpdir)
+        messages = list()
         _run_command(git_command)
         git_version, _, _ = _run_command(
             [
