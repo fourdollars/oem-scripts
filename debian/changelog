@@ -1,3 +1,14 @@
+oem-scripts (1.85) jammy; urgency=medium
+
+  [ Kai-Chuan Hsieh ]
+  * lp-bug: Update help output
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * oem-meta-packages: Adjust the way to deal with debian/control.
+  * oem-meta-packages: It shall always os.chdir(tmpdir) after TemporaryDirectory().
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 18 Jul 2023 11:29:49 +0800
+
 oem-scripts (1.84) jammy; urgency=medium
 
   [ Kai-Chuan Hsieh ]
