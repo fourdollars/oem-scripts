@@ -2,8 +2,19 @@
 
 export LAUNCHPAD_TOKEN="::"
 
-setup-apt-dir.sh -c jammy -m http://archive.ubuntu.com/ubuntu --disable-updates --disable-backports -o aptdir.log
-rm -f aptdir.log
+setup-apt-dir.sh -c jammy -m http://archive.ubuntu.com/ubuntu --disable-updates --disable-backports --disable-community -o aptdir.log
+if [ ! -e aptdir.log ]; then
+    echo "aptdir.log doesn't exist."
+    exit 1
+fi
+APTDIR="$(cat aptdir.log)"
+
+if apt-cache -o "Dir=$APTDIR" -o "Dir::State::status=$APTDIR/var/lib/dpkg/status" show fcitx 2>/dev/null | grep fcitx; then
+    echo "It should not find fcitx because it is in universe."
+    exit 1
+fi
+rm -fr "$APTDIR" aptdir.log
+
 setup-apt-dir.sh -c focal -m http://archive.ubuntu.com/ubuntu --disable-updates --disable-backports -o aptdir.log
 if [ ! -e aptdir.log ]; then
     echo "aptdir.log doesn't exist."
