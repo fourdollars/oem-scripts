@@ -45,6 +45,9 @@ examples:
 
 parser.add_argument("-d", "--debug", action="store_true", help="print debug messages")
 parser.add_argument(
+    "-v", "--verbose", action="store_true", help="print verbose messages"
+)
+parser.add_argument(
     "-l",
     "--long",
     action="store_true",
@@ -101,6 +104,12 @@ if args.debug:
     logging.basicConfig(
         format="<%(levelname)s> %(message)s",
         level=logging.DEBUG,
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
+elif args.verbose:
+    logging.basicConfig(
+        format="<%(levelname)s> %(message)s",
+        level=logging.INFO,
         handlers=[logging.StreamHandler(sys.stdout)],
     )
 else:
