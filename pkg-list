@@ -163,7 +163,7 @@ def get_depends(
 
     pkg = cache[pkg_name]
 
-    info(f"check {pkg_name} {pkg.architecture}")
+    info(f"Check {pkg_name} {pkg.architecture}")
     arch = pkg.architecture
     _debug_pkg(pkg)
 
@@ -174,16 +174,21 @@ def get_depends(
     for version in pkg.version_list:
         if pkg_name in map(lambda x: x[0], depends_list):
             continue
-        info(f"version {version.ver_str}")
+        info(f"Check {pkg_name} {pkg.architecture} version {version.ver_str}")
+
         _debug_pkg(version)
+
         url = None
 
         if not version.downloadable:
-            error(f"{pkg_name} {version.ver_str} is not downloadable.")
-            exit(1)
-
-        if pkg_name in map(lambda x: x[0], depends_list):
-            continue
+            for name, _, ver in pkg.provides_list:
+                if ver.downloadable:
+                    pkg_name = ver.parent_pkg.name
+                    version = ver
+                    break
+            else:
+                error(f"{pkg_name} {version.ver_str} is not downloadable.")
+                exit(1)
 
         if any(
             pkg_name == name and version.ver_str == ver for name, ver in exclude_list

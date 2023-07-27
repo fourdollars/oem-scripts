@@ -1,7 +1,10 @@
 #!/bin/bash
 
 echo "=== Enable focal proposed channel ==="
-APTDIR=$(setup-apt-dir.sh -c focal -m http://uk.archive.ubuntu.com/ubuntu -p | tail -n1)
+APTDIR=$(setup-apt-dir.sh -c focal --disable-community -m http://uk.archive.ubuntu.com/ubuntu -p | tail -n1)
+
+echo "=== ubuntu-standard ==="
+pkg-list --apt-dir "$APTDIR" ubuntu-standard
 
 echo "=== ubuntu-desktop --recommends ==="
 pkg-list --apt-dir "$APTDIR" ubuntu-desktop --recommends | tee ubuntu-desktop.list
