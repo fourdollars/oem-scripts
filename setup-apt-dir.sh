@@ -32,11 +32,12 @@ MIRROR=
 NO_BASE=
 NO_UPDATES=
 NO_BACKPORTS=
+NO_COMMUNITY=
 DPKG_STATUS=
 OUTPUT=
 PPA=()
 PROPOSED=
-OPTS="$(getopt -o c:dho:ps:m: --long apt-dir:,codename:,dpkg-status:,disable-base,disable-updates,disable-backports,debug,help,i386,output:,proposed,ppa:,mirror:,extra-repo:,extra-key: -n 'setup-apt-dir.sh' -- "$@")"
+OPTS="$(getopt -o c:dho:ps:m: --long apt-dir:,codename:,dpkg-status:,disable-base,disable-updates,disable-backports,disable-community,debug,help,i386,output:,proposed,ppa:,mirror:,extra-repo:,extra-key: -n 'setup-apt-dir.sh' -- "$@")"
 eval set -- "${OPTS}"
 while :; do
     case "$1" in
@@ -112,6 +113,9 @@ ENDLINE
             shift;;
         ('--disable-backports')
             NO_BACKPORTS=1
+            shift;;
+        ('--disable-community')
+            NO_COMMUNITY=1
             shift;;
         ('--i386')
             I386=1
@@ -196,26 +200,33 @@ else
     ARCH=""
 fi
 
+
+if [ -z "$NO_COMMUNITY" ]; then
+    DIST=(main restricted universe multiverse)
+else
+    DIST=(main restricted)
+fi
+
 if [ -z "$NO_BASE" ]; then
     cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
-deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME main restricted universe multiverse
+deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME ${DIST[*]}
 ENDLINE
 fi
 
 if [ -z "$NO_UPDATES" ]; then
     cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
-deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-updates main restricted universe multiverse
+deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-updates ${DIST[*]}
 ENDLINE
 fi
 
 if [ -z "$NO_BACKPORTS" ]; then
     cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
-deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-backports main restricted universe multiverse
+deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-backports ${DIST[*]}
 ENDLINE
 fi
 
 if [ -n "$PROPOSED" ]; then
-    echo "deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-proposed main restricted universe multiverse" >> "$APTDIR/etc/apt/sources.list"
+    echo "deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-proposed ${DIST[*]}" >> "$APTDIR/etc/apt/sources.list"
 fi
 
 for list in "${LISTS[@]}"; do
