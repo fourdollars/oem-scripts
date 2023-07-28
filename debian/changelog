@@ -1,3 +1,11 @@
+oem-scripts (1.87) jammy; urgency=medium
+
+  * d/t/setup-apt-dir, setup-apt-dir.sh: Add --disable-community to disable universe and multiverse.
+  * pkg-list: Add verbose argument to show info messages.
+  * d/t/pkg-list, pkg-list: Fix the problem that ubuntu-standard depends on dnsutils but dnsutils exists in universe however bind9-dnsutils in main also provides dnsutils.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 28 Jul 2023 21:38:46 +0800
+
 oem-scripts (1.86) jammy; urgency=medium
 
   [ Kai-Chuan Hsieh ]
