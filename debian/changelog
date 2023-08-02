@@ -1,3 +1,9 @@
+oem-scripts (1.88) jammy; urgency=medium
+
+  * setup-apt-dir.sh: Polish the help manual.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 02 Aug 2023 18:21:16 +0800
+
 oem-scripts (1.87) jammy; urgency=medium
 
   * d/t/setup-apt-dir, setup-apt-dir.sh: Add --disable-community to disable universe and multiverse.
