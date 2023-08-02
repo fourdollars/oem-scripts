@@ -70,6 +70,9 @@ OPTIONS:
  --disable-backports
       Disable -backports channel.
 
+ --disable-community
+      Disable universe and multiverse components.
+
  --i386
       Enable i386 arch.
 
