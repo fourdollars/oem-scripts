@@ -14,7 +14,12 @@ from subprocess import Popen
 def modinfo2dict(module_path):
     module = {}
     module["id"] = module_path.split("/")[-1]
-    cmd = "modinfo" + " " + module_path
+    if os.path.isfile(module_path):
+        cmd = "modinfo" + " " + module_path
+    elif os.path.isfile(module_path + ".zst"):
+        cmd = "modinfo" + " " + module_path + ".zst"
+    else:
+        print(module_path + " " + "doesn't exist")
     output = Popen(cmd, stdout=PIPE, shell=TRUE).communicate()[0]
     modinfo = output.decode(encoding="utf-8")
     line_regex = r"(?P<item>\w+):\s+(?P<value>\S+)"
