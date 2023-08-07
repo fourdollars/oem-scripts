@@ -1,3 +1,10 @@
+oem-scripts (1.89) jammy; urgency=medium
+
+  [ Kai-Chuan Hsieh ]
+  * Add linux-oem-22.04d support
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 07 Aug 2023 11:50:58 +0800
+
 oem-scripts (1.88) jammy; urgency=medium
 
   * setup-apt-dir.sh: Polish the help manual.
