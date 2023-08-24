@@ -443,7 +443,7 @@ def sync_bug_comments(
                 break
 
         if not synced:
-            comment_header = f"[sync from {from_bug_number} to {to_bug_number}]"
+            comment_header = f"[sync from lp:{from_bug_number} to lp:{to_bug_number}]"
 
             if header:
                 comment_header = "[" + header + "]" + "\n" + comment_header + "\n"
