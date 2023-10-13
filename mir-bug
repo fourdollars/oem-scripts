@@ -1115,7 +1115,7 @@ def check_and_update_git_repo(
         shutil.rmtree(os.path.join(new_dir, ".git"))
         os.remove(os.path.join(new_dir, "debian", "changelog"))
 
-        if username:
+        if username and not args.skip:
             git_repo = f"git+ssh://{username}@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta"
         else:
             git_repo = f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta"
