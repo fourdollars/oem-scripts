@@ -47,10 +47,10 @@ LAUNCHPAD_API="${LAUNCHPAD_API:=https://api.launchpad.net/}"
 # shellcheck source=config.sh
 source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
 
-# Get the path of get-private-ppa, it's same path with launchpad-api
+# Get the path of get-private-ppa, it's same path with lp-api
 cur_dir=$(cd "$(dirname "$0")" || exit; pwd)
 
-launchpad_api="${cur_dir}/launchpad-api"
+launchpad_api="${cur_dir}/lp-api"
 jq_file=$(command -v jq)
 if [ "${jq_file}" = "" ] || [ ! -x "${jq_file}" ]; then
     echo "Please install \`jq\` package!"
@@ -58,7 +58,7 @@ if [ "${jq_file}" = "" ] || [ ! -x "${jq_file}" ]; then
 fi
 
 if ! valid_oem_scripts_config; then
-    echo "Please execute \`launchpad-api\` to get the token for Launchpad API first."
+    echo "Please execute \`lp-api\` to get the token for Launchpad API first."
     exit 1
 fi
 
