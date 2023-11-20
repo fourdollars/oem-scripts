@@ -19,7 +19,8 @@ def modinfo2dict(module_path):
     elif os.path.isfile(module_path + ".zst"):
         cmd = "modinfo" + " " + module_path + ".zst"
     else:
-        print(module_path + " " + "doesn't exist")
+        print(module_path + " " + "doesn't exist", file=sys.stderr)
+        return
     output = Popen(cmd, stdout=PIPE, shell=TRUE).communicate()[0]
     modinfo = output.decode(encoding="utf-8")
     line_regex = r"(?P<item>\w+):\s+(?P<value>\S+)"
@@ -73,6 +74,9 @@ def main():
     group.add_argument("--acpi", action="store_true", help="filter acpi devices")
     group.add_argument("--hdaudio", action="store_true", help="filter hdaudio devices")
     parser.add_argument("-d", "--deb", type=str, help="linux-modules debian file path")
+    parser.add_argument(
+        "-e", "--extra", type=str, help="linux-modules-extra debian file path"
+    )
     args = parser.parse_args()
 
     if args.deb:
@@ -84,6 +88,13 @@ def main():
         tmpdir = output.decode(encoding="utf-8")
         cmd = "dpkg -x" + " " + args.deb + " " + tmpdir
         output = Popen(cmd, stdout=PIPE, shell=TRUE).communicate()[0]
+        if args.extra:
+            if not os.path.exists(args.extra):
+                print("cannot open the file: %s" % args.extra)
+                return 1
+
+            cmd = "dpkg -x" + " " + args.extra + " " + tmpdir
+            output = Popen(cmd, stdout=PIPE, shell=TRUE).communicate()[0]
         prefix = tmpdir + "/lib/modules"
         cmd = "ls -1" + " " + prefix
         output = Popen(cmd, stdout=PIPE, shell=TRUE).communicate()[0].strip()
