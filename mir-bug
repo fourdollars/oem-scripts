@@ -1249,7 +1249,7 @@ def handle_bug(lp, args, handler, overwrite_args=None):
                     if task.status != "Fix Released":
                         certified = False
         series = args.json["series"]
-        if series == "focal" and args.json["project"] != "soemrville":
+        if series == "focal" and args.json["project"] != "somerville":
             meta_name = f"oem-{args.json['project']}.{args.json['group']}-{args.json['platform']}-meta"
         else:
             meta_name = f"oem-{args.json['project']}-{args.json['platform']}-meta"
