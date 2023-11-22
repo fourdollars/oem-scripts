@@ -155,7 +155,7 @@ Vcs-Browser: {git_browser}
 
 Package: {ug}
 Architecture: all
-Depends: ${{misc:Depends}}, lenovo-doc-common.{pseries.lower()}
+Depends: ${{misc:Depends}}, oem-sutton-common-doc
 Description: Lenovo documents for {name}.
  This is a UserGuide documents for {name}.\n"""
         )
