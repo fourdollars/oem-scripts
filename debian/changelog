@@ -1,3 +1,22 @@
+oem-scripts (1.93) jammy; urgency=medium
+
+  [ Bin Li ]
+  * Fix the correct name of launchpad-api
+
+  [ pseudoc ]
+  * fix(pkg-oem-meta): crashes on non focal/jammy
+
+  [ Kai-Chuan Hsieh ]
+  * modinfo2json.py: Add caps to add modules-extra
+
+  [ Bin Li ]
+  * Use one single common doc
+
+  [ Cyrus Lien ]
+  * Fix fetching json_url failed on focal meta
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 23 Nov 2023 15:55:20 +0800
+
 oem-scripts (1.92) jammy; urgency=medium
 
   [ Kai-Chuan Hsieh ]
