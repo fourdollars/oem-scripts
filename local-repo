@@ -17,36 +17,31 @@ GPG_KEY_ID="$1"
 if [ -z "$GPG_KEY_ID" ]; then
     echo "Please provide the GPG key ID at first argument"
     usage
-    exit 1
 fi
 shift
 PPA="$1"
 if [ -z "$PPA" ]; then
     echo "Please provide the PPA at second argument"
     usage
-    exit 1
 fi
 shift
 PROJECT="$1"
 if [ -z "$PROJECT" ]; then
     echo "Please provide the project at second argument"
     usage
-    exit 1
 fi
 shift
 SERIES="$1"
 if [ -z "$SERIES" ]; then
     echo "Please provide the series at second argument"
     usage
-    exit 1
 fi
 shift
 
-PACKAGE_LIST="$@"
+PACKAGE_LIST="$*"
 if [ -z "$PACKAGE_LIST" ]; then
     echo "Please provide the package codename list"
     usage
-    exit 1
 fi
 
 # Get the Pakcages.gz file from the PPA, parse it to get the list of packages
@@ -59,11 +54,14 @@ PACKAGES=$PPA_URL"dists/$SERIES/main/binary-amd64/Packages.gz"
 if [ -e Packages ]; then
     rm -f Packages
 fi
-wget -q $PACKAGES -O Packages.gz
+if ! wget -q "$PACKAGES" -O Packages.gz ; then
+    echo "Failed to download Packages.gz"
+    exit 1
+fi
 gunzip Packages.gz
 
 # Parse the Packages file to get the list of packages with Package, Filename and MD5sum.
-cat Packages | awk '
+awk '
 BEGIN {
     FS=": "
     OFS=" "
@@ -86,31 +84,30 @@ BEGIN {
         md5sum=""
     }
 }
-' > Packages.list
+' Packages  > Packages.list
 
 # Read line by line from the Packages.list file and download the package.
 while read -r line; do
-    package=$(echo $line | awk '{print $1}')
-    filename=$(echo $line | awk '{print $2}')
-    md5sum=$(echo $line | awk '{print $3}')
-    file=$(basename $filename)
+    package=$(echo "$line" | awk '{print $1}')
+    filename=$(echo "$line" | awk '{print $2}')
+    md5sum=$(echo "$line" | awk '{print $3}')
+    file=$(basename "$filename")
     # Check if the package is the list
     for p in $PACKAGE_LIST ; do
         echo "Checking $p doc package"
         # p is part of the package name or p is the package name
-        if [[ $package == oem-$PROJECT-$p-doc || $package == $p ]]; then
-            if [ -e $file ]; then
+        if [[ $package = oem-$PROJECT-$p-doc || $package = "$p" ]]; then
+            if [ -e "$file" ]; then
                 NEED_ARCHIVE=1
                 continue
             fi
-            wget -q $PPA_URL$filename -O $file
-            if [ $? -ne 0 ]; then
-                echo "Failed to download $file"
+            if ! wget -q "$PPA_URL$filename" -O "$file" ; then
+                echo "Failed to download ${file}"
                 exit 1
             fi
-            md5=$(md5sum $file | awk '{print $1}')
+            md5=$(md5sum "$file" | awk '{print $1}')
             if [ "$md5" != "$md5sum" ]; then
-                echo "MD5sum of $file is not correct"
+                echo "MD5sum of ${file} is not correct"
                 exit 1
             else
                 NEED_ARCHIVE=1
@@ -126,22 +123,22 @@ if [ -z "$NEED_ARCHIVE" ]; then
 fi
 
 mkdir -p archive
-cp *.deb archive/
-pushd archive
+cp ./*.deb archive/
+pushd archive || exit 1
 apt-ftparchive packages . > Packages
 gzip -k Packages
 apt-ftparchive release ./ > Release
 
 # sign the Release file with gpg key
-gpg --default-key $GPG_KEY_ID --clearsign -o InRelease Release
-popd
+gpg --default-key "$GPG_KEY_ID" --clearsign -o InRelease Release
+popd || exit 1
 
 # Name the archive.tar.gz with timestamp
 ARCHIVE_FILE="archive-$(date +%Y%m%d%H%M%S).tar.gz"
-if [ -e $ARCHIVE_FILE ]; then
-    rm -f $ARCHIVE_FILE
+if [ -e "$ARCHIVE_FILE" ]; then
+    rm -f "$ARCHIVE_FILE"
 fi
-tar czvf $ARCHIVE_FILE archive/
+tar czvf "$ARCHIVE_FILE" archive/
 
 if [ -d archive ]; then
     rm -rf archive
