@@ -7,9 +7,9 @@
 
 function usage() {
     echo "Usage:"
-    echo "./local-repo <GPG_KEY_ID> <PPA> <PROJECT> <SERIES> <CODENAME_LIST/PACKAGE_LIST>"
+    echo " local-repo <GPG_KEY_ID> <PPA> <PROJECT> <SERIES> <CODENAME_LIST/PACKAGE_LIST>"
     echo "Example:"
-    echo "./local-repo.sh ABCDEF123456 lenovo-oem/preload sutton jammy akando"
+    echo " local-repo ABCDEF123456 lenovo-oem/preload sutton jammy akando"
     exit 1
 }
 
