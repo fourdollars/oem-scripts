@@ -1,0 +1,148 @@
+#!/bin/bash
+# local-repo
+#  This script is used to download the packages from the PPA and sign them with the GPG key,
+#  then archive them into a tar.gz file.
+#
+#set -x
+
+function usage() {
+    echo "Usage:"
+    echo " local-repo <GPG_KEY_ID> <PPA> <PROJECT> <SERIES> <CODENAME_LIST/PACKAGE_LIST>"
+    echo "Example:"
+    echo " local-repo ABCDEF123456 lenovo-oem/preload sutton jammy akando"
+    exit 1
+}
+
+GPG_KEY_ID="$1"
+if [ -z "$GPG_KEY_ID" ]; then
+    echo "Please provide the GPG key ID at first argument"
+    usage
+fi
+shift
+PPA="$1"
+if [ -z "$PPA" ]; then
+    echo "Please provide the PPA at second argument"
+    usage
+fi
+shift
+PROJECT="$1"
+if [ -z "$PROJECT" ]; then
+    echo "Please provide the project at second argument"
+    usage
+fi
+shift
+SERIES="$1"
+if [ -z "$SERIES" ]; then
+    echo "Please provide the series at second argument"
+    usage
+fi
+shift
+
+PACKAGE_LIST="$*"
+if [ -z "$PACKAGE_LIST" ]; then
+    echo "Please provide the package codename list"
+    usage
+fi
+
+# Get the Pakcages.gz file from the PPA, parse it to get the list of packages
+# http://ppa.launchpad.net/lenovo-oem/preload/ubuntu/dists/jammy/main/binary-amd64/Packages.gz
+# http://ppa.launchpad.net/lenovo-oem/preload/ubuntu/pool/main/o/oem-sutton-akando-doc/oem-sutton-akando-doc_22.04sutton2_all.deb
+PPA_URL="http://ppa.launchpad.net/$PPA/ubuntu/"
+PACKAGES=$PPA_URL"dists/$SERIES/main/binary-amd64/Packages.gz"
+
+# Download the Packages.gz file
+if [ -e Packages ]; then
+    rm -f Packages
+fi
+if ! wget -q "$PACKAGES" -O Packages.gz ; then
+    echo "Failed to download Packages.gz"
+    exit 1
+fi
+gunzip Packages.gz
+
+# Parse the Packages file to get the list of packages with Package, Filename and MD5sum.
+awk '
+BEGIN {
+    FS=": "
+    OFS=" "
+    package=""
+    filename=""
+    md5sum=""
+}
+{
+    if ($1 == "Package") {
+        package=$2
+    } else if ($1 == "Filename") {
+        filename=$2
+    } else if ($1 == "MD5sum") {
+        md5sum=$2
+    }
+    if (package != "" && filename != "" && md5sum != "") {
+        print package, filename, md5sum
+        package=""
+        filename=""
+        md5sum=""
+    }
+}
+' Packages  > Packages.list
+
+# Read line by line from the Packages.list file and download the package.
+while read -r line; do
+    package=$(echo "$line" | awk '{print $1}')
+    filename=$(echo "$line" | awk '{print $2}')
+    md5sum=$(echo "$line" | awk '{print $3}')
+    file=$(basename "$filename")
+    # Check if the package is the list
+    for p in $PACKAGE_LIST ; do
+        echo "Checking $p doc package"
+        # p is part of the package name or p is the package name
+        if [[ $package = oem-$PROJECT-$p-doc || $package = "$p" ]]; then
+            if [ -e "$file" ]; then
+                NEED_ARCHIVE=1
+                continue
+            fi
+            if ! wget -q "$PPA_URL$filename" -O "$file" ; then
+                echo "Failed to download ${file}"
+                exit 1
+            fi
+            md5=$(md5sum "$file" | awk '{print $1}')
+            if [ "$md5" != "$md5sum" ]; then
+                echo "MD5sum of ${file} is not correct"
+                exit 1
+            else
+                NEED_ARCHIVE=1
+            fi
+        fi
+    done
+
+done < Packages.list
+
+if [ -z "$NEED_ARCHIVE" ]; then
+    echo "No package to archive"
+    exit 0
+fi
+
+mkdir -p archive
+cp ./*.deb archive/
+pushd archive || exit 1
+apt-ftparchive packages . > Packages
+gzip -k Packages
+apt-ftparchive release ./ > Release
+
+# sign the Release file with gpg key
+gpg --default-key "$GPG_KEY_ID" --clearsign -o InRelease Release
+popd || exit 1
+
+# Name the archive.tar.gz with timestamp
+ARCHIVE_FILE="archive-$(date +%Y%m%d%H%M%S).tar.gz"
+if [ -e "$ARCHIVE_FILE" ]; then
+    rm -f "$ARCHIVE_FILE"
+fi
+tar czvf "$ARCHIVE_FILE" archive/
+
+if [ -d archive ]; then
+    rm -rf archive
+fi
+if [ -e Packages.list ]; then
+    rm -f Packages.list
+fi
