@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 
 import argparse
-import lsb_release
 import os
-import re
 import subprocess
 import sys
 import shutil
 
 from distro_info import UbuntuDistroInfo
-from logging import warning, error
+from logging import error
 from time import localtime, strftime
 
 platform_series = ["ThinkPad", "ThinkStation", "ThinkCentre", "Lenovo", "ThinkEdge"]
@@ -31,19 +29,13 @@ else:
     exit(1)
 
 info = UbuntuDistroInfo()
-try:
-    # for bionic
-    series = lsb_release.get_lsb_information()["CODENAME"]
-except AttributeError:
-    # for focal
-    series = lsb_release.get_os_release()["CODENAME"]
 
 parser.add_argument(
     "-s",
     "--series",
     choices=info.supported(),
-    default=series,
-    help=f"Ubuntu series, such as {series} by default.",
+    default="jammy",
+    help=f"Ubuntu series, such as jammy by default.",
     required=True,
 )
 parser.add_argument(
@@ -103,11 +95,10 @@ else:
     shutil.copyfile(filename, "docs/" + new_filename)
 
 PREFIX = "~oem-solutions-group"
-git_repo = PREFIX + "/" + git_repo_project + "/+git/" + ug
+git_repo = f"{PREFIX}/{git_repo_project}/+git/{ug}"
 
 
 def generate_debian_package(version):
-    extra = ""
 
     if len(group) > 0:
         version = version + group + "1"
