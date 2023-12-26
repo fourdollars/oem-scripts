@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+export DH_VERBOSE=1
+
+%:
+	dh $@
+
+override_dh_compress:
+	# Don't compress the .pdf, it's annoying and brings almost nothing
+	# since the format is already compressed
+	dh_compress -X.pdf -X.docx

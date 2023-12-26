@@ -1,277 +1,325 @@
 #!/usr/bin/env python3
-
-import argparse
+# -*- coding: utf-8 -*-
+"""
+Generate a Sutton UG package
+"""
 import os
+import json
+import argparse
 import subprocess
-import sys
-import shutil
+import time
 
 from distro_info import UbuntuDistroInfo
-from logging import error
-from time import localtime, strftime
+from lazr.restfulclient.errors import RestfulError
+from oem_scripts.LaunchpadLogin import LaunchpadLogin
 
-platform_series = ["ThinkPad", "ThinkStation", "ThinkCentre", "Lenovo", "ThinkEdge"]
-
-program_name = os.path.basename(sys.argv[0])
-cur_dir = os.getcwd()
-
-if program_name == "pkg-sutton-ug":
-    codename = "sutton"
-    Codename = codename.title()
-    git_repo_project = "sutton"
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter,
-        description=f"{Codename} platform userguide package generator.",
-        epilog=f'Ex. {program_name} -s jammy -p bailee -b 1880088 -n "ThinkPad P15s Gen 1" -f xxx.pdf',
-    )
-else:
-    error("This program can not be executed.")
-    exit(1)
+PROJECT = "sutton"
+OEM_PREFIX = "~oem-solutions-group"
+platform_unit = ["ThinkPad", "ThinkStation", "ThinkCentre", "Lenovo", "ThinkEdge"]
 
 info = UbuntuDistroInfo()
 
-parser.add_argument(
-    "-s",
-    "--series",
-    choices=info.supported(),
-    default="jammy",
-    help=f"Ubuntu series, such as jammy by default.",
-    required=True,
-)
-parser.add_argument(
-    "-b", "--private-bug", help="Launchpad private bug number.", type=int
-)
+def usage():
+    """
+    Print usage
+    """
+    print("Usage:")
+    print(" pkg-sutton-ug.py -s jammy -p bailee -b 1880088 -n \"ThinkPad P15s Gen 1\"")
+    print(" pkg-sutton-ug.py -s jammy -p bailee -b 1880086 -n \"ThinkPad X13\" -f xxx.pdf")
+    print(" pkg-sutton-ug.py -j jellyfish-abishag.json")
+    print(" pkg-sutton-ug.py -j jellyfish-abishag.json -f xxx.pdf")
 
-parser.add_argument("-g", "--group", help="OEM-group")
-parser.add_argument("-p", "--platform", help="platform-codename", required=True)
-parser.add_argument(
-    "-n", "--name", help="platform-name, such as ThinkPad P15s", required=True
-)
-parser.add_argument("-f", "--filepath", help="User guide file name", required=True)
-parser.add_argument(
-    "-u", "--push-git", help="use git-push directly", action="store_true"
-)
+class PlatformInfo:
+    """ class Platform information """
+    def __init__(self):
+        self.series = ""
+        self.platform = ""
+        self.docbug = ""
+        self.shortdesc = ""
+        self.project = ""
+        self.pvr = ""
+        self.group = ""
 
-args = parser.parse_args()
+    def read_json(self, json_file: str):
+        """ Read the platform information from JSON file """
+        with open(json_file, "r", encoding="utf-8") as json_data:
+            data = json.load(json_data)
+            json_data.close()
+        for key in ["series", "platform", "docbug", "short_description", "project", "pvr"]:
+            if key not in data or data[key] == "":
+                print("ERROR: Missing key or value for key: " + key)
+                return False
+        self.series = data["series"]
+        self.platform = data["platform"]
+        self.docbug = data["docbug"]
+        self.shortdesc = data["short_description"]
+        self.project = data["project"]
+        # If there is space in pvr, split it and use the first word
+        if " " in data["pvr"]:
+            print("INFO: Space in pvr, split it and use the first word")
+            self.pvr = data["pvr"].split(" ")[0]
+        else:
+            self.pvr = data["pvr"]
+        if self.pvr not in platform_unit:
+            print("ERROR: Invalid platform name: " + self.pvr)
+            return False
 
-platform = args.platform.lower()
-Platform = platform.title()
-series = args.series
-versions = dict(zip(info.get_all(result="codename"), info.get_all(result="release")))
-version = versions[series].split(" ")[0]
+        self.group = data["group"] if "group" in data else ""
+        return True
 
-if codename == "sutton":
-    name = args.name.replace("\n", " ")
-    pseries = name.split()[0]
-    if pseries not in platform_series:
-        error(
-            name
-            + " is not supported. It should start with ThinkPad/ThinkCentre/ThinkStation/Lenovo."
-        )
-        exit(1)
-    filename = args.filepath
-    if args.group:
-        group = args.group.lower()
-        ug = f"""oem-{codename}.{group}-{platform}-doc"""
+    def generic_kwargs(self, ug_filename: str):
+        """ Return the generic kwargs """
+        version = info.version(self.series).split(" ")[0]
+        if self.group == "":
+            package_name = f"""oem-{self.project}-{self.platform}-doc"""
+            version = version + self.project + "1"
+        else:
+            package_name = f"""oem-{self.project}.{self.group}-{self.platform}-doc"""
+            version = version + self.group + "1"
+
+        git_repo = f"{OEM_PREFIX}/{self.project}/+git/{package_name}"
+        git_abbr = f"https://git.launchpad.net/{git_repo}"
+        git_browser = f"https://code.launchpad.net/{git_repo}"
+
+        fullname = os.getenv("DEBFULLNAME", "Commercial Engineering")
+        email = os.getenv("DEBEMAIL", "commercial-engineering@canonical.com")
+
+        t_time = time.localtime()
+        timestamp = time.strftime("%a, %d %b %Y %H:%M:%S %z", t_time)
+        copyright_year = os.getenv("COPYRIGHT_YEAR", time.strftime("%Y", t_time))
+
+        return {
+            "project": self.project,
+            "series": self.series,
+            "docbug": self.docbug,
+            "shortdesc": self.shortdesc,
+            "package_name": package_name,
+            "version": version,
+            "fullname": fullname,
+            "email": email,
+            "git_repo": git_repo,
+            "git_abbr": git_abbr,
+            "git_browser": git_browser,
+            "copyright_year": copyright_year,
+            "timestamp": timestamp,
+            "ug_filename": ug_filename,
+        }
+
+def generate_debian_package(projection, ug_file:str, push_git:bool = False):
+    """
+    Generate a Sutton UG package
+    """
+    # template dir is "./" or "/usr/share/oem-scripts"
+    template_path = os.path.join(os.getcwd(), "template_ug")
+    if not os.path.exists(template_path):
+        template_path = os.path.join("/usr/share/oem-scripts/", "template_ug")
+        if not os.path.exists(template_path):
+            print("ERROR: No template_ug directory found")
+            return
+
+    package_path = os.path.join("/tmp", projection["package_name"])
+    if os.path.exists(package_path):
+        print("ERROR: Package directory already exists: " + package_path)
+        return
+
+    os.mkdir(package_path)
+
+    for _f in [ "debian", "docs", "debian/source" ]:
+        package_d = os.path.join(package_path, _f)
+        if not os.path.exists(package_d):
+            os.mkdir(package_d)
+
+    # Replace the template files with the real data
+    for _f in [ "changelog", "control", "copyright", "install",\
+            "links", "postrm", "rules", "source/format" ]:
+        temp_f = os.path.join(template_path, _f)
+        package_f = os.path.join(package_path, "debian", _f)
+        with open(temp_f, "r", encoding="utf-8") as temp:
+            temp_data = temp.read()
+            package_data = temp_data.format(**projection)
+            with open(package_f, "w", encoding="utf-8") as package:
+                package.write(package_data)
+
+    # copy the UG file to debian/docs and check the result
+    ug_d = os.path.join(package_path, "docs")
+    res = subprocess.run(["cp", ug_file, ug_d], check=False)
+    if res.returncode != 0:
+        print("ERROR: Failed to copy UG file to debian/docs")
+        return
+
+    # git init the package_path and check the result
+    os.chdir(package_path)
+    subprocess.run(["git", "init", "-q"], check=False)
+    subprocess.run(["git", "checkout", "--orphan", projection["series"]], check=False)
+
+    subprocess.run(["git", "add", "."], check=False)
+    subprocess.run(["git", "config", "user.name", projection["fullname"]], check=False)
+    subprocess.run(["git", "config", "user.email", projection["email"]], check=False)
+    subprocess.run(["debcommit", "-a", "-R", "-r"], check=False)
+    subprocess.run(["git", "remote", "add", "origin", f"lp:{projection['git_repo']}"], check=False)
+    if push_git:
+        subprocess.run(["git", "push", "--set-upstream", "origin",
+                        projection["series"]], check=False)
+    # restore the current directory
+    os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
+def login_lp():
+    """ Login Launchpad """
+    login = LaunchpadLogin(bot='yes')
+    return login.lp
+
+def get_ug_file(docbug):
+    """
+    Get the UG file from Launchpad
+    """
+    lp_api = login_lp()
+    ug_file = ""
+
+    latest_attachment = None
+    latest_date = None
+
+    bug = lp_api.bugs[docbug]
+    if bug is None:
+        print("ERROR: Failed to get the bug from Launchpad")
+        return ""
+    attachments = bug.attachments
+    if len(attachments) == 0:
+        print("ERROR: No attachment found in Launchpad")
+        return ""
+    if len(attachments) > 1:
+        print(f"INFO: Found {len(attachments)} attachments, will use the latest one")
+
+    for attachment in attachments:
+        # skip the attachment without message
+        message = attachment.message
+        if message is None:
+            continue
+        try:
+            date_t = message.date_created
+        except RestfulError as err:
+            print(f"WARN: Failed to get the message from LP: #{docbug}, " + str(err))
+            continue
+
+        if latest_date is None:
+            latest_date = date_t
+            latest_attachment = attachment
+        elif date_t > latest_date:
+            latest_date = date_t
+            latest_attachment = attachment
+
+    ug_name = latest_attachment.title
+    print("INFO: Found: " + ug_name + ", date: " + latest_date.strftime("%Y-%m-%d %H:%M:%S"))
+
+    # download the file
+    buffer = latest_attachment.data.open()
+    if buffer is None:
+        print("ERROR: Failed to get the UG file from Launchpad")
+        return ""
+    ug_file = ug_name.replace(" ", "_")
+    if not ug_file.endswith(".pdf"):
+        ug_file += ".pdf"
+    # save the file into /tmp
+    ug_file = os.path.join("/tmp", ug_file)
+    with open(ug_file, "wb") as u_f:
+        u_f.write(buffer.read())
+        buffer.close()
+
+    return ug_file
+
+def main():
+    """
+    Main function
+    """
+    parser = argparse.ArgumentParser(
+        description=f"{PROJECT} platform userguide package generator."
+    )
+
+    parser.add_argument(
+        "-j",
+        "--json",
+        help="JSON file name, such as jellyfish-abishag.json in oem-hw-info",
+    )
+    parser.add_argument(
+        "-s",
+        "--series",
+        choices=info.supported(),
+        default="jammy",
+        help="Ubuntu series, such as jammy by default.",
+    )
+    parser.add_argument(
+        "-p",
+        "--platform",
+        help="platform-codename",
+    )
+    parser.add_argument(
+        "-g",
+        "--group",
+        default="",
+        help="OEM-group, obsolete after focal/20.04",
+    )
+    parser.add_argument(
+        "-b",
+        "--docbug",
+        help="LP bug number for documentation.",
+        type=int,
+    )
+    parser.add_argument(
+        "-n",
+        "--name",
+        help="Name of the platform, such as ThinkPad P15s",
+    )
+
+    parser.add_argument(
+        "-f",
+        "--file",
+        help="Userguide file name, such as xxx.pdf",
+    )
+    parser.add_argument(
+        "-u",
+        "--push-git",
+        help="Push the package to git",
+        action="store_true",
+    )
+    args = parser.parse_args()
+
+    pinfo = PlatformInfo()
+    if args.json is not None:
+        if not os.path.exists(args.json):
+            print("ERROR: JSON file does not exist: " + args.json)
+            return
+        if pinfo.read_json(args.json) is False:
+            return
+    elif args.series is None or args.platform is None \
+         or args.docbug is None or args.name is None:
+        usage()
+        return
+    # The following arguments are higher priority than the JSON file
+    pinfo.series = args.series or pinfo.series
+    pinfo.platform = args.platform or pinfo.platform
+    pinfo.docbug = args.docbug or pinfo.docbug
+    pinfo.shortdesc = args.name or pinfo.shortdesc
+
+    pinfo.project = pinfo.project or PROJECT
+    pinfo.pvr = pinfo.pvr or pinfo.shortdesc.split(" ")[0]
+    if pinfo.pvr not in platform_unit:
+        print("ERROR: Invalid platform name: " + pinfo.pvr)
+        return
+    pinfo.group = args.group or pinfo.group
+
+    # Download the Userguide file from Launchpad
+    if args.file is None:
+        ug_file = get_ug_file(pinfo.docbug)
     else:
-        group = ""
-        ug = f"""oem-{codename}-{platform}-doc"""
+        ug_file = args.file
 
-if os.path.exists(ug):
-    error(ug + " already exists. Please remove or rename it.")
-    exit(1)
+    if not os.path.exists(ug_file):
+        print("ERROR: UG file does not exist: " + ug_file)
+        return
 
-os.mkdir(ug)
-os.chdir(ug)
+    ug_filename = ug_file.split("/")[-1]
+    projection = pinfo.generic_kwargs(ug_filename)
 
-if not os.path.exists("docs"):
-    os.mkdir("docs")
+    generate_debian_package(projection, ug_file, args.push_git)
 
-if filename.lower() == "dummy":
-    new_filename = name.replace(" ", "_") + "_UserGuide.pdf"
-    shutil.copyfile(cur_dir + "/UserGuide.pdf", "docs/" + new_filename)
-else:
-    new_filename = os.path.basename(filename.replace(" ", "_"))
-    shutil.copyfile(filename, "docs/" + new_filename)
-
-PREFIX = "~oem-solutions-group"
-git_repo = f"{PREFIX}/{git_repo_project}/+git/{ug}"
-
-
-def generate_debian_package(version):
-
-    if len(group) > 0:
-        version = version + group + "1"
-    else:
-        version = version + codename + "1"
-
-    if args.private_bug:
-        lp_bug = f" (LP: #{args.private_bug})"
-    else:
-        lp_bug = ""
-
-    git_abbr = f"https://git.launchpad.net/{git_repo}"
-    git_browser = f"https://code.launchpad.net/{git_repo}"
-
-    subprocess.run(["git", "checkout", "--orphan", series])
-
-    if not os.path.exists("debian"):
-        os.mkdir("debian")
-    os.chdir("debian")
-
-    fullname = os.getenv("DEBFULLNAME", "Commercial Engineering")
-    email = os.getenv("DEBEMAIL", "commercial-engineering@canonical.com")
-    timestamp = strftime("%a, %d %b %Y %H:%M:%S %z", localtime())
-
-    with open("changelog", "w") as f:
-        f.write(
-            f"""{ug} ({version}) {series}; urgency=medium
-
-  * UserGuide package for {name}.{lp_bug}
-
- -- {fullname} <{email}>  {timestamp}
-"""
-        )
-
-    with open("control", "w") as f:
-        f.write(
-            f"""Source: {ug}
-Section: misc
-Priority: optional
-Maintainer: Commercial Engineering <commercial-engineering@canonical.com>
-Build-Depends: debhelper-compat (= 12)
-Standards-Version: 4.5.0
-Vcs-Git: {git_abbr}
-Vcs-Browser: {git_browser}
-
-Package: {ug}
-Architecture: all
-Depends: ${{misc:Depends}}, oem-sutton-common-doc
-Description: Lenovo documents for {name}.
- This is a UserGuide documents for {name}.\n"""
-        )
-
-    timestamp = os.getenv("COPYRIGHT_YEAR", strftime("%Y", localtime()))
-
-    with open("copyright", "w") as f:
-        f.write(
-            "Format: https://www.debian.org/doc/packaging-manuals/"
-            "copyright-format/1.0/\n"
-            f"Upstream-Name: {ug}\n"
-            f"Source: {git_browser}\n\n"
-            f"""Files: debian/*
-Copyright: {timestamp} Canonical Limited
-License: GPL-3
- This package is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; version 3 of the License only.
- .
- This package is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- .
- You should have received a copy of the GNU General Public License
- along with this program. If not, see <http://www.gnu.org/licenses/>
- .
- On Debian systems, the complete text of the GNU General
- Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
-
-Files: docs/*
-Copyright: {timestamp}, Lenovo
-License: Proprietary
- Lenovo Publications Notice
- .
- The Lenovo Limited Warranty and User Guide that are preinstalled on this product are
- copyrighted materials developed by Lenovo and are not covered by any Linux Open Source agreements.
- Lenovo may update the User Guide periodically.
- .
- To access the latest Lenovo Limited Warranty and User Guide, go to:
- http://www.lenovo.com/support
-"""
-        )
-
-    with open("install", "w") as f:
-        f.write("docs/* /opt/lenovo/doc/lenovo-doc/\n")
-
-    with open("links", "w") as f:
-        # E: lenovo-doc-ace: dir-or-file-in-opt opt/lenovo/
-        f.write(
-            f"/opt/lenovo/doc/lenovo-doc/{new_filename} /usr/share/doc/{ug}/{new_filename}\n"
-        )
-        f.write(f"/opt/lenovo/doc/lenovo-doc/{new_filename} /etc/skel/{new_filename}\n")
-        # f.write(f'/usr/share/doc/lenovo-doc/{new_filename} /etc/skel/UserGuide.pdf\n')
-
-    with open("postrm", "w") as f:
-        f.write(
-            f"""#!/bin/sh
-
-set -e
-
-case "$1" in
-    remove|purge)
-        getent passwd |
-        while IFS=: read username x uid gid gecos home shell
-        do
-                # In oem image, the 1000 used for oem user.
-                if [ "$uid" -le 1000 ]; then
-                        continue
-                fi
-                if [ "$username" = root -o "$username" = "nobody" -o ! -d "$home" ]; then
-                        continue
-                fi
-                if [ -L "$home/{new_filename}" ]; then
-                        sudo -Hu "$username" rm -f $home/{new_filename}
-                fi
-        done
-    ;;
-esac
-
-#DEBHELPER#
-
-exit 0
-"""
-        )
-
-    with open("rules", "w") as f:
-        f.write(
-            """#!/usr/bin/make -f
-# -*- makefile -*-
-
-export DH_VERBOSE=1
-
-%:
-\tdh $@
-
-override_dh_compress:
-\t# Don't compress the .pdf, it's annoying and brings almost nothing
-\t# since the format is already compressed
-\tdh_compress -X.pdf -X.docx\n"""
-        )
-
-    os.chmod("rules", 0o755)
-
-    if not os.path.exists("source"):
-        os.mkdir("source")
-    os.chdir("source")
-
-    with open("format", "w") as f:
-        f.write("3.0 (native)\n")
-
-    os.chdir("..")
-    os.chdir("..")
-    subprocess.run(["git", "add", "."])
-    subprocess.run(["git", "config", "user.name", fullname])
-    subprocess.run(["git", "config", "user.email", email])
-    subprocess.run(["debcommit", "-a", "-R", "-r"])
-
-
-subprocess.run(["git", "init"])
-generate_debian_package(version)
-
-subprocess.run(["git", "remote", "add", "origin", f"lp:{git_repo}"])
-
-if args.push_git:
-    subprocess.run(["git", "push", "--set-upstream", "origin", series])
-
-print(f"'{ug}' is ready.")
+if __name__ == "__main__":
+    main()

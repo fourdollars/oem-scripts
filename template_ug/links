@@ -1,0 +1,2 @@
+/opt/lenovo/doc/lenovo-doc/{ug_filename} /usr/share/doc/{package_name}/{ug_filename}
+/opt/lenovo/doc/lenovo-doc/{ug_filename} /etc/skel/{ug_filename}

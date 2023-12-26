@@ -1,0 +1,14 @@
+Source: {package_name}
+Section: misc
+Priority: optional
+Maintainer: Commercial Engineering <commercial-engineering@canonical.com>
+Build-Depends: debhelper-compat (= 12)
+Standards-Version: 4.5.0
+Vcs-Git: {git_abbr}
+Vcs-Browser: {git_browser}
+
+Package: {package_name}
+Architecture: all
+Depends: ${{misc:Depends}}, oem-sutton-common-doc
+Description: Lenovo documents for {shortdesc}.
+ This is a UserGuide documents for {shortdesc}.
