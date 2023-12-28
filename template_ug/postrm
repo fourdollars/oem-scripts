@@ -1,0 +1,26 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+    remove|purge)
+        getent passwd |
+        while IFS=: read username x uid gid gecos home shell
+        do
+                # In oem image, the 1000 used for oem user.
+                if [ "$uid" -le 1000 ]; then
+                        continue
+                fi
+                if [ "$username" = root -o "$username" = "nobody" -o ! -d "$home" ]; then
+                        continue
+                fi
+                if [ -L "$home/{ug_filename}" ]; then
+                        sudo -Hu "$username" rm -f $home/{ug_filename}
+                fi
+        done
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0
