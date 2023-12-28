@@ -19,18 +19,23 @@ platform_unit = ["ThinkPad", "ThinkStation", "ThinkCentre", "Lenovo", "ThinkEdge
 
 info = UbuntuDistroInfo()
 
+
 def usage():
     """
     Print usage
     """
     print("Usage:")
-    print(" pkg-sutton-ug.py -s jammy -p bailee -b 1880088 -n \"ThinkPad P15s Gen 1\"")
-    print(" pkg-sutton-ug.py -s jammy -p bailee -b 1880086 -n \"ThinkPad X13\" -f xxx.pdf")
+    print(' pkg-sutton-ug.py -s jammy -p bailee -b 1880088 -n "ThinkPad P15s Gen 1"')
+    print(
+        ' pkg-sutton-ug.py -s jammy -p bailee -b 1880086 -n "ThinkPad X13" -f xxx.pdf'
+    )
     print(" pkg-sutton-ug.py -j jellyfish-abishag.json")
     print(" pkg-sutton-ug.py -j jellyfish-abishag.json -f xxx.pdf")
 
+
 class PlatformInfo:
-    """ class Platform information """
+    """class Platform information"""
+
     def __init__(self):
         self.series = ""
         self.platform = ""
@@ -41,11 +46,18 @@ class PlatformInfo:
         self.group = ""
 
     def read_json(self, json_file: str):
-        """ Read the platform information from JSON file """
+        """Read the platform information from JSON file"""
         with open(json_file, "r", encoding="utf-8") as json_data:
             data = json.load(json_data)
             json_data.close()
-        for key in ["series", "platform", "docbug", "short_description", "project", "pvr"]:
+        for key in [
+            "series",
+            "platform",
+            "docbug",
+            "short_description",
+            "project",
+            "pvr",
+        ]:
             if key not in data or data[key] == "":
                 print("ERROR: Missing key or value for key: " + key)
                 return False
@@ -68,7 +80,7 @@ class PlatformInfo:
         return True
 
     def generic_kwargs(self, ug_filename: str):
-        """ Return the generic kwargs """
+        """Return the generic kwargs"""
         version = info.version(self.series).split(" ")[0]
         if self.group == "":
             package_name = f"""oem-{self.project}-{self.platform}-doc"""
@@ -105,7 +117,8 @@ class PlatformInfo:
             "ug_filename": ug_filename,
         }
 
-def generate_debian_package(projection, ug_file:str, push_git:bool = False):
+
+def generate_debian_package(projection, ug_file: str, push_git: bool = False):
     """
     Generate a Sutton UG package
     """
@@ -124,14 +137,22 @@ def generate_debian_package(projection, ug_file:str, push_git:bool = False):
 
     os.mkdir(package_path)
 
-    for _f in [ "debian", "docs", "debian/source" ]:
+    for _f in ["debian", "docs", "debian/source"]:
         package_d = os.path.join(package_path, _f)
         if not os.path.exists(package_d):
             os.mkdir(package_d)
 
     # Replace the template files with the real data
-    for _f in [ "changelog", "control", "copyright", "install",\
-            "links", "postrm", "rules", "source/format" ]:
+    for _f in [
+        "changelog",
+        "control",
+        "copyright",
+        "install",
+        "links",
+        "postrm",
+        "rules",
+        "source/format",
+    ]:
         temp_f = os.path.join(template_path, _f)
         package_f = os.path.join(package_path, "debian", _f)
         with open(temp_f, "r", encoding="utf-8") as temp:
@@ -156,17 +177,23 @@ def generate_debian_package(projection, ug_file:str, push_git:bool = False):
     subprocess.run(["git", "config", "user.name", projection["fullname"]], check=False)
     subprocess.run(["git", "config", "user.email", projection["email"]], check=False)
     subprocess.run(["debcommit", "-a", "-R", "-r"], check=False)
-    subprocess.run(["git", "remote", "add", "origin", f"lp:{projection['git_repo']}"], check=False)
+    subprocess.run(
+        ["git", "remote", "add", "origin", f"lp:{projection['git_repo']}"], check=False
+    )
     if push_git:
-        subprocess.run(["git", "push", "--set-upstream", "origin",
-                        projection["series"]], check=False)
+        subprocess.run(
+            ["git", "push", "--set-upstream", "origin", projection["series"]],
+            check=False,
+        )
     # restore the current directory
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
+
 def login_lp():
-    """ Login Launchpad """
-    login = LaunchpadLogin(bot='yes')
+    """Login Launchpad"""
+    login = LaunchpadLogin(bot="yes")
     return login.lp
+
 
 def get_ug_file(docbug):
     """
@@ -208,7 +235,12 @@ def get_ug_file(docbug):
             latest_attachment = attachment
 
     ug_name = latest_attachment.title
-    print("INFO: Found: " + ug_name + ", date: " + latest_date.strftime("%Y-%m-%d %H:%M:%S"))
+    print(
+        "INFO: Found: "
+        + ug_name
+        + ", date: "
+        + latest_date.strftime("%Y-%m-%d %H:%M:%S")
+    )
 
     # download the file
     buffer = latest_attachment.data.open()
@@ -225,6 +257,7 @@ def get_ug_file(docbug):
         buffer.close()
 
     return ug_file
+
 
 def main():
     """
@@ -289,8 +322,12 @@ def main():
             return
         if pinfo.read_json(args.json) is False:
             return
-    elif args.series is None or args.platform is None \
-         or args.docbug is None or args.name is None:
+    elif (
+        args.series is None
+        or args.platform is None
+        or args.docbug is None
+        or args.name is None
+    ):
         usage()
         return
     # The following arguments are higher priority than the JSON file
@@ -320,6 +357,7 @@ def main():
     projection = pinfo.generic_kwargs(ug_filename)
 
     generate_debian_package(projection, ug_file, args.push_git)
+
 
 if __name__ == "__main__":
     main()
