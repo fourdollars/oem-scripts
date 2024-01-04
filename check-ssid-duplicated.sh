@@ -88,11 +88,11 @@ function check_duplicate() {
 
     all_matched=1
     for ssid in ${2//,/ }; do
-        matched_ssid=$(echo "$ssids" | grep -ie "$ssid")
+        matched_ssid=$(echo "$ssids" | grep -e "${ssid^^}")
         if [ -z "$matched_ssid" ]; then
             all_matched=0
         else
-            echo "${1//origin\//}: $ssid is duplicated with $matched_ssid"
+            echo "${1//origin\//}: ${ssid^^} is duplicated with $matched_ssid"
             ret=1
         fi
     done
