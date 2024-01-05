@@ -416,7 +416,7 @@ def update_bug(
 
     check_and_update_bug_subscriptions(lp, bug, update=True, yes=yes)
 
-    if check_bug_tags(bug, certified) is False:
+    if check_bug_tags(bug, certified, update=True) is False:
         tags = copy(bug.tags)
         if certified:
             if args.release:
@@ -480,7 +480,7 @@ def check_bug(
         need_fixing = True
     if check_and_update_bug_subscriptions(lp, bug) is False:
         need_fixing = True
-    if check_bug_tags(bug, certified) is False:
+    if check_bug_tags(bug, certified, update=False) is False:
         need_fixing = True
     if check_and_update_git_repo(bug, pkg_name, series=series) is False:
         need_fixing = True
@@ -740,6 +740,8 @@ def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool
     if args.ready and args.release:
         for subscriber in ("oem-solutions-engineers", "ubuntu-archive"):
             if subscriber not in subscriptions:
+                if not update and subscriber == "ubuntu-archive":
+                    continue
                 error(f"'{subscriber}' is not in the subscriptions.")
                 if update and yes_or_ask(
                     yes, f"Do you want to subscribe '{subscriber}'?"
@@ -759,12 +761,15 @@ def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool
     return result
 
 
-def check_bug_tags(bug, certified: bool = False) -> bool:
+def check_bug_tags(bug, certified: bool = False, update=False) -> bool:
     info("Checking bug tags...")
     result = True
     if certified:
         if args.release:
-            taglist = TAG_LIST + ["ubuntu-certified", "oem-done-upload"]
+            if update:
+                taglist = TAG_LIST + ["ubuntu-certified", "oem-done-upload"]
+            else:
+                taglist = TAG_LIST + ["ubuntu-certified"]
         elif args.ready:
             taglist = TAG_LIST + ["ubuntu-certified", "oem-needs-upload"]
         else:
@@ -1110,7 +1115,7 @@ def check_and_update_git_repo(
         shutil.rmtree(os.path.join(new_dir, ".git"))
         os.remove(os.path.join(new_dir, "debian", "changelog"))
 
-        if username:
+        if username and not args.skip:
             git_repo = f"git+ssh://{username}@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta"
         else:
             git_repo = f"https://git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/oem-{project}-projects-meta"
