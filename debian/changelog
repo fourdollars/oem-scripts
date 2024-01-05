@@ -1,3 +1,12 @@
+oem-scripts (1.95) jammy; urgency=medium
+
+  * debian/tests/get-private-ppa: Show more debug messages when it failed.
+  * mir-bug: Don't check the ubuntu-archive subscription and the oem-done-upload tag when releasing it.
+  * mir-bug: Don't use the username to clone git repo when we want to avoid updating it.
+  * get-private-ppa: Use the shorter lp-api.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 05 Jan 2024 11:59:43 +0800
+
 oem-scripts (1.94) jammy; urgency=medium
 
   [ Bin Li ]
