@@ -1,3 +1,24 @@
+oem-scripts (1.94) jammy; urgency=medium
+
+  [ Bin Li ]
+  * Add the local-repo to oem-scripts https://warthogs.atlassian.net/browse/PCSWE-1190
+  * Add local-repo to shellcheck
+  * Install the local-repo
+  * Revise the manual
+
+  [ Andy Chi ]
+  * Change the source list of checkbox
+
+  [ Bin Li ]
+  * Remove the series cause lsb_release is dropped.
+  * Refactor the pkg-sutton-ug
+  * Fix black errors
+
+  [ Jeremy Szu ]
+  * [check-ssid-duplicated.sh] Fix grep -i mis-grep the ssid in the format of dmi
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 05 Jan 2024 09:24:50 +0800
+
 oem-scripts (1.93) jammy; urgency=medium
 
   [ Bin Li ]
