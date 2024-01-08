@@ -274,7 +274,9 @@ def collect_bugs(lp, output):
     )
     try:
         total = int(tasks.total_size)
-    except TypeError:  # When the total size becomes more than 50, it won't return 'int' but 'ScalarValue' instead.
+    except (
+        TypeError
+    ):  # When the total size becomes more than 50, it won't return 'int' but 'ScalarValue' instead.
         total = tasks.total_size.value
 
     bugs = []
@@ -862,7 +864,7 @@ def check_and_update_bug_attachments(
         _run_command(["dpkg-buildpackage", "-S", "-us", "-uc"])
         os.chdir(tmpdir)
         dsc = glob(f"{pkg_name}*.dsc")[0]
-        prog = re.compile(fr"{pkg_name}_(.*).dsc")
+        prog = re.compile(rf"{pkg_name}_(.*).dsc")
         result = prog.match(dsc)
         debian_version = result.group(1)
         debdiff = f"{pkg_name}_{debian_version}.debdiff"
@@ -876,8 +878,9 @@ def check_and_update_bug_attachments(
         content += "\n"
         with open(debdiff, "w") as f:
             diff_started = False
+            # oem-metapackage-mir-check will generated debdiff with debug info, so we need to remove them.
             for line in content.split("\n"):
-                if diff_started is False and line.startswith("diff -Nru oem-qemu-meta"):
+                if diff_started is False and line.startswith("diff"):
                     diff_started = True
                 if diff_started:
                     f.write(line + "\n")
