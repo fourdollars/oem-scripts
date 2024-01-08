@@ -880,9 +880,7 @@ def check_and_update_bug_attachments(
             diff_started = False
             # oem-metapackage-mir-check will generated debdiff with debug info, so we need to remove them.
             for line in content.split("\n"):
-                if diff_started is False and line.startswith(
-                    "diff -uNr -x gbp.conf -x changelog oem-qemu-meta"
-                ):
+                if diff_started is False and line.startswith("diff"):
                     diff_started = True
                 if diff_started:
                     f.write(line + "\n")
