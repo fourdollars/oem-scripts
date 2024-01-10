@@ -1,3 +1,14 @@
+oem-scripts (1.96) jammy; urgency=medium
+
+  [ Bin Li ]
+  * the output of mir-check was changed and format with black
+  * Use diff for simple
+
+  [ Jeremy Szu ]
+  * [check-ssid-duplicated.sh] report error if not all matched
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 10 Jan 2024 18:07:09 +0800
+
 oem-scripts (1.95) jammy; urgency=medium
 
   * debian/tests/get-private-ppa: Show more debug messages when it failed.
