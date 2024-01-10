@@ -123,7 +123,7 @@ function check_duplicate() {
         fi
     done
 
-    if [ "$ret" -eq 2 ] && [ "$all_matched" -eq 0 ]; then
+    if [ "$ret" -eq 2 ] && [ "$all_matched" -eq 1 ]; then
         ret=1
     fi
 
