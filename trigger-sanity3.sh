@@ -203,10 +203,7 @@ main() {
             ;;
             --checkbox_ppas)
                 shift
-                checkbox_ppas=$1
-                if [[ $checkbox_ppas =~ [[:space:]] ]]; then
-                    checkbox_ppas=${checkbox_ppas/' '/%20}
-                fi
+                checkbox_ppas=$(echo "${1}" | sed -E 's/^\s*//;s/\s*$//;s/\s+/%20/g')
             ;;
             --auto_create_bug_assignee)
                 shift
