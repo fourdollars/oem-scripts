@@ -186,7 +186,7 @@ case "${CODENAME}" in
     (xenial|bionic|focal)
         PUBKEY="790BC7277767219C42C86F933B4FE6ACC0B21F32"
         ;;
-    (hirsute|impish|jammy|mantic)
+    (hirsute|impish|jammy|mantic|noble)
         PUBKEY="F6ECB3762474EDA9D21B7022871920D1991BC93C"
         ;;
     (*)
