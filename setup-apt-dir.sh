@@ -33,11 +33,12 @@ NO_BASE=
 NO_UPDATES=
 NO_BACKPORTS=
 NO_COMMUNITY=
+HAS_SOURCE=
 DPKG_STATUS=
 OUTPUT=
 PPA=()
 PROPOSED=
-OPTS="$(getopt -o c:dho:ps:m: --long apt-dir:,codename:,dpkg-status:,disable-base,disable-updates,disable-backports,disable-community,debug,help,i386,output:,proposed,ppa:,mirror:,extra-repo:,extra-key: -n 'setup-apt-dir.sh' -- "$@")"
+OPTS="$(getopt -o c:dho:ps:m: --long apt-dir:,codename:,dpkg-status:,disable-base,disable-updates,disable-backports,disable-community,enable-source,debug,help,i386,output:,proposed,ppa:,mirror:,extra-repo:,extra-key: -n 'setup-apt-dir.sh' -- "$@")"
 eval set -- "${OPTS}"
 while :; do
     case "$1" in
@@ -72,6 +73,9 @@ OPTIONS:
 
  --disable-community
       Disable universe and multiverse components.
+
+ --enable-source
+      Enable deb-src in the source list.
 
  --i386
       Enable i386 arch.
@@ -119,6 +123,9 @@ ENDLINE
             shift;;
         ('--disable-community')
             NO_COMMUNITY=1
+            shift;;
+        ('--enable-source')
+            HAS_SOURCE=1
             shift;;
         ('--i386')
             I386=1
@@ -179,6 +186,9 @@ if [ "${#PPA[@]}" != "0" ]; then
     while read -r _ url key; do
         KEYS+=("$key")
         LISTS+=("deb [signed-by=$APTDIR/$key.pub] $url $CODENAME main")
+        if [ -n "${HAS_SOURCE}" ]; then
+            LISTS+=("deb-src [signed-by=$APTDIR/$key.pub] $url $CODENAME main")
+        fi
     done< <(get-private-ppa "${PPA[@]}")
 fi
 
@@ -214,22 +224,44 @@ if [ -z "$NO_BASE" ]; then
     cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
 deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME ${DIST[*]}
 ENDLINE
+    if [ -n "${HAS_SOURCE}" ]; then
+        cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
+deb-src [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME ${DIST[*]}
+ENDLINE
+    fi
 fi
 
 if [ -z "$NO_UPDATES" ]; then
     cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
 deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-updates ${DIST[*]}
 ENDLINE
+    if [ -n "${HAS_SOURCE}" ]; then
+        cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
+deb-src [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-updates ${DIST[*]}
+ENDLINE
+    fi
 fi
 
 if [ -z "$NO_BACKPORTS" ]; then
     cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
 deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-backports ${DIST[*]}
 ENDLINE
+    if [ -n "${HAS_SOURCE}" ]; then
+        cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
+deb-src [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-backports ${DIST[*]}
+ENDLINE
+    fi
 fi
 
 if [ -n "$PROPOSED" ]; then
-    echo "deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-proposed ${DIST[*]}" >> "$APTDIR/etc/apt/sources.list"
+    cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
+deb [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-proposed ${DIST[*]}
+ENDLINE
+    if [ -n "${HAS_SOURCE}" ]; then
+        cat >> "$APTDIR/etc/apt/sources.list" <<ENDLINE
+deb-src [signed-by=$APTDIR/$PUBKEY.pub$ARCH] $MIRROR $CODENAME-proposed ${DIST[*]}
+ENDLINE
+    fi
 fi
 
 for list in "${LISTS[@]}"; do
