@@ -377,7 +377,9 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> bool:
                     ["pkg-list", "--apt-dir", tmpdir, pkg], returncode=(0, 1)
                 )
                 if returncode == 1:
+                    print(output)
                     failed = True
+                    no_error = False
                 else:
                     for line in output.split("\n"):
                         archive_pkg, archive_ver = line.split(" ")
