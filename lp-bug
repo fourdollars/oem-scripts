@@ -387,8 +387,9 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> bool:
                             if apt_pkg.version_compare(archive_ver, ver) >= 0:
                                 print(f"{line} >= {ver}")
                             else:
-                                warning(f"{line} < {ver}")
+                                error(f"{line} < {ver}")
                                 failed = True
+                                no_error = False
             # Tag "cqa-verified" if no failure.
             if not failed:
                 if not args.dry_run and _yes_or_ask(
