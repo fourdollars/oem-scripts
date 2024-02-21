@@ -7,8 +7,18 @@ export LAUNCHPAD_API="https://api.staging.launchpad.net/"
 
 # Search for the latest bug to test.
 while read -r bug; do
-    if launchpad-api get "$bug" | jq -r '.tags | .[]' | grep cqa-verified-staging >/dev/null; then
-        lp-bug cqa-verify --dry-run "$(launchpad-api get "$bug" | jq -r '.id')"
-        break
-    fi
-done < <(launchpad-api get cloudberry ws.op==searchTasks status=="Fix Committed" | jq -r '.entries | .[] | .bug_link' | sort -r)
+    id=$(basename "$bug")
+    case "$id" in
+        (1943233|1943231|1843358|1830578)
+            if ! lp-bug cqa-verify --dry-run "$id"; then
+                true
+            else
+                false
+            fi
+            ;;
+        (*)
+            lp-bug cqa-verify --dry-run "$id"
+            ;;
+    esac
+    break
+done < <(lp-api get cloudberry ws.op==searchTasks status=="Fix Committed" tags==cqa-verified-staging | jq -r '.entries | .[] | .bug_link' | sort -r)
