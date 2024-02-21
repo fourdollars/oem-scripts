@@ -26,10 +26,14 @@ import sys
 import os
 
 from apt import apt_pkg
+from distro_info import UbuntuDistroInfo
 from logging import debug, warning, info, error
 from oem_scripts import _run_command
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
 from tempfile import TemporaryDirectory
+
+
+distroinfo = UbuntuDistroInfo()
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -334,7 +338,7 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> bool:
         with TemporaryDirectory() as tmpdir:
             failed = False
             fingerprint = "F9FDA6BED73CDC22"
-            series = ["jammy", "focal", "bionic", "xenial"]
+            series = reversed(list(filter(lambda x: distroinfo.is_lts(x), distroinfo.supported_esm())))
             codename = ""
             for item in series:
                 if item in prod_archive_line:
