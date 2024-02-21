@@ -338,7 +338,9 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> bool:
         with TemporaryDirectory() as tmpdir:
             failed = False
             fingerprint = "F9FDA6BED73CDC22"
-            series = reversed(list(filter(lambda x: distroinfo.is_lts(x), distroinfo.supported_esm())))
+            series = reversed(
+                list(filter(lambda x: distroinfo.is_lts(x), distroinfo.supported_esm()))
+            )
             codename = ""
             for item in series:
                 if item in prod_archive_line:
