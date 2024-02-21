@@ -366,6 +366,10 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> bool:
                     prod_archive_line.replace(
                         "deb ", f"deb [signed-by={tmpdir}/{fingerprint}.pub] "
                     ),
+                    "--extra-repo",
+                    prod_archive_line.replace(
+                        "deb ", f"deb-src [signed-by={tmpdir}/{fingerprint}.pub] "
+                    ),
                 ],
                 returncode=(0, 100),
             )
