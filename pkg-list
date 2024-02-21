@@ -57,6 +57,11 @@ parser.add_argument("--apt-dir", type=str, help="specify the dir for apt")
 parser.add_argument(
     "--recommends", action="store_true", help="include recommends packages"
 )
+parser.add_argument(
+    "--source",
+    action="store_true",
+    help="Specify the name of Debian source package instead",
+)
 parser.add_argument("--suggests", action="store_true", help="include suggests packages")
 parser.add_argument(
     "--non-installed",
@@ -79,7 +84,7 @@ parser.add_argument(
     metavar="PKG_NAME",
     type=str,
     nargs="+",
-    help="the names of Debian binary packages",
+    help="the names of Debian binary/source packages",
 )
 
 args = parser.parse_args()
