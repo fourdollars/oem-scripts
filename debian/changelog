@@ -1,3 +1,26 @@
+oem-scripts (1.98) jammy; urgency=medium
+
+  [ Yo-Jung Lin ]
+  * Fix whitespace substitution for more than 3 PPAs in --checkbox_ppas
+
+  [ Andy Chi ]
+  * Change the default checkbox_ppas
+
+  [ Yao Wei (魏銘廷) ]
+  * setup-apt-dir.sh: add noble support
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * lp-bug: Use UbuntuDistroInfo to get all LTS series instead of hardcoding the list.
+  * lp-bug: Return failed and show the output for cqa-verify subcommand.
+  * lp-bug: Show error and return failed when the version did not fulfill the requirement.
+  * black lp-bug to reformat.
+  * pkg-list: Add the --source option.
+  * pkg-list: Make it able to search for the Debian source package.
+  * setup-apt-dir.sh: Add the --enable-source option to enable deb-src.
+  * debian/tests/lp-bug: Expect some bugs with the failed result.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 22 Feb 2024 13:18:30 +0800
+
 oem-scripts (1.97) jammy; urgency=medium
 
   [ pseudoc ]
