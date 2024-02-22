@@ -1,3 +1,9 @@
+oem-scripts (1.99) jammy; urgency=medium
+
+  * lp-bug: Use the --source option of pkg-list for the cqa-verify subcommand.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 22 Feb 2024 15:16:05 +0800
+
 oem-scripts (1.98) jammy; urgency=medium
 
   [ Yo-Jung Lin ]
