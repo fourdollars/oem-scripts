@@ -26,10 +26,14 @@ import sys
 import os
 
 from apt import apt_pkg
+from distro_info import UbuntuDistroInfo
 from logging import debug, warning, info, error
 from oem_scripts import _run_command
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
 from tempfile import TemporaryDirectory
+
+
+distroinfo = UbuntuDistroInfo()
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -334,7 +338,9 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> bool:
         with TemporaryDirectory() as tmpdir:
             failed = False
             fingerprint = "F9FDA6BED73CDC22"
-            series = ["jammy", "focal", "bionic", "xenial"]
+            series = reversed(
+                list(filter(lambda x: distroinfo.is_lts(x), distroinfo.supported_esm()))
+            )
             codename = ""
             for item in series:
                 if item in prod_archive_line:
@@ -360,6 +366,10 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> bool:
                     prod_archive_line.replace(
                         "deb ", f"deb [signed-by={tmpdir}/{fingerprint}.pub] "
                     ),
+                    "--extra-repo",
+                    prod_archive_line.replace(
+                        "deb ", f"deb-src [signed-by={tmpdir}/{fingerprint}.pub] "
+                    ),
                 ],
                 returncode=(0, 100),
             )
@@ -373,7 +383,9 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> bool:
                     ["pkg-list", "--apt-dir", tmpdir, pkg], returncode=(0, 1)
                 )
                 if returncode == 1:
+                    print(output)
                     failed = True
+                    no_error = False
                 else:
                     for line in output.split("\n"):
                         archive_pkg, archive_ver = line.split(" ")
@@ -381,8 +393,9 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> bool:
                             if apt_pkg.version_compare(archive_ver, ver) >= 0:
                                 print(f"{line} >= {ver}")
                             else:
-                                warning(f"{line} < {ver}")
+                                error(f"{line} < {ver}")
                                 failed = True
+                                no_error = False
             # Tag "cqa-verified" if no failure.
             if not failed:
                 if not args.dry_run and _yes_or_ask(
