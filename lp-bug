@@ -380,7 +380,7 @@ def cloudberry_cqa_verified(lp, yes: bool, bugID: int) -> bool:
             # Use the temporary apt dir to compare the package versions.
             for pkg, ver in packages:
                 output, _, returncode = _run_command(
-                    ["pkg-list", "--apt-dir", tmpdir, pkg], returncode=(0, 1)
+                    ["pkg-list", "--apt-dir", tmpdir, "--source", pkg], returncode=(0, 1)
                 )
                 if returncode == 1:
                     print(output)
