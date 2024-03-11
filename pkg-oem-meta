@@ -64,6 +64,9 @@ if series == "focal":
     default_kernel_meta = "linux-oem-20.04"
 elif series == "jammy":
     default_kernel_meta = "linux-oem-22.04"
+elif series == "noble":
+    # TODO: update to linux-oem-24.04 when available
+    default_kernel_meta = "linux-generic-hwe-22.04"
 
 parser.add_argument(
     "-k",
@@ -204,6 +207,11 @@ def generate_debian_package(version, bootstrap=False, real=False):
             extra = ", linux-generic-hwe-22.04"
         flavour = "default"
         grub_flavour = "generic"
+    elif args.kernel == "linux-generic-hwe-24.04":
+        if real:
+            extra = ", linux-generic-hwe-24.04"
+        flavour = "default"
+        grub_flavour = "generic"
     elif args.kernel == "linux-oem-20.04b":
         if real:
             extra = ", linux-oem-20.04b | linux-oem-20.04"
@@ -219,11 +227,20 @@ def generate_debian_package(version, bootstrap=False, real=False):
             extra = f", {args.kernel}"
         flavour = "oem"
         grub_flavour = "oem"
+    elif args.kernel.startswith("linux-oem-24.04"):
+        if real:
+            extra = f", {args.kernel}"
+        flavour = "oem"
+        grub_flavour = "oem"
 
     if group and series == "focal":
         prefix = group + "."
         infix = "." + group
         platform_archive = codename + infix
+    elif series == "noble":
+        prefix = ""
+        infix = ""
+        platform_archive = codename + "-" + platform
     else:
         prefix = ""
         infix = ""
@@ -251,19 +268,24 @@ def generate_debian_package(version, bootstrap=False, real=False):
             lp_bug = f" (LP: #{args.private_bug})"
         else:
             lp_bug = ""
-        if codename == "somerville":
-            extra = extra + ", oem-somerville-meta"
-            factory_depends = factory_depends + ", oem-somerville-factory-meta"
-        if codename == "sutton":
-            extra = extra + ", oem-" + platform_archive + "-meta"
-            factory_depends = (
-                factory_depends + ", oem-" + platform_archive + "-factory-meta"
-            )
-        if codename == "stella":
-            extra = extra + ", oem-" + platform_archive + "-meta"
-            factory_depends = (
-                factory_depends + ", oem-" + platform_archive + "-factory-meta"
-            )
+
+        if series == "noble":
+            extra = extra + ", oem-" + codename + "-meta"
+            factory_depends = factory_depends + ", oem-" + codename + "-factory-meta"
+        else:
+            if codename == "somerville":
+                extra = extra + ", oem-somerville-meta"
+                factory_depends = factory_depends + ", oem-somerville-factory-meta"
+            if codename == "sutton":
+                extra = extra + ", oem-" + platform_archive + "-meta"
+                factory_depends = (
+                    factory_depends + ", oem-" + platform_archive + "-factory-meta"
+                )
+            if codename == "stella":
+                extra = extra + ", oem-" + platform_archive + "-meta"
+                factory_depends = (
+                    factory_depends + ", oem-" + platform_archive + "-factory-meta"
+                )
 
     git_abbr = f"https://git.launchpad.net/{git_repo} -b {branch}"
     git_browser = f"https://code.launchpad.net/{git_repo}/+ref/{branch}"
@@ -272,7 +294,7 @@ def generate_debian_package(version, bootstrap=False, real=False):
 
     source_file = "oem-%s-%s-meta.list" % (codename + infix, platform)
     archive = "archive.canonical.com"
-    if series == "focal" or codename == "somerville":
+    if series == "focal" or series == "noble" or codename == "somerville":
         source_list = f"""\
 deb http://{brand}.{archive}/ {series} {codename}
 # deb-src http://{brand}.{archive}/ {series} {codename}
