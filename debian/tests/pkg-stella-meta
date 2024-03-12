@@ -7,6 +7,146 @@ IFS=$'\n\t'
 export DEBFULLNAME="Commercial Engineering"
 export DEBEMAIL="commercial-engineering@canonical.com"
 
+echo "== Check linux-oem-24.04 =="
+
+pkg-stella-meta --public-bug 1895517 --private-bug 1892301 -s noble -k linux-oem-24.04 -p ivysaur 8750
+
+cd oem-stella-ivysaur-meta || exit 1
+
+git checkout ivysaur-noble-ubuntu
+
+grep "^deb http://hp.archive.canonical.com/ noble stella$" oem-stella-ivysaur-meta.list
+grep "^# deb-src http://hp.archive.canonical.com/ noble stella$" oem-stella-ivysaur-meta.list
+grep -v "^deb http://hp.archive.canonical.com/ noble stella.cmit$" oem-stella-ivysaur-meta.list
+grep -v "^# deb-src http://hp.archive.canonical.com/ noble stella.cmit$" oem-stella-ivysaur-meta.list
+grep "^deb http://hp.archive.canonical.com/ noble stella-ivysaur$" oem-stella-ivysaur-meta.list
+grep "^# deb-src http://hp.archive.canonical.com/ noble stella-ivysaur$" oem-stella-ivysaur-meta.list
+
+grep "oem-stella-ivysaur-meta (24.04~ubuntu1) UNRELEASED; urgency=medium" debian/changelog
+grep "\* Meta package for Stella Ivysaur." debian/changelog
+grep '(LP: #1895517)' debian/changelog
+
+grep "Source: oem-stella-ivysaur-meta" debian/control
+grep "Package: oem-stella-ivysaur-meta" debian/control
+grep -v "Package: oem-stella-factory-ivysaur-meta" debian/control
+grep "Depends: \${misc:Depends}, ubuntu-oem-keyring" debian/control
+grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
+grep "^Restrictions: needs-root$" debian/tests/control
+grep "^apt-get autoremove --purge --yes oem-stella-ivysaur-meta$" debian/tests/meta
+
+grep "Upstream-Name: oem-stella-ivysaur-meta" debian/copyright
+
+grep "alias pci:\*sv0000103Csd00008750bc0Csc05\* meta oem-stella-ivysaur-meta" debian/modaliases
+
+# oem-flavour.cfg only exists in oem branch.
+if [ -f oem-flavour.cfg ]; then
+    exit 1
+fi
+
+git checkout ivysaur-noble-oem
+
+grep "^deb http://hp.archive.canonical.com/ noble stella$" oem-stella-ivysaur-meta.list
+grep "^# deb-src http://hp.archive.canonical.com/ noble stella$" oem-stella-ivysaur-meta.list
+grep -v "^deb http://hp.archive.canonical.com/ noble stella.cmit$" oem-stella-ivysaur-meta.list
+grep -v "^# deb-src http://hp.archive.canonical.com/ noble stella.cmit$" oem-stella-ivysaur-meta.list
+grep "^deb http://hp.archive.canonical.com/ noble stella-ivysaur$" oem-stella-ivysaur-meta.list
+grep "^# deb-src http://hp.archive.canonical.com/ noble stella-ivysaur$" oem-stella-ivysaur-meta.list
+
+grep "oem-stella-ivysaur-meta (24.04ubuntu1) noble; urgency=medium" debian/changelog
+grep "\* Meta package for Stella Ivysaur." debian/changelog
+grep '(LP: #1892301)' debian/changelog
+
+grep "Source: oem-stella-ivysaur-meta" debian/control
+grep "Package: oem-stella-factory-ivysaur-meta" debian/control
+grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-oem-24.04, oem-stella-meta" debian/control
+grep "Depends: \${misc:Depends}, oem-stella-factory-meta" debian/control
+grep "XB-Ubuntu-OEM-Kernel-Flavour: oem" debian/control
+grep "^Restrictions: needs-root$" debian/tests/control
+grep "^apt-get autoremove --purge --yes oem-stella-ivysaur-meta$" debian/tests/meta
+
+grep "Upstream-Name: oem-stella-ivysaur-meta" debian/copyright
+
+grep "alias pci:\*sv0000103Csd00008750bc0Csc05\* meta oem-stella-ivysaur-meta" debian/modaliases
+
+# oem-flavour.cfg only exists in oem branch.
+if [ ! -f oem-flavour.cfg ]; then
+    exit 1
+fi
+grep "^GRUB_FLAVOUR_ORDER=oem$" oem-flavour.cfg
+
+cd ..
+rm -fr oem-stella-ivysaur-meta
+
+echo "== Check linux-generic-hwe-22.04 for Noble =="
+
+pkg-stella-meta --public-bug 1895517 --private-bug 1892301 -s noble -k linux-generic-hwe-22.04 -p ivysaur 8750
+
+cd oem-stella-ivysaur-meta || exit 1
+
+git checkout ivysaur-noble-ubuntu
+
+grep "^deb http://hp.archive.canonical.com/ noble stella$" oem-stella-ivysaur-meta.list
+grep "^# deb-src http://hp.archive.canonical.com/ noble stella$" oem-stella-ivysaur-meta.list
+grep -v "^deb http://hp.archive.canonical.com/ noble stella.cmit$" oem-stella-ivysaur-meta.list
+grep -v "^# deb-src http://hp.archive.canonical.com/ noble stella.cmit$" oem-stella-ivysaur-meta.list
+grep "^deb http://hp.archive.canonical.com/ noble stella-ivysaur$" oem-stella-ivysaur-meta.list
+grep "^# deb-src http://hp.archive.canonical.com/ noble stella-ivysaur$" oem-stella-ivysaur-meta.list
+
+grep "oem-stella-ivysaur-meta (24.04~ubuntu1) UNRELEASED; urgency=medium" debian/changelog
+grep "\* Meta package for Stella Ivysaur." debian/changelog
+grep '(LP: #1895517)' debian/changelog
+
+grep "Source: oem-stella-ivysaur-meta" debian/control
+grep "Package: oem-stella-ivysaur-meta" debian/control
+grep -v "Package: oem-stella-factory-ivysaur-meta" debian/control
+grep "Depends: \${misc:Depends}, ubuntu-oem-keyring" debian/control
+grep "XB-Ubuntu-OEM-Kernel-Flavour: default" debian/control
+grep "^Restrictions: needs-root$" debian/tests/control
+grep "^apt-get autoremove --purge --yes oem-stella-ivysaur-meta$" debian/tests/meta
+
+grep "Upstream-Name: oem-stella-ivysaur-meta" debian/copyright
+
+grep "alias pci:\*sv0000103Csd00008750bc0Csc05\* meta oem-stella-ivysaur-meta" debian/modaliases
+
+# oem-flavour.cfg only exists in oem branch.
+if [ -f oem-flavour.cfg ]; then
+    exit 1
+fi
+
+git checkout ivysaur-noble-oem
+
+grep "^deb http://hp.archive.canonical.com/ noble stella$" oem-stella-ivysaur-meta.list
+grep "^# deb-src http://hp.archive.canonical.com/ noble stella$" oem-stella-ivysaur-meta.list
+grep -v "^deb http://hp.archive.canonical.com/ noble stella.cmit$" oem-stella-ivysaur-meta.list
+grep -v "^# deb-src http://hp.archive.canonical.com/ noble stella.cmit$" oem-stella-ivysaur-meta.list
+grep "^deb http://hp.archive.canonical.com/ noble stella-ivysaur$" oem-stella-ivysaur-meta.list
+grep "^# deb-src http://hp.archive.canonical.com/ noble stella-ivysaur$" oem-stella-ivysaur-meta.list
+
+grep "oem-stella-ivysaur-meta (24.04ubuntu1) noble; urgency=medium" debian/changelog
+grep "\* Meta package for Stella Ivysaur." debian/changelog
+grep '(LP: #1892301)' debian/changelog
+
+grep "Source: oem-stella-ivysaur-meta" debian/control
+grep "Package: oem-stella-factory-ivysaur-meta" debian/control
+grep "Depends: \${misc:Depends}, ubuntu-oem-keyring, linux-generic-hwe-22.04, oem-stella-meta" debian/control
+grep "Depends: \${misc:Depends}, oem-stella-factory-meta" debian/control
+grep "XB-Ubuntu-OEM-Kernel-Flavour: default" debian/control
+grep "^Restrictions: needs-root$" debian/tests/control
+grep "^apt-get autoremove --purge --yes oem-stella-ivysaur-meta$" debian/tests/meta
+
+grep "Upstream-Name: oem-stella-ivysaur-meta" debian/copyright
+
+grep "alias pci:\*sv0000103Csd00008750bc0Csc05\* meta oem-stella-ivysaur-meta" debian/modaliases
+
+# oem-flavour.cfg only exists in oem branch.
+if [ ! -f oem-flavour.cfg ]; then
+    exit 1
+fi
+grep "^GRUB_FLAVOUR_ORDER=generic$" oem-flavour.cfg
+
+cd ..
+rm -fr oem-stella-ivysaur-meta
+
 echo "== Check linux-oem-22.04a =="
 
 pkg-stella-meta --public-bug 1895517 --private-bug 1892301 -s jammy -k linux-oem-22.04a -p ivysaur 8750
