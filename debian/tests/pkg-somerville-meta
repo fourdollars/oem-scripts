@@ -9,6 +9,22 @@ cd "$AUTOPKGTEST_ARTIFACTS"
 export DEBFULLNAME="Commercial Engineering"
 export DEBEMAIL="commercial-engineering@canonical.com"
 
+echo "== Check --jira argument =="
+
+if pkg-somerville-meta --public-bug 1868254 --private-bug 123456 --jira Nantou-141 -s noble -k linux-oem-24.04 -p three-eyed-raven 0962 --market-name "XPS 13 7390" --product-name "XPS 13 7390"; then
+  echo "pkg-somerville-meta shall not accept both --private-bug and --jira."
+  exit 1
+fi
+
+pkg-somerville-meta --public-bug 1868254 --jira Nantou-141 -s noble -k linux-oem-24.04 -p three-eyed-raven 0962 --market-name "XPS 13 7390" --product-name "XPS 13 7390"
+cd oem-somerville-three-eyed-raven-meta || exit 1
+git checkout three-eyed-raven-noble-oem
+
+grep '(JIRA: NANTOU-141)' debian/changelog
+
+cd ..
+rm -fr oem-somerville-three-eyed-raven-meta
+
 echo "== Check linux-oem-24.04 =="
 
 pkg-somerville-meta --public-bug 1868254 --private-bug 123456 -s noble -k linux-oem-24.04 -p three-eyed-raven 0962 --market-name "XPS 13 7390" --product-name "XPS 13 7390"

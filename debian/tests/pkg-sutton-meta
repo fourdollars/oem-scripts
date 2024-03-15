@@ -7,6 +7,22 @@ IFS=$'\n\t'
 export DEBFULLNAME="Commercial Engineering"
 export DEBEMAIL="commercial-engineering@canonical.com"
 
+echo "== Check --jira argument =="
+
+if pkg-sutton-meta --public-bug 123456 --private-bug 1874177 --jira SUTTON-123 -s noble -k linux-oem-24.04 -p AdaM N2U bvnLENOVo:bvrN2o; then
+  echo "pkg-sutton-meta shall not accept both --private-bug and --jira."
+  exit 1
+fi
+
+pkg-sutton-meta --public-bug 123456 --jira SUTTON-123 -s noble -k linux-oem-24.04 -p AdaM N2U bvnLENOVo:bvrN2o
+cd oem-sutton-adam-meta || exit 1
+git checkout adam-noble-oem
+
+grep '(JIRA: SUTTON-123)' debian/changelog
+
+cd ..
+rm -fr oem-sutton-adam-meta
+
 echo "== Check linux-oem-24.04 =="
 
 pkg-sutton-meta --public-bug 123456 --private-bug 1874177 -s noble -k linux-oem-24.04 -p AdaM N2U bvnLENOVo:bvrN2o
