@@ -7,6 +7,22 @@ IFS=$'\n\t'
 export DEBFULLNAME="Commercial Engineering"
 export DEBEMAIL="commercial-engineering@canonical.com"
 
+echo "== Check --jira argument =="
+
+if pkg-stella-meta --public-bug 1895517 --private-bug 1892301 --jira nantou-177  -s noble -k linux-oem-24.04 -p ivysaur 8750; then
+  echo "pkg-stella-meta shall not accept both --private-bug and --jira."
+  exit 1
+fi
+
+pkg-stella-meta --public-bug 1895517 --jira nantou-177  -s noble -k linux-oem-24.04 -p ivysaur 8750
+cd oem-stella-ivysaur-meta || exit 1
+git checkout ivysaur-noble-oem
+
+grep '(JIRA: NANTOU-177)' debian/changelog
+
+cd ..
+rm -fr oem-stella-ivysaur-meta
+
 echo "== Check linux-oem-24.04 =="
 
 pkg-stella-meta --public-bug 1895517 --private-bug 1892301 -s noble -k linux-oem-24.04 -p ivysaur 8750
