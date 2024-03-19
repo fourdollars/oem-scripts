@@ -86,8 +86,12 @@ class PlatformInfo:
         version = info.version(self.series).split(" ")[0]
         if self.group == "":
             if self.postfix != "":
-                package_name = f"""oem-{self.project}-{self.platform}-doc-{self.postfix}"""
-                provides_package = f"""\nProvides: oem-{self.project}-{self.platform}-doc"""
+                package_name = (
+                    f"""oem-{self.project}-{self.platform}-doc-{self.postfix}"""
+                )
+                provides_package = (
+                    f"""\nProvides: oem-{self.project}-{self.platform}-doc"""
+                )
             else:
                 package_name = f"""oem-{self.project}-{self.platform}-doc"""
                 provides_package = ""
