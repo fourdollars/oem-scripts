@@ -8,7 +8,7 @@ Vcs-Git: {git_abbr}
 Vcs-Browser: {git_browser}
 
 Package: {package_name}
-Architecture: all
+Architecture: all{provides_package}
 Depends: ${{misc:Depends}}, oem-sutton-common-doc
 Description: Lenovo documents for {shortdesc}.
  This is a UserGuide documents for {shortdesc}.
