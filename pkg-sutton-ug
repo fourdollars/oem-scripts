@@ -31,6 +31,7 @@ def usage():
     )
     print(" pkg-sutton-ug.py -j jellyfish-abishag.json")
     print(" pkg-sutton-ug.py -j jellyfish-abishag.json -f xxx.pdf")
+    print(" pkg-sutton-ug.py -j jellyfish-cairo.json -P m70s")
 
 
 class PlatformInfo:
@@ -44,6 +45,7 @@ class PlatformInfo:
         self.project = ""
         self.pvr = ""
         self.group = ""
+        self.postfix = ""
 
     def read_json(self, json_file: str):
         """Read the platform information from JSON file"""
@@ -83,7 +85,12 @@ class PlatformInfo:
         """Return the generic kwargs"""
         version = info.version(self.series).split(" ")[0]
         if self.group == "":
-            package_name = f"""oem-{self.project}-{self.platform}-doc"""
+            if self.postfix != "":
+                package_name = f"""oem-{self.project}-{self.platform}-doc-{self.postfix}"""
+                provides_package = f"""\nProvides: oem-{self.project}-{self.platform}-doc"""
+            else:
+                package_name = f"""oem-{self.project}-{self.platform}-doc"""
+                provides_package = ""
             version = version + self.project + "1"
         else:
             package_name = f"""oem-{self.project}.{self.group}-{self.platform}-doc"""
@@ -106,6 +113,7 @@ class PlatformInfo:
             "docbug": self.docbug,
             "shortdesc": self.shortdesc,
             "package_name": package_name,
+            "provides_package": provides_package,
             "version": version,
             "fullname": fullname,
             "email": email,
@@ -297,6 +305,11 @@ def main():
         type=int,
     )
     parser.add_argument(
+        "-P",
+        "--postfix",
+        help="When multiple platforms sharing same BIOS, set the single platform name as postfix",
+    )
+    parser.add_argument(
         "-n",
         "--name",
         help="Name of the platform, such as ThinkPad P15s",
@@ -342,6 +355,7 @@ def main():
         print("ERROR: Invalid platform name: " + pinfo.pvr)
         return
     pinfo.group = args.group or pinfo.group
+    pinfo.postfix = args.postfix or pinfo.postfix
 
     # Download the Userguide file from Launchpad
     if args.file is None:
