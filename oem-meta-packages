@@ -2229,7 +2229,7 @@ elif args.subcommand == "unsubscribe":
 elif args.subcommand == "create":
     platform_json = json.load(args.platform)
     series = platform_json["series"]
-    if series != "focal" and series != "jammy":
+    if series != "focal" and series != "jammy" and series != "noble":
         error(f"{series} is not supported yet.")
         exit(1)
     project = platform_json["project"]
@@ -2256,8 +2256,12 @@ elif args.subcommand == "create":
         error(f"{kernel_meta} is not supported yet.")
         exit(1)
     commands.extend(["--kernel", kernel_meta])
-    private_bug = platform_json["metabug"]
-    commands.extend(["--private-bug", str(private_bug)])
+    bug_id = platform_json["metabug"]
+    if isinstance(bug_id, int):
+        commands.extend(["--private-bug", str(bug_id)])
+    else:
+        commands.extend(["--jira", str(bug_id)])
+
     if "mirbug" in platform_json:
         commands.extend(["--public-bug", str(platform_json["mirbug"])])
     if platform_json.get("certified", False) is True:

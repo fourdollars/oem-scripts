@@ -186,6 +186,49 @@ ENDLINE
 oem-meta-packages create jellyfish-cais.json
 mv oem-sutton-cais-meta jellyfish-cais-meta-2
 
+cat > numbat-treecko.json <<ENDLINE
+{
+  "auto_meta_creating": true,
+  "biosids": [
+    "0C87"
+  ],
+  "bvn": "DellInc.",
+  "certification-hardware": [],
+  "certified": false,
+  "certify-planning": [
+    2033464
+  ],
+  "hardware": [
+    "202308-31925"
+  ],
+  "initial_biosidsfull": [
+    [
+      "0C87",
+      "XPS 13 9340 (0C87)"
+    ]
+  ],
+  "initial_productnames": [
+    "XPS 13 9340 (0C87)"
+  ],
+  "kernel_meta": "linux-generic-hwe-24.04",
+  "metabug": "casc-329",
+  "mirbug": 2030831,
+  "platform": "treecko",
+  "pmbiosids": [
+    "0C87"
+  ],
+  "project": "somerville",
+  "pvr": "",
+  "series": "noble",
+  "short_description": "",
+  "skus": [
+    "TRBM-DVT1-C1"
+  ]
+}
+ENDLINE
+oem-meta-packages create numbat-treecko.json
+rm -rf oem-somerville-treecko-meta
+
 # update
 oem-meta-packages --dry-run --use-cache --series focal update oem-somerville-tentacool-meta --kernel linux-generic-hwe-20.04
 oem-meta-packages --dry-run --use-cache --series focal update oem-stella.cmit-camerupt-meta --kernel linux-generic-hwe-20.04
