@@ -19,31 +19,40 @@ function usage()
     echo -n "  bash $(basename "$0")"
     echo -n " --project=[stella,sutton,somerville]"
     echo -n " --pc=\${platform-codename}"
+    echo -n " [--series=\${ubuntu-series} (default: $SERIES_DEFAULT)] "
     echo -n " \"\${SSID1},\${SSID2}, ... ,\${SSIDn}\""
     echo ""
     echo "Example:"
     echo "  bash $(basename "$0") --project=stella --pc=audino \"886D,8870\""
-    echo "  bash $(basename "$0") --project=stella --pc=grimer \"870B,870C\""
+    echo "  bash $(basename "$0") --project=stella --pc=grimer --series=jammy \"870B,870C\""
     exit 3
 }
 
 PROJECT=""
 PLATFORM_CODENAME=""
+SERIES=""
+SERIES_DEFAULT="jammy"
 
 function cleanup(){
     cd - > /dev/null 2>&1 || true
     rm -rf "$WORKING_DIR"
 }
 
-[[ "$#" -ne 3 ]] && usage
+[[ "$#" -lt 3 ]] && usage
 
-for _ in {1..2}; do
+for _ in {1..3}; do
     case "$1" in
         --project=*)
             eval PROJECT="${1#*=}"
             ;;
         --pc=*)
             eval PLATFORM_CODENAME="${1#*=}"
+            ;;
+        --series=*)
+            eval SERIES="${1#*=}"
+            ;;
+        *)
+            break
             ;;
     esac
     shift
@@ -152,7 +161,14 @@ else
 fi
 
 NON_FATAL=0
-for b in $(git branch -r); do
+GIT_CMD="git branch -r"
+if [ -n "$SERIES" ]; then
+    GIT_CMD+=" | grep -e $SERIES-oem$ -e $SERIES-ubuntu$"
+else
+    GIT_CMD+=" | grep -e $SERIES_DEFAULT-oem$ -e $SERIES_DEFAULT-ubuntu$"
+fi
+
+for b in $(eval $GIT_CMD); do
     check_duplicate "$b" "$*" "$PLATFORM_CODENAME" "$PROJECT"
     exit_code=$?
     if [ "$exit_code" -eq 1 ]; then
