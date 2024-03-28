@@ -1,3 +1,19 @@
+oem-scripts (2.1) jammy; urgency=medium
+
+  [ Artur Pak ]
+  * Add Noble support to pkg-oem-meta (NANTOU-122)
+  * Add --jira  argument to pkg-oem-meta (JIRA: NANTOU-155)
+
+  [ Bin Li ]
+  * Support postfix
+  * Remove black error
+
+  [ Artur Pak ]
+  * Add noble support in oem-meta-package create (JIRA: NANTOU-191)
+  * Added optional --series argument to check-ssid-duplicated.sh (JIRA: NANTOU-217)
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 28 Mar 2024 10:50:40 +0800
+
 oem-scripts (2.0) jammy; urgency=medium
 
   * black lp-bug.
