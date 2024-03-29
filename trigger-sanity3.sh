@@ -19,7 +19,7 @@ cmd_before_run_plan=""
 inj_recovery="false"
 gitbranch_oem_sanity="master"
 auto_create_bugs="false"
-checkbox_ppas="ppa:oem-solutions-group/pc-sanity-daily%20ppa:checkbox-dev/beta%20/ppa:firmware-testing-team/ppa-fwts-stable"
+checkbox_ppas="ppa:oem-solutions-group/pc-sanity-daily%20ppa:checkbox-dev/beta%20ppa:firmware-testing-team/ppa-fwts-stable"
 upload_report="false"
 inj_recovery_img_from="ps5"
 
