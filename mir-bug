@@ -890,19 +890,18 @@ def check_and_update_bug_attachments(
         for attachment in bug.attachments:
             if "debdiff" in attachment.title:
                 _run_command(["wget", attachment.data_link, "-O", "data"])
-                if sys.stdout.isatty():
-                    out, err, returncode = _run_command(
-                        ["colordiff", "-ur", "data", debdiff], returncode=(0, 1)
-                    )
-                else:
-                    out, err, returncode = _run_command(
-                        ["diff", "-ur", "data", debdiff], returncode=(0, 1)
-                    )
-                if returncode == 1:
+                out, err, _ = _run_command(["interdiff", "data", debdiff])
+                if out:
                     warning(
                         f"{attachment.title} - {attachment.web_link} has unexpected content."
                     )
-                    info(f"{out}")
+                    if sys.stdout.isatty():
+                        out, err, returncode = _run_command(
+                            ["colordiff", "-ur", "data", debdiff], returncode=(0, 1)
+                        )
+                        info(f"{out}")
+                    else:
+                        info(f"{out}")
                     found = True
                     if update and yes_or_ask(
                         yes,
@@ -912,7 +911,7 @@ def check_and_update_bug_attachments(
                             attachment.removeFromBug()
                         except lazr.restfulclient.errors.NotFound as e:
                             debug(e)
-                elif returncode == 0:
+                else:
                     info(f"{attachment.title} - {attachment.data_link} looks OK.")
                     return True
 
