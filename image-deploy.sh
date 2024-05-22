@@ -12,6 +12,7 @@ Options:
     -h|--help        The manual of the script
     --iso            ISO file path to be deployed on the target
     --url            URL link to deploy the ISO from internet
+                     URL of 10.131.60.220 needs to config .netrc locally
     -u|--user        The user of the target, default ubuntu
     -o|--timeout     The timeout for doing the deployment, default 3600 seconds
 Examples:
@@ -56,7 +57,7 @@ while :; do
             else
                 mkdir -p "$URL_CACHE_PATH" || true
                 pushd "$URL_CACHE_PATH"
-                if [[ "$2" =~ 10.131.50.220:8080 ]]; then
+                if [[ "$2" =~ 10.131.60.220:8080 ]]; then
                     curl -nS -O "$2"
                 else
                     curl -O "$2"
