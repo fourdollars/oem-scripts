@@ -3,6 +3,9 @@
 exec 2>&1
 set -euox pipefail
 
+# shellcheck source=config.sh
+source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
+
 usage()
 {
 cat <<EOF
@@ -12,7 +15,7 @@ Options:
     -h|--help        The manual of the script
     --iso            ISO file path to be deployed on the target
     --url            URL link to deploy the ISO from internet
-                     URL of 10.131.60.220 needs to config .netrc locally
+                     URL of Jenkins needs to config .netrc locally
     -u|--user        The user of the target, default ubuntu
     -o|--timeout     The timeout for doing the deployment, default 3600 seconds
 Examples:
@@ -51,13 +54,16 @@ while :; do
             usage
 	    exit;;
         ('--url')
+            if valid_oem_scripts_config_jenkins_addr; then
+                jenkins_addr=$(read_oem_scripts_config jenkins_addr)
+            fi
             ISO=$(basename "$2")
             if [ -f "$URL_CACHE_PATH/$ISO" ]; then
                 echo "$ISO has been downloaded"
             else
                 mkdir -p "$URL_CACHE_PATH" || true
                 pushd "$URL_CACHE_PATH"
-                if [[ "$2" =~ 10.131.60.220:8080 ]]; then
+                if [ -n "${jenkins_addr:-}" ] && [[ "$2" =~ $jenkins_addr ]]; then
                     curl -nS -O "$2"
                 else
                     curl -O "$2"
