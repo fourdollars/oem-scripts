@@ -120,7 +120,6 @@ main() {
         case "$1" in
             -h | --help)
                 usage 0
-                exit 0
                 ;;
             --oem-codename)
                 [ -n "$oem" ] || prepare

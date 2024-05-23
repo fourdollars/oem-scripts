@@ -1279,9 +1279,9 @@ def handle_bug(lp, args, handler, overwrite_args=None):
     certified_hardwares = args.json["certification-hardware"] if certified else []
     bug_number = args.json["mirbug"]
 
-    if type(bug_number) == str:
+    if type(bug_number) is str:
         bug_number = int(bug_number)
-    elif type(bug_number) == int:
+    elif type(bug_number) is int:
         pass
     else:
         unexpected = type(bug_number)
