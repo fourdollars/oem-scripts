@@ -96,7 +96,7 @@ def link_priv_bugs(main_bugnum, privates, ihv, watch):
 
 
 def add_bug_task(bug, bug_task):
-    assert type(bug_task) == lazr.restfulclient.resource.Entry
+    assert type(bug_task) is lazr.restfulclient.resource.Entry
 
     # Check if already have the requested
     for i in bug.bug_tasks:
