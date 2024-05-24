@@ -1137,9 +1137,9 @@ def check_and_update_git_repo(
             if args.release:
                 lines[0] = f"{pkg_name} ({version}~ubuntu1) {series}; urgency=medium\n"
             else:
-                lines[0] = (
-                    f"{pkg_name} ({version}~ubuntu1) UNRELEASED; urgency=medium\n"
-                )
+                lines[
+                    0
+                ] = f"{pkg_name} ({version}~ubuntu1) UNRELEASED; urgency=medium\n"
 
             if os.getenv("AUTOPKGTEST_ARTIFACTS", None) and lines[2].startswith(
                 "  * Meta package for"
@@ -1160,9 +1160,9 @@ def check_and_update_git_repo(
                     lines = f.readlines()
                 for i, line in enumerate(lines):
                     if line.startswith("XB-Ubuntu-OEM-Kernel-Flavour:"):
-                        lines[i] = (
-                            f"XB-Ubuntu-OEM-Kernel-Flavour: {args.kernel_flavour}\n"
-                        )
+                        lines[
+                            i
+                        ] = f"XB-Ubuntu-OEM-Kernel-Flavour: {args.kernel_flavour}\n"
                         break
                 with open(control, "w") as f:
                     f.writelines(lines)

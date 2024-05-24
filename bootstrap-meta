@@ -563,9 +563,9 @@ class BootstrapMetaGit(BootstrapMeta):
                 for idx, line in enumerate(lines):
                     if f"(LP: #{bug.id})" in line:
                         found = True
-                        lines[idx] = (
-                            f"  * Update the hardware support for {self.market_name}. (LP: #{bug.id})\n"
-                        )
+                        lines[
+                            idx
+                        ] = f"  * Update the hardware support for {self.market_name}. (LP: #{bug.id})\n"
 
                 if found:
                     with open(changelog, "w") as f:
