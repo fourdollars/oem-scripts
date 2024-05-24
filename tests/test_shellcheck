@@ -5,4 +5,5 @@ shellcheck \
     supported-lts-ubuntu-series.sh \
     -x trigger-sanity3.sh \
     get-oem-info.sh \
-    local-repo
+    local-repo \
+    -x image-deploy.sh
