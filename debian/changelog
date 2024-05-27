@@ -1,3 +1,9 @@
+oem-scripts (2.4) jammy; urgency=medium
+
+  * black bootstrap-meta and mir-bug.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 27 May 2024 11:41:44 +0800
+
 oem-scripts (2.3) jammy; urgency=medium
 
   [ Kai-Chuan Hsieh ]
