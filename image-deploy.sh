@@ -4,7 +4,7 @@ exec 2>&1
 set -euox pipefail
 
 # shellcheck source=config.sh
-source /usr/share/oem-scripts/config.sh 2>/dev/null || source config.sh
+source config.sh || source /usr/share/oem-scripts/config.sh 2>/dev/null
 
 usage()
 {
@@ -15,18 +15,25 @@ Options:
     -h|--help        The manual of the script
     --iso            ISO file path to be deployed on the target
     --url            URL link to deploy the ISO from internet
-                     URL of Jenkins needs to config .netrc locally
+                     URL of PS5 Jenkins needs to config USER_ID and USER_TOKEN locally
+                     URL of oem-share Webdav needs to config rclone config locally
     -u|--user        The user of the target, default ubuntu
     -o|--timeout     The timeout for doing the deployment, default 3600 seconds
 Examples:
     $0 -u ubuntu --iso /home/ubuntu/Downloads/somerville-noble-hwe-20240501-65.iso 10.42.0.161
     $0 -u ubuntu --url https://people.canonical.com/~kchsieh/images/somerville-noble-hwe-20240501-65.iso 10.42.0.161
+    $0 -u ubuntu --url https://oem-share.canonical.com/partners/somerville/share/releases/noble/hwe/20240515-86/somerville-noble-hwe-20240515-86.iso 10.102.182.186
+    $0 -u ubuntu --url https://oem-share.canonical.com/share/somerville/releases/noble/hwe/20240515-86/somerville-noble-hwe-20240515-86.iso 10.102.182.186
 EOF
 }
 
 if [ $# -lt 3 ]; then
     usage
     exit
+fi
+
+if [ -z "${LAUNCHPAD_USER:-}" ]; then
+    LAUNCHPAD_USER="$USER"
 fi
 
 TARGET_USER="ubuntu"
@@ -36,7 +43,7 @@ ISO=
 STORE_PART=""
 TIMEOUT=3600
 CONFIG_REPO_PATH="$HOME/.cache/oem-scripts/ubuntu-oem-image-builder"
-CONFIG_REPO_REMOTE="git+ssh://$USER@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/ubuntu-oem-image-builder"
+CONFIG_REPO_REMOTE="git+ssh://$LAUNCHPAD_USER@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/ubuntu-oem-image-builder"
 URL_CACHE_PATH="$HOME/.cache/oem-scripts/images"
 SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 SSH="ssh $SSH_OPTS"
@@ -55,7 +62,9 @@ while :; do
 	    exit;;
         ('--url')
             if valid_oem_scripts_config_jenkins_addr; then
-                jenkins_addr=$(read_oem_scripts_config jenkins_addr)
+                JENKINS_IP=$(read_oem_scripts_config jenkins_addr)
+                JENKINS_USER_ID=$(read_oem_scripts_config jenkins_user)
+                JENKINS_USER_TOKEN=$(read_oem_scripts_config jenkins_token)
             fi
             ISO=$(basename "$2")
             if [ -f "$URL_CACHE_PATH/$ISO" ]; then
@@ -63,8 +72,28 @@ while :; do
             else
                 mkdir -p "$URL_CACHE_PATH" || true
                 pushd "$URL_CACHE_PATH"
-                if [ -n "${jenkins_addr:-}" ] && [[ "$2" =~ $jenkins_addr ]]; then
-                    curl -nS -O "$2"
+                if [ -n "${JENKINS_IP:-}" ] && [[ "$2" =~ $JENKINS_IP ]]; then
+                    if [ -n "$JENKINS_USER_ID" ] && [ -n "$JENKINS_USER_TOKEN" ]; then
+                        curl -u "$JENKINS_USER_ID:$JENKINS_USER_TOKEN" -O "$2"
+                    else
+                        echo "No USER ID and USER TOKEN configured for jenkins operations"
+                    fi
+                elif [[ "$2" =~ "oem-share" ]]; then
+                    if [ -z "${RCLONE_CONFIG_PATH:-}" ]; then
+                        RCLONE_CONFIG_PATH="$HOME/.config/rclone/rclone.conf"
+                    fi
+                    if [ -f "$RCLONE_CONFIG_PATH" ]; then
+                        if [[ "$2" =~ "partners" ]]; then
+                            PROJECT=$(echo "$2" | cut -d "/" -f 5)
+                            FILEPATH=$(echo "$2" | sed "s/.*share\///g")
+                        else
+                            PROJECT=$(echo "$2" | cut -d "/" -f 5)
+                            FILEPATH=$(echo "$2" | sed "s/.*$PROJECT\///g")
+                        fi
+                        rclone --config "$RCLONE_CONFIG_PATH" sync "$PROJECT":"$FILEPATH" .
+                    else
+                        echo "Can't find rclone config for webdav manipulation"
+                    fi
                 else
                     curl -O "$2"
                 fi
