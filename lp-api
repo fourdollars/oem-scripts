@@ -160,6 +160,13 @@ post_api()
     http --check-status --ignore-stdin --form POST "$api" "$(get_auth_header)" "$@"
 }
 
+if [ "$1" == "get_token" ]; then
+    get_token
+    echo "Your token is:"
+    echo "${oauth_token}:${oauth_token_secret}:${oauth_consumer_key}"
+    exit 0
+fi
+
 if [ -n "$LAUNCHPAD_TOKEN" ]; then
     read -r oauth_token oauth_token_secret oauth_consumer_key < <(echo "$LAUNCHPAD_TOKEN" | tr ':' ' ')
     if [ -z "$oauth_consumer_key" ]; then
