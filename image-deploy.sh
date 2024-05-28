@@ -137,7 +137,9 @@ fi
 for addr in "${TARGET_IPS[@]}";
 do
     # Clear the knonw host
-    ssh-keygen -f "/home/$USER/.ssh/known_hosts" -R "$addr"
+    if [ -f "$HOME/.ssh/known_hosts" ]; then
+        ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$addr"
+    fi
 
     # Find the partitions
     while read -r name fstype mountpoint;
@@ -205,7 +207,9 @@ done
 # Clear the known hosts
 for addr in "${TARGET_IPS[@]}";
 do
-    ssh-keygen -f "/home/$USER/.ssh/known_hosts" -R "$addr"
+    if [ -f "$HOME/.ssh/known_hosts" ]; then
+        ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$addr"
+    fi
 done
 
 # Polling the targets
