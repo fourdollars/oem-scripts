@@ -121,11 +121,7 @@ if [ ! -f "$ISO_PATH" ]; then
     exit
 fi
 
-for addr in "$@";
-do
-    TARGET_IPS+=("$addr")
-done
-
+read -ra TARGET_IPS <<< "$@"
 
 # Download config repo to local
 if [ ! -d "$CONFIG_REPO_PATH" ]; then
@@ -228,6 +224,7 @@ do
     for addr in "${STARTED[@]}";
     do
         if $SSH "$TARGET_USER"@"$addr" -- exit; then
+            STARTED=("${STARTED[@]/$addr}")
             finished=$((finished + 1))
         fi
     done
