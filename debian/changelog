@@ -1,3 +1,13 @@
+oem-scripts (2.7) jammy; urgency=medium
+
+  [ Kai-Chuan Hsieh ]
+  * image-deploy.sh: Fix multiple DUT deployment stop condition
+
+  [ Bin Li ]
+  * Retire lsb_release. (JIRA: OEX86-310)
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 05 Jun 2024 11:20:09 +0800
+
 oem-scripts (2.6) jammy; urgency=medium
 
   * image-deploy.sh: Make the script become system executable
