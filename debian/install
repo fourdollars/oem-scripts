@@ -19,3 +19,4 @@ stap-dbgsym.sh /usr/bin
 trigger-sanity3.sh /usr/bin
 local-repo /usr/bin
 image-deploy.sh /usr/bin
+c3-api.py /usr/bin
