@@ -46,22 +46,88 @@ def get_c3_v2_api(token: str, api: str):
     return 1
 
 
+def put_c3_v2_api(token: str, api: str, payload: str):
+    host = "https://certification.canonical.com"
+    auth = f"Bearer {token}"
+    url = host + api
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": auth,
+    }
+    response = requests.request("PUT", url, headers=headers, data=payload)
+
+    print(response.text)
+
+    if response.status_code == 200:
+        return 0
+
+    return 1
+
+
+def post_c3_v2_api(token: str, api: str, payload: str):
+    host = "https://certification.canonical.com"
+    auth = f"Bearer {token}"
+    url = host + api
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": auth,
+    }
+    response = requests.request("POST", url, headers=headers, data=payload)
+
+    print(response.text)
+
+    if response.status_code == 200:
+        return 0
+
+    return 1
+
+
+def patch_c3_v2_api(token: str, api: str, payload: str):
+    host = "https://certification.canonical.com"
+    auth = f"Bearer {token}"
+    url = host + api
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": auth,
+    }
+    response = requests.request("PATCH", url, headers=headers, data=payload)
+
+    print(response.text)
+
+    if response.status_code == 200:
+        return 0
+
+    return 1
+
+
 def main():
     parser = argparse.ArgumentParser(description="A tool to use C3 v2 REST API")
     op_group = parser.add_mutually_exclusive_group(required=True)
-    op_group.add_argument("--get", action="store_true", help="C3 HTTP GET operation")
+    op_group.add_argument(
+        "--get", nargs="?", type=str, help="C3 HTTP GET for API endpoint"
+    )
     op_group.add_argument(
         "--post",
-        action="store_true",
-        help="C3 HTTP POST operation, not tested yet",
+        nargs="?",
+        type=str,
+        help="C3 HTTP POST for API endpoint",
     )
     op_group.add_argument(
-        "--put", action="store_true", help="C3 HTTP PUT operation, not tested yet"
+        "--put",
+        nargs="?",
+        type=str,
+        help="C3 HTTP PUT for API endpoint",
     )
-    parser.add_argument(
-        "api",
-        help="API endpoint, refer to https://certification.canonical.com/api/v2/schema",
+    op_group.add_argument(
+        "--patch",
+        nargs="?",
+        type=str,
+        help="C3 HTTP PATCH for API endpoint",
     )
+    parser.add_argument("payload", nargs="?", type=str, help="payload in json format")
     args = parser.parse_args()
 
     oem_scripts_config_ini = os.path.join(
@@ -95,7 +161,28 @@ def main():
         return 1
 
     if args.get:
-        return get_c3_v2_api(access_token, args.api)
+        return get_c3_v2_api(access_token, args.get)
+
+    if args.put:
+        if not args.payload:
+            logging.error("Need payload for PUT operation")
+            return 1
+
+        return put_c3_v2_api(access_token, args.put, args.payload)
+
+    if args.post:
+        if not args.payload:
+            logging.error("Need payload for POST operation")
+            return 1
+
+        return post_c3_v2_api(access_token, args.post, args.payload)
+
+    if args.patch:
+        if not args.payload:
+            logging.error("Need payload for PATCH operation")
+            return 1
+
+        return patch_c3_v2_api(access_token, args.patch, args.payload)
 
 
 if __name__ == "__main__":
