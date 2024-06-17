@@ -1,3 +1,19 @@
+oem-scripts (2.8) jammy; urgency=medium
+
+  [ Dirk Su ]
+  * compare-manifeset.py: add tool to compare manifests of noble
+
+  [ Kai-Chuan Hsieh ]
+  * c3-api.py: Add python script for c3 v2 api get
+  * c3-api.py: Add post and put and patch function
+  * c3-v2-api.py: Update script name for v2 specified
+  * oem_scripts/__init__.py: Add oem-24.04a and oem-24.04b support
+
+  [ Yao Wei (魏銘廷) ]
+  * pkg-list: fix not able to get package if the first one is not available
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 18 Jun 2024 07:52:31 +0800
+
 oem-scripts (2.7) jammy; urgency=medium
 
   [ Kai-Chuan Hsieh ]
