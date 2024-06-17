@@ -144,6 +144,7 @@ def get_depends(
     suggests: bool,
     non_installed: bool,
     source=False,
+    recursed=False,
 ) -> bool:
     """Recursively get all dependencies.
 
@@ -180,7 +181,9 @@ def get_depends(
     arch = pkg.architecture
     _debug_pkg(pkg)
 
-    if args.fail_unavailable and not pkg.has_versions:
+    if (recursed or args.fail_unavailable) and not pkg.has_versions:
+        # if the function is recursive call, just fail it and
+        # args.fail_unavailable is handled in the caller
         warning(f"{pkg_name} is unavailable.")
         return False
 
@@ -251,6 +254,7 @@ def get_depends(
                         recommends=recommends,
                         suggests=suggests,
                         non_installed=non_installed,
+                        recursed=True,
                     )
                     if found:
                         break
