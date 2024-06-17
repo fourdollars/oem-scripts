@@ -64,8 +64,7 @@ if series == "focal":
 elif series == "jammy":
     default_kernel_meta = "linux-oem-22.04"
 elif series == "noble":
-    # TODO: update to linux-oem-24.04 when available
-    default_kernel_meta = "linux-generic-hwe-22.04"
+    default_kernel_meta = "linux-oem-24.04"
 
 bug_id_group = parser.add_mutually_exclusive_group(required=True)
 parser.add_argument(
