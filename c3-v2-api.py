@@ -151,7 +151,7 @@ def main():
             logging.info(
                 f"No c3_client_id and c3_client_secret configured in {oem_scripts_config_ini}"
             )
-        else:
+        elif not access_token:
             access_token = request_c3_access_token(
                 config["c3_client_id"], config["c3_client_secret"]
             )
