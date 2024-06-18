@@ -1,3 +1,10 @@
+oem-scripts (2.9) jammy; urgency=medium
+
+  [ Yao Wei (魏銘廷) ]
+  * pkg-list: direct logging messages to stderr
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 18 Jun 2024 11:40:12 +0800
+
 oem-scripts (2.8) jammy; urgency=medium
 
   [ Dirk Su ]
