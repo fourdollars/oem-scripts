@@ -10,11 +10,14 @@ Tests:
  get-private-ppa,
  lp-api,
  lp-bug,
- pkg-list,
  review-merge-proposal,
  run-autopkgtest,
  setup-apt-dir
 Depends: @
+
+Tests: pkg-list
+Depends: @
+Restrictions: allow-stderr
 
 Tests:
  bootstrap-meta,
