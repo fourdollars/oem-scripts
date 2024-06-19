@@ -160,7 +160,6 @@ else
     git fetch -q origin &> /dev/null
 fi
 
-NON_FATAL=0
 GIT_CMD="git branch -r"
 if [ -n "$SERIES" ]; then
     GIT_CMD+=" | grep -e $SERIES-oem$ -e $SERIES-ubuntu$"
@@ -175,13 +174,12 @@ for b in $(eval $GIT_CMD); do
         exit 1
     fi
     if [ "$exit_code" -eq 2 ]; then
-        NON_FATAL=1
+        >&2 cat <<-EOF
+		WARNING: An exact match is found for the given ssid(s) and platform codename.
+		         You may ignore this warning if it is a platform refresh.
+		EOF
+        exit 2
     fi
 done
-
-if [ "$NON_FATAL" -eq 1 ]; then
-    >&2 echo "WARNING: Some ssids or platform codenames are duplicated."
-    exit 2
-fi
 
 echo "SSID(s) $* are avalible for ${PROJECT} project."
