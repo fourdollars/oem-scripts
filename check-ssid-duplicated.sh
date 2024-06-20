@@ -12,44 +12,44 @@
 #  2: duplicate with both ssid and platform codename
 #  3: other errors
 
-function usage()
-{
+function usage() {
+    local script_name
+    script_name=$(basename "$0")
     echo ""
     echo "Usage:"
-    echo -n "  bash $(basename "$0")"
+    echo -n "  bash $script_name"
     echo -n " --project=[stella,sutton,somerville]"
     echo -n " --pc=\${platform-codename}"
-    echo -n " [--series=\${ubuntu-series} (default: $SERIES_DEFAULT)] "
+    echo -n " [--series=\${ubuntu-series} (default: $SERIES)] "
     echo -n " \"\${SSID1},\${SSID2}, ... ,\${SSIDn}\""
     echo ""
     echo "Example:"
-    echo "  bash $(basename "$0") --project=stella --pc=audino \"886D,8870\""
-    echo "  bash $(basename "$0") --project=stella --pc=grimer --series=jammy \"870B,870C\""
+    echo "  bash $script_name --project=stella --pc=audino \"886D,8870\""
+    echo "  bash $script_name --project=stella --pc=grimer --series=jammy \"870B,870C\""
     exit 3
 }
 
 PROJECT=""
 PLATFORM_CODENAME=""
-SERIES=""
-SERIES_DEFAULT="jammy"
+SERIES="jammy"
 
-function cleanup(){
+function cleanup() {
     cd - > /dev/null 2>&1 || true
     rm -rf "$WORKING_DIR"
 }
 
 [[ "$#" -lt 3 ]] && usage
 
-for _ in {1..3}; do
+while [ "$#" -gt 0 ]; do
     case "$1" in
         --project=*)
-            eval PROJECT="${1#*=}"
+            PROJECT="${1#*=}"
             ;;
         --pc=*)
-            eval PLATFORM_CODENAME="${1#*=}"
+            PLATFORM_CODENAME="${1#*=}"
             ;;
         --series=*)
-            eval SERIES="${1#*=}"
+            SERIES="${1#*=}"
             ;;
         *)
             break
@@ -160,14 +160,7 @@ else
     git fetch -q origin &> /dev/null
 fi
 
-GIT_CMD="git branch -r"
-if [ -n "$SERIES" ]; then
-    GIT_CMD+=" | grep -e $SERIES-oem$ -e $SERIES-ubuntu$"
-else
-    GIT_CMD+=" | grep -e $SERIES_DEFAULT-oem$ -e $SERIES_DEFAULT-ubuntu$"
-fi
-
-for b in $(eval $GIT_CMD); do
+for b in $(git branch -r | grep -E "$SERIES-(oem|ubuntu)$"); do
     check_duplicate "$b" "$*" "$PLATFORM_CODENAME" "$PROJECT"
     exit_code=$?
     if [ "$exit_code" -eq 1 ]; then
