@@ -1,3 +1,18 @@
+oem-scripts (2.10) jammy; urgency=medium
+
+  [ Artur Pak ]
+  * c3-v2-api.py: Add access_token env check
+
+  [ pseudoc ]
+  * fix(check-ssid): sutton platform refresh with same BIOS prefix
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * oem_scripts/__init__.py: Make _run_command return out and err as the empty string instead of b''.
+  * debian/tests/oem-meta-packages: Test the general oem-meta-packages collect.
+  * debian/tests/control: Allow stderr for pkg-list.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 20 Jun 2024 08:18:53 +0800
+
 oem-scripts (2.9) jammy; urgency=medium
 
   [ Yao Wei (魏銘廷) ]
