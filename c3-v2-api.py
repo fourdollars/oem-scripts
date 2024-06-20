@@ -24,6 +24,8 @@ def request_c3_access_token(client_id: str, secret: str):
         "https://certification.canonical.com/oauth2/token/", headers=headers, data=data
     )
 
+    print(response.text)
+
     return json.loads(response.text)["access_token"]
 
 
