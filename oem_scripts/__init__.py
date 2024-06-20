@@ -86,8 +86,13 @@ def _run_command(
 
     if out:
         out = out.decode("utf-8").strip()
+    else:
+        out = ""
+
     if err:
         err = err.decode("utf-8").strip()
+    else:
+        err = ""
 
     if proc.returncode not in returncode:
         critical(f"return {proc.returncode}")

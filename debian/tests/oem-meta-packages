@@ -9,6 +9,8 @@ RET=0
 oem-meta-packages --quiet list
 
 # collect
+oem-meta-packages --quiet collect oem-somerville-tentacool-meta -o /dev/null
+
 if ! timeout 10s oem-meta-packages --quiet --series focal --use-cache collect oem-somerville-aipom-adl-meta; then
     echo "FAIL: Timeout after 10s for 'oem-meta-packages --quiet --series focal --use-cache collect oem-somerville-aipom-adl-meta'."
     RET=1
