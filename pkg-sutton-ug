@@ -14,7 +14,6 @@ from lazr.restfulclient.errors import RestfulError
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
 
 PROJECT = "sutton"
-OEM_PREFIX = "~oem-solutions-group"
 platform_unit = ["ThinkPad", "ThinkStation", "ThinkCentre", "Lenovo", "ThinkEdge"]
 
 info = UbuntuDistroInfo()
@@ -100,9 +99,9 @@ class PlatformInfo:
             package_name = f"""oem-{self.project}.{self.group}-{self.platform}-doc"""
             version = version + self.group + "1"
 
-        git_repo = f"{OEM_PREFIX}/{self.project}/+git/{package_name}"
-        git_abbr = f"https://git.launchpad.net/{git_repo}"
-        git_browser = f"https://code.launchpad.net/{git_repo}"
+        git_repo = "~oem-solutions-engineers/pc-enablement/+git/oem-sutton-projects-doc"
+        git_abbr = f"https://git.launchpad.net/{git_repo} -b {self.platform}-{self.series}"
+        git_browser = f"https://code.launchpad.net/{git_repo}/+ref/{self.platform}-{self.series}"
 
         fullname = os.getenv("DEBFULLNAME", "Commercial Engineering")
         email = os.getenv("DEBEMAIL", "commercial-engineering@canonical.com")
@@ -113,6 +112,7 @@ class PlatformInfo:
 
         return {
             "project": self.project,
+            "platform": self.platform,
             "series": self.series,
             "docbug": self.docbug,
             "shortdesc": self.shortdesc,
@@ -183,7 +183,7 @@ def generate_debian_package(projection, ug_file: str, push_git: bool = False):
     # git init the package_path and check the result
     os.chdir(package_path)
     subprocess.run(["git", "init", "-q"], check=False)
-    subprocess.run(["git", "checkout", "--orphan", projection["series"]], check=False)
+    subprocess.run(["git", "checkout", "--orphan", projection["platform"] + "-" + projection["series"]], check=False)
 
     subprocess.run(["git", "add", "."], check=False)
     subprocess.run(["git", "config", "user.name", projection["fullname"]], check=False)
@@ -288,8 +288,7 @@ def main():
         "-s",
         "--series",
         choices=info.supported(),
-        default="jammy",
-        help="Ubuntu series, such as jammy by default.",
+        help="Ubuntu series, such as jammy, noble...",
     )
     parser.add_argument(
         "-p",
@@ -299,7 +298,6 @@ def main():
     parser.add_argument(
         "-g",
         "--group",
-        default="",
         help="OEM-group, obsolete after focal/20.04",
     )
     parser.add_argument(
