@@ -100,8 +100,12 @@ class PlatformInfo:
             version = version + self.group + "1"
 
         git_repo = "~oem-solutions-engineers/pc-enablement/+git/oem-sutton-projects-doc"
-        git_abbr = f"https://git.launchpad.net/{git_repo} -b {self.platform}-{self.series}"
-        git_browser = f"https://code.launchpad.net/{git_repo}/+ref/{self.platform}-{self.series}"
+        git_abbr = (
+            f"https://git.launchpad.net/{git_repo} -b {self.platform}-{self.series}"
+        )
+        git_browser = (
+            f"https://code.launchpad.net/{git_repo}/+ref/{self.platform}-{self.series}"
+        )
 
         fullname = os.getenv("DEBFULLNAME", "Commercial Engineering")
         email = os.getenv("DEBEMAIL", "commercial-engineering@canonical.com")
@@ -183,7 +187,15 @@ def generate_debian_package(projection, ug_file: str, push_git: bool = False):
     # git init the package_path and check the result
     os.chdir(package_path)
     subprocess.run(["git", "init", "-q"], check=False)
-    subprocess.run(["git", "checkout", "--orphan", projection["platform"] + "-" + projection["series"]], check=False)
+    subprocess.run(
+        [
+            "git",
+            "checkout",
+            "--orphan",
+            projection["platform"] + "-" + projection["series"],
+        ],
+        check=False,
+    )
 
     subprocess.run(["git", "add", "."], check=False)
     subprocess.run(["git", "config", "user.name", projection["fullname"]], check=False)
