@@ -1,3 +1,17 @@
+oem-scripts (2.11) jammy; urgency=medium
+
+  [ pseudoc ]
+  * refactor(check-ssid): format & simplify code
+
+  [ Kai-Chuan Hsieh ]
+  * c3-v2-api.py: Print response for request c3 access token
+  * Revert "c3-v2-api.py: Print response for request c3 access token"
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * mir-bug: Check the empty string instead of b'' for the output of 'git diff'.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 02 Jul 2024 10:16:17 +0800
+
 oem-scripts (2.10) jammy; urgency=medium
 
   [ Artur Pak ]
