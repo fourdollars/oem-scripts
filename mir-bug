@@ -1183,7 +1183,7 @@ def check_and_update_git_repo(
 
         _run_command(["git", "add", "."])
         out, _, _ = _run_command(["git", "diff", "--color=always", "--cached"])
-        if out != b"":
+        if out:
             warning("$ git diff")
             print(out)
             if update is True:
