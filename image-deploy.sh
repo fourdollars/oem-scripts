@@ -167,6 +167,9 @@ do
     $SCP "$CONFIG_REPO_PATH"/alloem-init/cloud-configs/redeploy/user-data "$TARGET_USER"@"$addr":/home/"$TARGET_USER"/redeploy/cloud-configs/redeploy/
     $SCP "$CONFIG_REPO_PATH"/alloem-init/cloud-configs/grub/redeploy.cfg "$TARGET_USER"@"$addr":/home/"$TARGET_USER"/redeploy/cloud-configs/grub/redeploy.cfg
 
+    # Copy ssh key from alloem-init injections to the target
+    $SCP -r "$CONFIG_REPO_PATH"/injections/alloem-init/chroot/minimal.standard.live.hotfix.squashfs/etc/ssh "$TARGET_USER"@"$addr":/home/"$TARGET_USER"/redeploy/ssh-config
+
     # Umount the partitions
     MOUNT=$($SSH "$TARGET_USER"@"$addr" -- lsblk -n -o MOUNTPOINT "$RESET_PART")
     if [ -n "$MOUNT" ]; then
