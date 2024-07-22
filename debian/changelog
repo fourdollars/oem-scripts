@@ -1,3 +1,15 @@
+oem-scripts (2.12) jammy; urgency=medium
+
+  [ Bin Li ]
+  * Put UG in one repo. (JIRA: #OEX86-342)
+  * fix black errors
+
+  [ Yao Wei (魏銘廷) ]
+  * image-deploy.sh: copy alloem-init public ssh keys from ubuntu-oem-image-builder to /ssh-config in reset partition
+  * fix(image-deploy.sh): add missing cp ssh-config to reset partition
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Mon, 22 Jul 2024 17:19:08 +0800
+
 oem-scripts (2.11) jammy; urgency=medium
 
   [ pseudoc ]
