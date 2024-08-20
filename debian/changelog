@@ -1,3 +1,9 @@
+oem-scripts (2.13) jammy; urgency=medium
+
+  * oem-meta-packages: No lsb_release python module on noble.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 20 Aug 2024 09:49:12 +0800
+
 oem-scripts (2.12) jammy; urgency=medium
 
   [ Bin Li ]
