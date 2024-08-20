@@ -22,7 +22,6 @@ import collections
 import difflib
 import json
 import lazr
-import lsb_release
 import oem_scripts
 import os
 import re
@@ -148,7 +147,11 @@ parser.add_argument(
 parser.add_argument("--dry-run", help="Dry run the process.", action="store_true")
 parser.add_argument("--yes", help="Say yes for all prompts.", action="store_true")
 parser.add_argument("--apt-dir", type=str, help="specify the dir for apt")
-series = lsb_release.get_os_release()["CODENAME"]
+with open("/etc/os-release") as f:
+    for line in f:
+        if line.startswith("UBUNTU_CODENAME="):
+            series = line.split("=")[1].strip().strip('"')
+            break
 parser.add_argument(
     "--use-cache",
     help=f"Use cache from https://people.canonical.com/~oem-enablement/oem-meta-packages/oem-{{somerville,stella,sutton}}-*-meta-{series}.json to speed up the process. (experimental)",
