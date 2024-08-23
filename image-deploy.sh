@@ -1,8 +1,7 @@
 #!/bin/bash
 # vim: ts=4:et
 
-exec 2>&1
-set -euox pipefail
+set -eo pipefail
 
 # shellcheck source=config.sh
 source config.sh || source /usr/share/oem-scripts/config.sh 2>/dev/null
@@ -49,8 +48,6 @@ CACHE_ROOT="$HOME/.cache/oem-scripts"
 URL_CACHE_PATH="$CACHE_ROOT/images"
 CONFIG_REPO_PATH="$CACHE_ROOT/ubuntu-oem-image-builder"
 SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-SSH="ssh $SSH_OPTS"
-SCP="scp $SSH_OPTS"
 
 if [ ! -d "$HOME/.caceh/oem-scripts" ]; then
     mkdir -p "$HOME/.cache/oem-scripts"
@@ -123,6 +120,38 @@ if [ ! -f "$ISO_PATH" ]; then
     exit
 fi
 
+ignore_ssh_warn() { grep -v "^Warning: Permanently added" >&2; }
+
+in_target() {
+    echo "Running on $TARGET_IP: \"$*\""
+    # shellcheck disable=SC2086
+    ssh $SSH_OPTS "$TARGET_USER@$TARGET_IP" -- "$@" \
+        2> >(ignore_ssh_warn)
+}
+
+to_target() {
+    local dir recursive
+    if [ -n "$2" ]; then
+        # if $2 ends with /, then it's a directory
+        if [[ "$2" == */ ]]; then
+            dir="$2"
+        else
+            dir=$(dirname "$2")
+        fi
+        in_target mkdir -p "$dir"
+    fi
+
+    if [ -d "$1" ]; then
+        recursive="-r"
+    fi
+
+    echo "Copying $1 to $TARGET_IP:$2"
+
+    # shellcheck disable=SC2086
+    scp $SSH_OPTS $recursive "$1" "$TARGET_USER@$TARGET_IP:$2" \
+        2> >(ignore_ssh_warn)
+}
+
 read -ra TARGET_IPS <<< "$@"
 
 # Download config repo to local
@@ -132,85 +161,85 @@ else
     git -C "$CONFIG_REPO_PATH" pull
 fi
 
-for addr in "${TARGET_IPS[@]}";
-do
-    # Clear the knonw host
-    if [ -f "$HOME/.ssh/known_hosts" ]; then
-        ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$addr"
-    fi
-
-    # Find the partitions
-    while read -r name fstype mountpoint;
-    do
-        echo "$name,$fstype,$mountpoint"
+store_partition() {
+    while read -r name fstype mountpoint; do
         if [ "$fstype" = "ext4" ]; then
-            if [ "$mountpoint" = "/home/$TARGET_USER" ] || [ "$mountpoint" = "/" ]; then
-                STORE_PART="/dev/$name"
-                break
+            if [ "$mountpoint" = "/home/$USER" ] || [ "$mountpoint" = "/" ]; then
+                echo "/dev/$name"
+                return
             fi
         fi
-    done < <($SSH "$TARGET_USER"@"$addr" -- lsblk -n -l -o NAME,FSTYPE,MOUNTPOINT)
+    done < <(lsblk -n -l -o NAME,FSTYPE,MOUNTPOINT)
+    return 1
+}
 
-    if [ -z "$STORE_PART" ]; then
-        echo "Can't find partition to store ISO on target $addr"
-        exit
-    fi
-    RESET_PART="${STORE_PART:0:-1}2"
-    RESET_PARTUUID=$($SSH "$TARGET_USER"@"$addr" -- lsblk -n -o PARTUUID "$RESET_PART")
-    EFI_PART="${STORE_PART:0:-1}1"
+redeploy() {
+    local iso store_part device efi_part reset_part reset_partuuid
+    iso=$1
 
-    # Copy ISO to the target
-    $SCP "$ISO_PATH" "$TARGET_USER"@"$addr":/home/"$TARGET_USER"
+    store_part=$(store_partition)
+    device="${store_part:0:-1}"
+    efi_part="${device}1"
+    reset_part="${device}2"
+    reset_partuuid=$(lsblk -n -o PARTUUID "$reset_part")
 
-    # Copy cloud-config redeploy to the target
-    $SSH "$TARGET_USER"@"$addr" -- mkdir -p /home/"$TARGET_USER"/redeploy/cloud-configs/redeploy
-    $SSH "$TARGET_USER"@"$addr" -- mkdir -p /home/"$TARGET_USER"/redeploy/cloud-configs/grub
-    $SCP "$CONFIG_REPO_PATH"/alloem-init/cloud-configs/redeploy/meta-data "$TARGET_USER"@"$addr":/home/"$TARGET_USER"/redeploy/cloud-configs/redeploy/
-    $SCP "$CONFIG_REPO_PATH"/alloem-init/cloud-configs/redeploy/user-data "$TARGET_USER"@"$addr":/home/"$TARGET_USER"/redeploy/cloud-configs/redeploy/
-    $SCP "$CONFIG_REPO_PATH"/alloem-init/cloud-configs/grub/redeploy.cfg "$TARGET_USER"@"$addr":/home/"$TARGET_USER"/redeploy/cloud-configs/grub/redeploy.cfg
+    # Umount andd format the partitions
+    for part in "$reset_part" "$efi_part"; do
+        if [ -n "$(lsblk -n -o MOUNTPOINT "$part")" ]; then
+            sudo umount "$part"
+        fi
+        sudo mkfs.vfat "$part"
+    done
 
-    # Copy ssh key from alloem-init injections to the target
-    $SCP -r "$CONFIG_REPO_PATH"/injections/alloem-init/chroot/minimal.standard.live.hotfix.squashfs/etc/ssh "$TARGET_USER"@"$addr":/home/"$TARGET_USER"/redeploy/ssh-config
-
-    # Umount the partitions
-    MOUNT=$($SSH "$TARGET_USER"@"$addr" -- lsblk -n -o MOUNTPOINT "$RESET_PART")
-    if [ -n "$MOUNT" ]; then
-        $SSH "$TARGET_USER"@"$addr" -- sudo umount "$RESET_PART"
-    fi
-    MOUNT=$($SSH "$TARGET_USER"@"$addr" -- lsblk -n -o MOUNTPOINT "$EFI_PART")
-    if [ -n "$MOUNT" ]; then
-        $SSH "$TARGET_USER"@"$addr" -- sudo umount "$EFI_PART"
-    fi
-
-    # Format partitions
-    $SSH "$TARGET_USER"@"$addr" -- sudo mkfs.vfat "$RESET_PART"
-    $SSH "$TARGET_USER"@"$addr" -- sudo mkfs.vfat "$EFI_PART"
-
-    # Mount ISO and reset partition
-    $SSH "$TARGET_USER"@"$addr" -- mkdir -p /home/"$TARGET_USER"/iso || true
-    $SSH "$TARGET_USER"@"$addr" -- mkdir -p /home/"$TARGET_USER"/reset || true
-    $SSH "$TARGET_USER"@"$addr" -- sudo mount -o loop /home/"$TARGET_USER"/"$ISO" /home/"$TARGET_USER"/iso || true
-    $SSH "$TARGET_USER"@"$addr" -- sudo mount "$RESET_PART" /home/"$TARGET_USER"/reset || true
+    mkdir -p iso
+    mkdir -p reset
+    sudo mount -o loop "$iso" iso || return 1
+    sudo mount "$reset_part" reset || return 1
 
     # Sync ISO to the reset partition
-    $SSH "$TARGET_USER"@"$addr" -- sudo rsync -avP /home/"$TARGET_USER"/iso/ /home/"$TARGET_USER"/reset || true
+    sudo rsync -avP iso/ reset || true
 
     # Sync cloud-configs to the reset partition
-    $SSH "$TARGET_USER"@"$addr" -- sudo mkdir -p /home/"$TARGET_USER"/reset/cloud-configs || true
-    $SSH "$TARGET_USER"@"$addr" -- sudo cp -r /home/"$TARGET_USER"/redeploy/cloud-configs/redeploy/ /home/"$TARGET_USER"/reset/cloud-configs/
-    $SSH "$TARGET_USER"@"$addr" -- sudo cp -r /home/"$TARGET_USER"/redeploy/ssh-config/ /home/"$TARGET_USER"/reset/
-    $SSH "$TARGET_USER"@"$addr" -- sudo cp /home/"$TARGET_USER"/redeploy/cloud-configs/grub/redeploy.cfg /home/"$TARGET_USER"/reset/boot/grub/grub.cfg
-    $SSH "$TARGET_USER"@"$addr" -- sudo sed -i "s/RP_PARTUUID/${RESET_PARTUUID}/" /home/"$TARGET_USER"/reset/boot/grub/grub.cfg
+    sudo mkdir -p reset/cloud-configs
+    sudo cp -r redeploy/cloud-configs/redeploy/ reset/cloud-configs/
+    sudo cp -r redeploy/ssh-config/ reset/
 
-    # Reboot the target
-    $SSH "$TARGET_USER"@"$addr" -- sudo reboot || true
+    # Update the grub.cfg to boot from the reset partition
+    sudo cp redeploy/cloud-configs/grub/redeploy.cfg reset/boot/grub/grub.cfg
+    sudo sed -i "s/RP_PARTUUID/${reset_partuuid}/" reset/boot/grub/grub.cfg
+
+    # Reboot to start the redeploy process
+    sudo reboot
+}
+
+for TARGET_IP in "${TARGET_IPS[@]}";
+do
+    if STORE_PART=$(in_target "$(typeset -f store_partition); store_partition"); then
+        echo "Store partition: $STORE_PART"
+    else
+        echo "Can't find partition to store ISO on target $TARGET_IP"
+        exit 1
+    fi
+
+    # Copy ISO to the target
+    to_target "$ISO_PATH"
+
+    # Copy cloud-config redeploy to the target
+    to_target "$CONFIG_REPO_PATH/alloem-init/cloud-configs/redeploy/meta-data" redeploy/cloud-configs/redeploy/
+    to_target "$CONFIG_REPO_PATH/alloem-init/cloud-configs/redeploy/user-data" redeploy/cloud-configs/redeploy/
+    to_target "$CONFIG_REPO_PATH/alloem-init/cloud-configs/grub/redeploy.cfg" redeploy/cloud-configs/grub/redeploy.cfg
+
+    # Copy ssh key from alloem-init injections to the target
+    to_target "$CONFIG_REPO_PATH/injections/alloem-init/chroot/minimal.standard.live.hotfix.squashfs/etc/ssh" redeploy/ssh-config
+
+    in_target "$(typeset -f store_partition redeploy); redeploy $ISO"
 done
 
 # Clear the known hosts
-for addr in "${TARGET_IPS[@]}";
+for TARGET_IP in "${TARGET_IPS[@]}";
 do
     if [ -f "$HOME/.ssh/known_hosts" ]; then
-        ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$addr"
+        ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$TARGET_IP"
     fi
 done
 
@@ -227,9 +256,8 @@ do
         break
     fi
 
-    for addr in "${STARTED[@]}";
-    do
-        if $SSH "$TARGET_USER"@"$addr" -- exit; then
+    for TARGET_IP in "${STARTED[@]}"; do
+        if in_target exit; then
             STARTED=("${STARTED[@]/$addr}")
             finished=$((finished + 1))
         fi
