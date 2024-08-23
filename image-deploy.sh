@@ -19,6 +19,9 @@ Options:
     URL of oem-share Webdav needs to config rclone config locally
     -u|--user        The user of the target, default ubuntu
     -o|--timeout     The timeout for doing the deployment, default 3600 seconds
+Environment variables:
+    LAUNCHPAD_USER          The user of the launchpad, default \$USER
+    RCLONE_CONFIG_PATH      The path of rclone config, default \$HOME/.config/rclone/rclone.conf
 Examples:
     $0 -u ubuntu --iso /home/ubuntu/Downloads/somerville-noble-hwe-20240501-65.iso 10.42.0.161
     $0 -u ubuntu --url https://people.canonical.com/~kchsieh/images/somerville-noble-hwe-20240501-65.iso 10.42.0.161
@@ -32,9 +35,9 @@ if [ $# -lt 3 ]; then
     exit
 fi
 
-if [ -z "${LAUNCHPAD_USER:-}" ]; then
-    LAUNCHPAD_USER="$USER"
-fi
+# Environment variables
+LAUNCHPAD_USER=${LAUNCHPAD_USER:-"$USER"}
+RCLONE_CONFIG_PATH=${RCLONE_CONFIG_PATH:-"$HOME/.config/rclone/rclone.conf"}
 
 TARGET_USER="ubuntu"
 TARGET_IPS=()
@@ -79,9 +82,6 @@ while :; do
                         echo "No USER ID and USER TOKEN configured for jenkins operations"
                     fi
                 elif [[ "$2" =~ "oem-share" ]]; then
-                    if [ -z "${RCLONE_CONFIG_PATH:-}" ]; then
-                        RCLONE_CONFIG_PATH="$HOME/.config/rclone/rclone.conf"
-                    fi
                     if [ -f "$RCLONE_CONFIG_PATH" ]; then
                         if [[ "$2" =~ "partners" ]]; then
                             PROJECT=$(echo "$2" | cut -d "/" -f 5)
