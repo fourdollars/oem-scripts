@@ -45,9 +45,9 @@ ISO_PATH=
 ISO=
 STORE_PART=""
 TIMEOUT=3600
-CONFIG_REPO_PATH="$HOME/.cache/oem-scripts/ubuntu-oem-image-builder"
-CONFIG_REPO_REMOTE="git+ssh://$LAUNCHPAD_USER@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/ubuntu-oem-image-builder"
-URL_CACHE_PATH="$HOME/.cache/oem-scripts/images"
+CACHE_ROOT="$HOME/.cache/oem-scripts"
+URL_CACHE_PATH="$CACHE_ROOT/images"
+CONFIG_REPO_PATH="$CACHE_ROOT/ubuntu-oem-image-builder"
 SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 SSH="ssh $SSH_OPTS"
 SCP="scp $SSH_OPTS"
@@ -55,6 +55,8 @@ SCP="scp $SSH_OPTS"
 if [ ! -d "$HOME/.caceh/oem-scripts" ]; then
     mkdir -p "$HOME/.cache/oem-scripts"
 fi
+
+mkdir -p "$CACHE_ROOT"
 
 OPTS="$(getopt -o u:o: --long iso:,user:,timeout:,url: -n 'image-deploy.sh' -- "$@")"
 eval set -- "${OPTS}"
@@ -70,12 +72,13 @@ while :; do
                 JENKINS_USER_TOKEN=$(read_oem_scripts_config jenkins_token)
             fi
             ISO=$(basename "$2")
-            if [ -f "$URL_CACHE_PATH/$ISO" ]; then
+            ISO_PATH="$URL_CACHE_PATH/$ISO"
+            if [ -f "$ISO_PATH" ]; then
                 echo "$ISO has been downloaded"
             else
                 mkdir -p "$URL_CACHE_PATH" || true
                 pushd "$URL_CACHE_PATH"
-                if [ -n "${JENKINS_IP:-}" ] && [[ "$2" =~ $JENKINS_IP ]]; then
+                if [ -n "$JENKINS_IP" ] && [[ "$2" =~ $JENKINS_IP ]]; then
                     if [ -n "$JENKINS_USER_ID" ] && [ -n "$JENKINS_USER_TOKEN" ]; then
                         curl -u "$JENKINS_USER_ID:$JENKINS_USER_TOKEN" -O "$2"
                     else
@@ -99,7 +102,6 @@ while :; do
                 fi
                 popd
             fi
-            ISO_PATH="$URL_CACHE_PATH/$ISO"
             shift 2;;
         ('--iso')
             ISO_PATH="$2"
