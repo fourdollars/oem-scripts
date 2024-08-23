@@ -1,4 +1,5 @@
 #!/bin/bash
+# vim: ts=4:et
 
 exec 2>&1
 set -euox pipefail
@@ -6,17 +7,16 @@ set -euox pipefail
 # shellcheck source=config.sh
 source config.sh || source /usr/share/oem-scripts/config.sh 2>/dev/null
 
-usage()
-{
-cat <<EOF
+usage() {
+cat << EOF
 Usage:
     $0 [OPTIONS] <TARGET_IP 1> <TARGET_IP 2> ...
 Options:
     -h|--help        The manual of the script
     --iso            ISO file path to be deployed on the target
     --url            URL link to deploy the ISO from internet
-                     URL of PS5 Jenkins needs to config USER_ID and USER_TOKEN locally
-                     URL of oem-share Webdav needs to config rclone config locally
+    URL of PS5 Jenkins needs to config USER_ID and USER_TOKEN locally
+    URL of oem-share Webdav needs to config rclone config locally
     -u|--user        The user of the target, default ubuntu
     -o|--timeout     The timeout for doing the deployment, default 3600 seconds
 Examples:
@@ -59,7 +59,7 @@ while :; do
     case "$1" in
         ('-h'|'--help')
             usage
-	    exit;;
+            exit;;
         ('--url')
             if valid_oem_scripts_config_jenkins_addr; then
                 JENKINS_IP=$(read_oem_scripts_config jenkins_addr)
@@ -103,16 +103,16 @@ while :; do
             shift 2;;
         ('--iso')
             ISO_PATH="$2"
-	    ISO=$(basename "$ISO_PATH")
+            ISO=$(basename "$ISO_PATH")
             shift 2;;
         ('-u'|'--user')
             TARGET_USER="$2"
-	    shift 2;;
+            shift 2;;
         ('-o'|'--timeout')
             TIMEOUT="$2"
             shift 2;;
-	('--') shift; break ;;
-	(*) break ;;
+        ('--') shift; break ;;
+        (*) break ;;
     esac
 done
 
