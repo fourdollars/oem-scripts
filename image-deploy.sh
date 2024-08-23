@@ -24,6 +24,7 @@ Environment variables:
     CONFIG_REPO_REMOTE      The remote URL of the config repo, default
                             git+ssh://\$LAUNCHPAD_USER@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/ubuntu-oem-image-builder
     CONFIG_REPO_BRANCH      The branch of the config repo, default noble
+    INTERACTIVE             The flag to enable the interactive mode, default false
 Examples:
     $0 -u ubuntu --iso /home/ubuntu/Downloads/somerville-noble-hwe-20240501-65.iso 10.42.0.161
     $0 -u ubuntu --url https://people.canonical.com/~kchsieh/images/somerville-noble-hwe-20240501-65.iso 10.42.0.161
@@ -42,6 +43,7 @@ LAUNCHPAD_USER=${LAUNCHPAD_USER:-"$USER"}
 RCLONE_CONFIG_PATH=${RCLONE_CONFIG_PATH:-"$HOME/.config/rclone/rclone.conf"}
 CONFIG_REPO_REMOTE="${CONFIG_REPO_REMOTE:-"git+ssh://$LAUNCHPAD_USER@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/ubuntu-oem-image-builder"}"
 CONFIG_REPO_BRANCH="${CONFIG_REPO_BRANCH:-"noble"}"
+INTERACTIVE=${INTERACTIVE:-false}
 
 TARGET_USER="ubuntu"
 TARGET_IPS=()
@@ -54,8 +56,8 @@ URL_CACHE_PATH="$CACHE_ROOT/images"
 CONFIG_REPO_PATH="$CACHE_ROOT/ubuntu-oem-image-builder"
 SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
-if [ ! -d "$HOME/.caceh/oem-scripts" ]; then
-    mkdir -p "$HOME/.cache/oem-scripts"
+if ! $INTERACTIVE; then
+    SSH_OPTS="$SSH_OPTS -o PubkeyAuthentication=yes -o PasswordAuthentication=no"
 fi
 
 mkdir -p "$CACHE_ROOT"
