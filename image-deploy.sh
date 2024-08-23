@@ -219,8 +219,7 @@ redeploy() {
     sudo reboot
 }
 
-for TARGET_IP in "${TARGET_IPS[@]}";
-do
+for TARGET_IP in "${TARGET_IPS[@]}"; do
     if STORE_PART=$(in_target "$(typeset -f store_partition); store_partition"); then
         echo "Store partition: $STORE_PART"
     else
@@ -243,8 +242,7 @@ do
 done
 
 # Clear the known hosts
-for TARGET_IP in "${TARGET_IPS[@]}";
-do
+for TARGET_IP in "${TARGET_IPS[@]}"; do
     if [ -f "$HOME/.ssh/known_hosts" ]; then
         ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$TARGET_IP"
     fi
@@ -254,8 +252,7 @@ done
 STARTED=("${TARGET_IPS[@]}")
 finished=0
 startTime=$(date +%s)
-while :;
-do
+while :; do
     sleep 180
     currentTime=$(date +%s)
     if [[ $((currentTime - startTime)) -gt $TIMEOUT ]]; then
