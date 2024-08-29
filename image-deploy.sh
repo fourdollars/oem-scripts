@@ -171,7 +171,7 @@ fi
 store_partition() {
     while read -r name fstype mountpoint; do
         if [ "$fstype" = "ext4" ]; then
-            if [ "$mountpoint" = "/home/$USER" ] || [ "$mountpoint" = "/" ]; then
+            if [ "$mountpoint" = "$HOME" ] || [ "$mountpoint" = "/" ]; then
                 echo "/dev/$name"
                 return
             fi
