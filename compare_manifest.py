@@ -72,9 +72,7 @@ def compare_squashfs(new_squash, old_squash, apt_cache):
 
     deb_list = {}
     for package in new_squash_list:
-        version_key, is_snap = (
-            ("revision", True) if "snap:" in package else ("version", False)
-        )
+        is_snap = True if "snap:" in package else False
         if package not in old_squash_list:
             if is_snap:
                 output["ADDED"].append({"name": package})
@@ -82,7 +80,7 @@ def compare_squashfs(new_squash, old_squash, apt_cache):
             result = query_deb(
                 package,
                 apt_cache,
-                new_squash[package][version_key],
+                new_squash[package]["version"],
                 new_squash[package].get("source", None),
             )
             if result is None:
@@ -91,20 +89,56 @@ def compare_squashfs(new_squash, old_squash, apt_cache):
             deb_list[package] = result
             continue
         old_squash_list.remove(package)
-        if new_squash[package][version_key] != old_squash[package][version_key]:
-            if is_snap:
-                output["DIFF"].append({"name": package})
-                continue
+        if is_snap:
+            if (
+                new_squash[package]["version"] != old_squash[package]["version"]
+                or new_squash[package]["revision"] != old_squash[package]["revision"]
+                or new_squash[package]["tracking"] != old_squash[package]["tracking"]
+            ):
+                changes = {}
+                if old_squash[package]["version"] != new_squash[package]["version"]:
+                    changes.update(
+                        {
+                            "version": old_squash[package]["version"]
+                            + " -> "
+                            + new_squash[package]["version"]
+                        }
+                    )
+                if old_squash[package]["revision"] != new_squash[package]["revision"]:
+                    changes.update(
+                        {
+                            "revision": old_squash[package]["revision"]
+                            + " -> "
+                            + new_squash[package]["revision"]
+                        }
+                    )
+                if old_squash[package]["tracking"] != new_squash[package]["tracking"]:
+                    changes.update(
+                        {
+                            "tracking": old_squash[package]["tracking"]
+                            + " -> "
+                            + new_squash[package]["tracking"]
+                        }
+                    )
+                output["DIFF"].append(
+                    {
+                        "name": package,
+                        "version_change": changes,
+                    }
+                )
+            continue
+
+        if new_squash[package]["version"] != old_squash[package]["version"]:
             result_new = query_deb(
                 package,
                 apt_cache,
-                new_squash[package][version_key],
+                new_squash[package]["version"],
                 new_squash[package].get("source", None),
             )
             result_old = query_deb(
                 package,
                 apt_cache,
-                old_squash[package][version_key],
+                old_squash[package]["version"],
                 old_squash[package].get("source", None),
             )
             if result_new is None or result_old is None:
@@ -119,13 +153,14 @@ def compare_squashfs(new_squash, old_squash, apt_cache):
                 }
             )
     for package in old_squash_list:
-        version_key, is_snap = (
-            ("revision", True) if "snap:" in package else ("version", False)
-        )
+        is_snap = True if "snap:" in package else False
+        if is_snap:
+            output["REMOVED"].append({"name": package})
+            continue
         result = query_deb(
             package,
             apt_cache,
-            old_squash[package][version_key],
+            old_squash[package]["version"],
             old_squash[package].get("source", None),
         )
         if result is not None:
@@ -310,6 +345,10 @@ def generate_report(data, output_path):
                                     for s in changelog.split("\n"):
                                         if len(s) > 0:
                                             fd.write("\t\t\t" + s + "\n")
+                                version_change = sub_item.get("version_change", None)
+                                if version_change is not None:
+                                    for key, value in version_change.items():
+                                        fd.write("\t\t\t" + key + ":" + value + "\n")
                                 fd.write("\n")
                 changelog = item.get("changelog", None)
                 if changelog is not None:
