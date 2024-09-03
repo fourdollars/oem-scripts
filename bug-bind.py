@@ -5,9 +5,14 @@
 import argparse
 import logging
 import re
+import os
+import requests
+from requests.auth import HTTPBasicAuth
+import json
 
 import lazr.restfulclient.resource
 from oem_scripts.LaunchpadLogin import LaunchpadLogin
+from configparser import ConfigParser
 
 HWE_PUBLIC_PROJECT = "hwe-next"
 OEM_PUBLIC_PROJECT = "oem-priority"
@@ -20,6 +25,38 @@ logging.basicConfig(
 )
 
 
+def get_jira_email_token():
+    oem_scripts_config_ini = os.path.join(
+        os.environ["HOME"], ".config/oem-scripts/config.ini"
+    )
+    oem_scripts_config = ConfigParser()
+    oem_scripts_config.read(oem_scripts_config_ini)
+    config = oem_scripts_config["private"]
+
+    return config["jira_email"], config["jira_token"]
+
+
+def issue_update_fields(
+    email: str,
+    token: str,
+    issue_key: str,
+    fields: dict,
+):
+    url = f"https://warthogs.atlassian.net/rest/api/2/issue/{issue_key}"
+    auth = HTTPBasicAuth(email, token)
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+
+    payload = json.dumps(
+        {
+            "fields": fields,
+        }
+    )
+
+    response = requests.request("PUT", url, data=payload, headers=headers, auth=auth)
+
+    response.raise_for_status()
+
+
 def link_bugs(public_bugnum, privates, ihv):
     assert public_bugnum.isdigit()
     login = LaunchpadLogin()
@@ -30,15 +67,36 @@ def link_bugs(public_bugnum, privates, ihv):
 
     # Add X-HWE-Bug: tag to description.
     for priv in privates:
-        assert priv.isdigit()
-        bug = lp.bugs[priv]
+        if priv.isdigit():
+            bug = lp.bugs[priv]
 
-        if re.search(tag, bug.description) is None:
-            # Add the referenced public bug to the private bug, if it's not in already.
-            bug.description += "\n\n{}\n".format(tag)
-            bug.lp_save()
+            if re.search(tag, bug.description) is None:
+                # Add the referenced public bug to the private bug, if it's not in already.
+                bug.description += "\n\n{}\n".format(tag)
+                bug.lp_save()
+            else:
+                log.warning("Bug already linked to public bug " + tag)
+
+            add_bug_tags(
+                pub_bug,
+                [
+                    "originate-from-" + str(bug.id),
+                    bug.bug_tasks_collection[0].bug_target_name,  # OEM codename
+                    "oem-priority",
+                ],
+            )
         else:
-            log.warning("Bug already linked to public bug " + tag)
+            issue_key = priv
+            jira_email, jira_token = get_jira_email_token()
+            fields = {"customfield_10596": pub_bug.web_link}
+            issue_update_fields(jira_email, jira_token, issue_key, fields)
+            add_bug_tags(
+                pub_bug,
+                [
+                    "jira-" + issue_key.lower(),
+                    "oem-priority",
+                ],
+            )
 
         if ihv == "hwe":
             hwe_next = lp.projects[HWE_PUBLIC_PROJECT]
@@ -56,15 +114,6 @@ def link_bugs(public_bugnum, privates, ihv):
                 remote_bug_tag(pub_bug, "hwe-needs-public-bug")
             else:
                 log.error("Project " + ihv + " not defined")
-
-        add_bug_tags(
-            pub_bug,
-            [
-                "originate-from-" + str(bug.id),
-                bug.bug_tasks_collection[0].bug_target_name,  # OEM codename
-                "oem-priority",
-            ],
-        )
 
     add_bug_task(pub_bug, hwe_next)
 
@@ -129,8 +178,8 @@ def add_bug_tags(bug, tags):
 
 
 if __name__ == "__main__":
-    description = """bind private bugs with pubilc bug
-bud-bind.py -p public_bugnumber private_bugnumber1 private_bugnumber2...
+    description = """bind private bugs or jira issues with pubilc bug
+bud-bind.py -p public_bugnumber [private_bugnumber1|jira_issue1] [private_bugnumber2|jira_issue2]...
 bug-bind.py -m private_bugnumber private_bugnumber1 private_bugnumer2...
 bug-bind.py -w private_bugnumber private_bugnumber1 private_bugnumber2..."""
     help = """The expected live cycle of an oem-priority bug is:
