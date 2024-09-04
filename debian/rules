@@ -16,3 +16,6 @@ else
 	./tests/test_flake8
 	./tests/test_shellcheck
 endif
+
+override_dh_dwz:
+	# Can error with "dwz: debian/oem-scripts/usr/sbin/autoISO: Found compressed .debug_aranges section, not attempting dwz compression"
