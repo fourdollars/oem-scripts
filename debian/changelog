@@ -1,3 +1,27 @@
+oem-scripts (2.14) noble; urgency=medium
+
+  [ pseudoc ]
+  * style(image-deploy.sh): fix mixed indentations
+  * feat(image-deploy.sh): introduce external env vars
+  * refactor(image-deploy.sh): use CACHE_ROOT env
+  * refactor(image-deploy.sh): use ssh command wrapper
+  * feat(image-deploy.sh): envs for CONFIG_REPO
+  * feat(image-deploy.sh): non-interactive mode
+  * style(image-deploy.sh): consistent style
+  * refactor(image-deploy.sh): /home/$USER -> $HOME
+
+  [ Kai-Chuan Hsieh ]
+  * bug-bind.py: Add link jira to public lp-bug capability
+
+  [ Shih-Yuan Lee (FourDollars) ]
+  * black mir-bug and bootstrap-meta on noble.
+  * debian/rules: Avoid the error from dh_dwz.
+
+  [ Dirk Su ]
+  * compare_manifest.py: add version/revision/tracking change info to snap packages
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 04 Sep 2024 17:05:22 +0800
+
 oem-scripts (2.13) jammy; urgency=medium
 
   * oem-meta-packages: No lsb_release python module on noble.
