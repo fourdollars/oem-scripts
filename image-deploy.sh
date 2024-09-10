@@ -42,7 +42,7 @@ fi
 LAUNCHPAD_USER=${LAUNCHPAD_USER:-"$USER"}
 RCLONE_CONFIG_PATH=${RCLONE_CONFIG_PATH:-"$HOME/.config/rclone/rclone.conf"}
 CONFIG_REPO_REMOTE="${CONFIG_REPO_REMOTE:-"git+ssh://$LAUNCHPAD_USER@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/ubuntu-oem-image-builder"}"
-CONFIG_REPO_BRANCH="${CONFIG_REPO_BRANCH:-"noble"}"
+CONFIG_REPO_BRANCH="${CONFIG_REPO_BRANCH:-"main"}"
 INTERACTIVE=${INTERACTIVE:-false}
 
 TARGET_USER="ubuntu"
