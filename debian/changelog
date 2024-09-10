@@ -1,3 +1,10 @@
+oem-scripts (2.15) noble; urgency=medium
+
+  [ Artur Pak ]
+  * image-deploy.sh: Update noble to main branch for image builder repo
+
+ -- artur <artur.pak@canonical.com>  Tue, 10 Sep 2024 10:06:34 +0800
+
 oem-scripts (2.14) noble; urgency=medium
 
   [ pseudoc ]
