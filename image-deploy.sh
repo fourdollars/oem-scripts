@@ -262,7 +262,7 @@ while :; do
 
     for TARGET_IP in "${STARTED[@]}"; do
         if in_target exit; then
-            STARTED=("${STARTED[@]/$addr}")
+            STARTED=("${STARTED[@]/$TARGET_IP}")
             finished=$((finished + 1))
         fi
     done
