@@ -22,8 +22,8 @@ Environment variables:
     LAUNCHPAD_USER          The user of the launchpad, default \$USER
     RCLONE_CONFIG_PATH      The path of rclone config, default \$HOME/.config/rclone/rclone.conf
     CONFIG_REPO_REMOTE      The remote URL of the config repo, default
-                            git+ssh://\$LAUNCHPAD_USER@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/ubuntu-oem-image-builder
-    CONFIG_REPO_BRANCH      The branch of the config repo, default noble
+                            git+ssh://\$LAUNCHPAD_USER@git.launchpad.net/~oem-solutions-engineers/oem-dev-tools/+git/ubuntu-oem-image-builder
+    CONFIG_REPO_BRANCH      The branch of the config repo, default main
     INTERACTIVE             The flag to enable the interactive mode, default false
 Examples:
     $0 -u ubuntu --iso /home/ubuntu/Downloads/somerville-noble-hwe-20240501-65.iso 10.42.0.161
@@ -41,7 +41,7 @@ fi
 # Environment variables
 LAUNCHPAD_USER=${LAUNCHPAD_USER:-"$USER"}
 RCLONE_CONFIG_PATH=${RCLONE_CONFIG_PATH:-"$HOME/.config/rclone/rclone.conf"}
-CONFIG_REPO_REMOTE="${CONFIG_REPO_REMOTE:-"git+ssh://$LAUNCHPAD_USER@git.launchpad.net/~oem-solutions-engineers/pc-enablement/+git/ubuntu-oem-image-builder"}"
+CONFIG_REPO_REMOTE="${CONFIG_REPO_REMOTE:-"git+ssh://$LAUNCHPAD_USER@git.launchpad.net/~oem-solutions-engineers/oem-dev-tools/+git/ubuntu-oem-image-builder"}"
 CONFIG_REPO_BRANCH="${CONFIG_REPO_BRANCH:-"main"}"
 INTERACTIVE=${INTERACTIVE:-false}
 
