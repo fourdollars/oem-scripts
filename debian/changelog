@@ -1,3 +1,10 @@
+oem-scripts (2.17) noble; urgency=medium
+
+  [ Artur Pak ]
+  * image-deploy.sh: update repo to oem-dev-tools
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 18 Sep 2024 11:21:12 +0800
+
 oem-scripts (2.16) noble; urgency=medium
 
   [ Artur Pak ]
