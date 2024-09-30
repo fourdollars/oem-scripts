@@ -47,6 +47,8 @@ INTERACTIVE=${INTERACTIVE:-false}
 
 TARGET_USER="ubuntu"
 TARGET_IPS=()
+DEPLOYED_IPS=()
+SKIPPED_IPS=()
 ISO_PATH=
 ISO=
 STORE_PART=""
@@ -54,7 +56,7 @@ TIMEOUT=3600
 CACHE_ROOT="$HOME/.cache/oem-scripts"
 URL_CACHE_PATH="$CACHE_ROOT/images"
 CONFIG_REPO_PATH="$CACHE_ROOT/ubuntu-oem-image-builder"
-SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 "
 
 if ! $INTERACTIVE; then
     SSH_OPTS="$SSH_OPTS -o PubkeyAuthentication=yes -o PasswordAuthentication=no"
@@ -203,28 +205,30 @@ redeploy() {
     sudo mount -o loop "$iso" iso || return 1
     sudo mount "$reset_part" reset || return 1
 
-    # Sync ISO to the reset partition
+    echo "Sync ISO to the reset partition"
     sudo rsync -avP iso/ reset || true
 
-    # Sync cloud-configs to the reset partition
+    echo "Sync cloud-configs to the reset partition"
     sudo mkdir -p reset/cloud-configs
     sudo cp -r redeploy/cloud-configs/redeploy/ reset/cloud-configs/
     sudo cp -r redeploy/ssh-config/ reset/
 
-    # Update the grub.cfg to boot from the reset partition
+    echo "Update the grub.cfg to boot from the reset partition"
     sudo cp redeploy/cloud-configs/grub/redeploy.cfg reset/boot/grub/grub.cfg
     sudo sed -i "s/RP_PARTUUID/${reset_partuuid}/" reset/boot/grub/grub.cfg
 
-    # Reboot to start the redeploy process
+    echo "Reboot to start the redeploy process"
     sudo reboot
 }
 
 for TARGET_IP in "${TARGET_IPS[@]}"; do
     if STORE_PART=$(in_target "$(typeset -f store_partition); store_partition"); then
         echo "Store partition: $STORE_PART"
+        DEPLOYED_IPS+=("$TARGET_IP")
     else
-        echo "Can't find partition to store ISO on target $TARGET_IP"
-        exit 1
+        echo "Erorr: Can't access the $TARGET_IP or find partition to store ISO on target. Skipping..."
+        SKIPPED_IPS+=("$TARGET_IP")
+        continue
     fi
 
     # Copy ISO to the target
@@ -238,8 +242,14 @@ for TARGET_IP in "${TARGET_IPS[@]}"; do
     # Copy ssh key from alloem-init injections to the target
     to_target "$CONFIG_REPO_PATH/injections/alloem-init/chroot/minimal.standard.live.hotfix.squashfs/etc/ssh" redeploy/ssh-config
 
+    echo "Start deployment on $TARGET_IP"
     in_target "$(typeset -f store_partition redeploy); redeploy $ISO"
 done
+
+if [ ${#DEPLOYED_IPS[@]} -eq 0 ]; then
+    echo "No devices were deployed. Please check the logs for errors."
+    exit 1
+fi
 
 # Clear the known hosts
 for TARGET_IP in "${TARGET_IPS[@]}"; do
@@ -249,9 +259,10 @@ for TARGET_IP in "${TARGET_IPS[@]}"; do
 done
 
 # Polling the targets
-STARTED=("${TARGET_IPS[@]}")
+STARTED=("${DEPLOYED_IPS[@]}")
 finished=0
 startTime=$(date +%s)
+echo "Verify deployment status on ${DEPLOYED_IPS[*]}"
 while :; do
     sleep 180
     currentTime=$(date +%s)
@@ -264,11 +275,15 @@ while :; do
         if in_target exit; then
             STARTED=("${STARTED[@]/$TARGET_IP}")
             finished=$((finished + 1))
+            echo "$TARGET_IP is back online. Deployment is done for this device."
         fi
     done
 
-    if [ $finished -eq ${#TARGET_IPS[@]} ]; then
-        echo "Deployment are done"
+    if [ $finished -eq ${#DEPLOYED_IPS[@]} ]; then
+        echo "Deployment are done on ${DEPLOYED_IPS[*]}"
+        if [ ${#SKIPPED_IPS[@]} -ne 0 ]; then
+            echo "Deployment failed on ${SKIPPED_IPS[*]}. Please check."
+        fi
         break
     fi
 done
