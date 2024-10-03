@@ -1311,7 +1311,11 @@ class OemFromPPA(OemMetaPkgInfo):
                     raise e
             _run_command(["get-private-ppa", f"ppa:oem-archive/{archive.name}"])
             source_lists = "\n".join(lp.me.getArchiveSubscriptionURLs())
-        sources = archive.getPublishedSources(exact_match=True, source_name=self.meta)
+
+        ds = lp.distributions["ubuntu"].getSeries(name_or_version=series)
+        sources = archive.getPublishedSources(
+            exact_match=True, source_name=self.meta, distro_series=ds
+        )
         fingerprint = archive.signing_key_fingerprint
         version = ""  # apt_pkg.version_compare doesn't accept NoneType
         for source in sources:
