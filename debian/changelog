@@ -1,3 +1,10 @@
+oem-scripts (2.18) noble; urgency=medium
+
+  [ Artur Pak ]
+  * oem-meta-packages: Add distro_series when check OemFromPPA
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 03 Oct 2024 16:14:46 +0800
+
 oem-scripts (2.17) noble; urgency=medium
 
   [ Artur Pak ]
