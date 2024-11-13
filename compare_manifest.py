@@ -16,11 +16,13 @@ def memoize(func):
 
     # use <source>_<version> as key to query cache
     def wrapper(*args):
-        if args[3] + "_" + args[2] in cache:
-            return cache[args[3] + "_" + args[2]]
+        pkg = args[3] if args[3] else args[0]
+        ver = args[2]
+        if f"{pkg}_{ver}" in cache:
+            return cache[f"{pkg}_{ver}"]
 
         result = func(*args)
-        cache[args[3] + "_" + args[2]] = result
+        cache[f"{pkg}_{ver}"] = result
         return result
 
     return wrapper
@@ -331,7 +333,7 @@ def generate_report(data, output_path):
     with open(output_path, "w") as fd:
         for section, section_data in data.items():
             fd.write(section + "\n")
-            for item in section_data:
+            for item in sorted(section_data, key=lambda item: item["name"]):
                 fd.write("\t" + item["name"] + "\n")
                 subcomponent = item.get("subcomponent", None)
                 if subcomponent is not None:
