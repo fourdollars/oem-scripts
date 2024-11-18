@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+
+import argparse
+import yaml
+from apt import apt_pkg
+
+if __name__ == "__main__":
+    sbom = {}
+    parser = argparse.ArgumentParser(description="Generate SBOM from manifest")
+    parser.add_argument(
+        "--manifest",
+        help="Path to the manifest file",
+        type=str,
+        required=True,
+    )
+    args = parser.parse_args()
+
+    with open(args.manifest, "r") as f:
+        manifest = yaml.safe_load(f)
+
+    for path in manifest.get("deb", None):
+        name = path.split("/")[-1]
+        pkg = name.split("_")[0]
+        if " " in pkg:
+            pkg = pkg.split(" ")[0]
+        src = manifest["deb"][path]["source"]
+        ver = manifest["deb"][path]["version"]
+        deb = sbom.get(src, None)
+        if deb is None:
+            sbom[src] = {
+                "version": ver,
+                "packages": [pkg],
+            }
+        else:
+            if apt_pkg.version_compare(deb["version"], ver) < 0:
+                deb["version"] = ver
+            if pkg not in deb["packages"]:
+                deb["packages"].append(pkg)
+                deb["packages"].sort()
+    for squashfs in manifest.get("squashfs", None):
+        for pkg, fields in manifest["squashfs"][squashfs]["manifest"].items():
+            if pkg.startswith("snap:"):
+                snap = sbom.get(pkg, None)
+                rev = fields.get("revision", None)
+                trk = fields.get("tracking", None)
+                ver = fields.get("version", None)
+                if snap is None:
+                    sbom[pkg] = {
+                        "revision": rev,
+                        "tracking": trk,
+                        "version": ver,
+                    }
+                else:
+                    if rev > snap["revision"]:
+                        snap["revision"] = rev
+                        snap["version"] = ver
+                        snap["tracking"] = trk
+                    elif ver > snap["version"]:
+                        snap["revision"] = rev
+                        snap["version"] = ver
+                        snap["tracking"] = trk
+                continue
+            if "'" in pkg:
+                pkg.replace("'", "")
+            if pkg.startswith("-"):
+                pkg = pkg[1:]
+            if pkg.endswith(":amd64"):
+                pkg = pkg[:-6]
+            if "source" not in fields:
+                continue
+            src = fields["source"]
+            ver = fields["version"]
+            deb = sbom.get(src, None)
+            if deb is None:
+                sbom[src] = {
+                    "version": ver,
+                    "packages": [pkg],
+                }
+            else:
+                if apt_pkg.version_compare(deb["version"], ver) < 0:
+                    deb["version"] = ver
+                if pkg not in deb["packages"]:
+                    deb["packages"].append(pkg)
+                    deb["packages"].sort()
+
+    print(yaml.dump(sbom))
