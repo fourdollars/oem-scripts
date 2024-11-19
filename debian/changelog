@@ -1,3 +1,13 @@
+oem-scripts (2.22) noble; urgency=medium
+
+  * Install compare_manifest.py and sort the scripts list.
+  * Sort the list by name in each section.
+  * Make oem-image-sbom to generate SBOM yaml file from the image manifest.
+  * Add an option '--assume-certified' to mir-bug.
+  * Improve autopkgtest for mir-bug.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 19 Nov 2024 14:22:10 +0800
+
 oem-scripts (2.21) noble; urgency=medium
 
   * Install put-dell-embargo.sh
