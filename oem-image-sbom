@@ -114,6 +114,10 @@ def compare_sbom(first, second):
     for pkg, fields in first.items():
         if pkg not in second:
             remove[pkg] = {"version": fields["version"]}
+            if pkg.startswith("snap:"):
+                for field in ("revision", "tracking"):
+                    if field in fields:
+                        remove[pkg][field] = fields[field]
         else:
             ret = apt_pkg.version_compare(fields["version"], second[pkg]["version"])
             if ret < 0:
@@ -124,9 +128,17 @@ def compare_sbom(first, second):
                 change[pkg] = {
                     "version": f"{fields['version']} -> {second[pkg]['version']} (WARNING)"
                 }
+            if ret != 0 and pkg.startswith("snap:"):
+                for field in ("revision", "tracking"):
+                    if field in fields:
+                        change[pkg][field] = f"{fields[field]} -> {second[pkg][field]}"
     for pkg, fields in second.items():
         if pkg not in first:
             add[pkg] = {"version": fields["version"]}
+            if pkg.startswith("snap:"):
+                for field in ("revision", "tracking"):
+                    if field in fields:
+                        add[pkg][field] = fields[field]
 
     diff = {}
     if add:
