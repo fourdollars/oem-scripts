@@ -98,6 +98,11 @@ update.add_argument(
     action="store_true",
 )
 update.add_argument(
+    "--assume-certified",
+    help="Assume the platform is Ubuntu certified.",
+    action="store_true",
+)
+update.add_argument(
     "--kernel-flavour",
     help="Set the kernel flavour in debian/control.",
     choices=["oem", "default"],
@@ -127,6 +132,11 @@ check.add_argument(
 )
 check.add_argument(
     "--skip", help="Skip checking oem branch of Git repository.", action="store_true"
+)
+check.add_argument(
+    "--assume-certified",
+    help="Assume the platform is Ubuntu certified.",
+    action="store_true",
 )
 check.add_argument(
     "--kernel-flavour",
@@ -376,6 +386,7 @@ def update_bug(
     series: str,
     bug_number: int,
     yes: bool,
+    assume_certified: bool = False,
     certified: bool = False,
     certified_hardwares: list = [],
 ) -> None:
@@ -383,22 +394,23 @@ def update_bug(
     info(f'Updating LP: #{bug_number} - "{bug.title}" ...')
     desc, pkg_name = check_bug_description(bug, certified_hardwares, series=series)
     bug_modified = False
-    task_modified = False
+    modified = False
 
     if desc and yes_or_ask(yes, "Do you want to update the bug description?"):
-        bug_modified = True
+        modified = bug_modified = True
         bug.description = desc
 
     if check_bug_title(bug, pkg_name, series) is False and yes_or_ask(
         yes, "Do you want to update the bug title?"
     ):
-        bug_modified = True
+        modified = bug_modified = True
         if series == "focal":
             bug.title = f"[MIR] {pkg_name}"
         else:
             bug.title = f"[MIR][{series}] {pkg_name}"
 
     if bug_modified:
+        modified = True
         bug.lp_save()
         bug_modified = False
 
@@ -409,7 +421,7 @@ def update_bug(
                     yes,
                     f"Do you want to update the importance of {task.bug_target_name} from {task.importance} to Critical?",
                 ):
-                    task_modified = True
+                    modified = True
                     task.importance = "Critical"
                     task.lp_save()
 
@@ -417,33 +429,13 @@ def update_bug(
 
     check_and_update_bug_subscriptions(lp, bug, update=True, yes=yes)
 
-    if check_bug_tags(bug, certified, update=True) is False:
-        tags = copy(bug.tags)
-        if certified:
-            if args.release:
-                taglist = TAG_LIST + ["ubuntu-certified", "oem-done-upload"]
-            elif args.ready:
-                taglist = TAG_LIST + ["ubuntu-certified", "oem-needs-upload"]
-            else:
-                taglist = TAG_LIST + ["ubuntu-certified"]
-        else:
-            taglist = TAG_LIST
-        for tag in taglist:
-            if tag not in bug.tags and yes_or_ask(
-                yes, f"Do you want to add '{tag}' tag?"
-            ):
-                bug_modified = True
-                tags.append(tag)
-        for tag in bug.tags:
-            if tag.startswith("oem-scripts-"):
-                if tag[len("oem-scripts-") :] != oem_scripts.__version__:
-                    if yes_or_ask(yes, f"Do you want to remove '{tag}' tag?"):
-                        tags.remove(tag)
-            elif certified and args.release and tag == "oem-needs-upload":
-                if yes_or_ask(yes, f"Do you want to remove '{tag}' tag?"):
-                    tags.remove(tag)
-        if tags != bug.tags:
-            bug.tags = tags
+    bug_modified = check_and_update_bug_tags(
+        bug, certified, assume_certified=assume_certified, update=True, yes=yes
+    )
+    if bug_modified:
+        modified = True
+        bug.lp_save()
+        bug_modified = False
 
     check_and_update_git_repo(
         bug, pkg_name, series=series, yes=yes, update=True, username=lp.me.name
@@ -451,10 +443,7 @@ def update_bug(
 
     check_and_update_bug_attachments(bug, pkg_name, series=series, update=True, yes=yes)
 
-    if bug_modified:
-        bug.lp_save()
-        info(f"LP: #{bug_number} is updated.")
-    elif task_modified:
+    if modified:
         info(f"LP: #{bug_number} is updated.")
     elif yes:
         info("Everything looks OK.")
@@ -464,6 +453,7 @@ def check_bug(
     lp,
     bug_number: int,
     series: str,
+    assume_certified: bool = False,
     certified: bool = False,
     certified_hardwares: list = [],
 ) -> None:
@@ -481,7 +471,12 @@ def check_bug(
         need_fixing = True
     if check_and_update_bug_subscriptions(lp, bug) is False:
         need_fixing = True
-    if check_bug_tags(bug, certified, update=False) is False:
+    if (
+        check_and_update_bug_tags(
+            bug, certified, assume_certified=assume_certified, update=False
+        )
+        is False
+    ):
         need_fixing = True
     if check_and_update_git_repo(bug, pkg_name, series=series) is False:
         need_fixing = True
@@ -762,26 +757,72 @@ def check_and_update_bug_subscriptions(lp, bug, update=False, yes=False) -> bool
     return result
 
 
-def check_bug_tags(bug, certified: bool = False, update=False) -> bool:
-    info("Checking bug tags...")
-    result = True
-    if certified:
-        if args.release:
-            if update:
-                taglist = TAG_LIST + ["ubuntu-certified", "oem-done-upload"]
-            else:
-                taglist = TAG_LIST + ["ubuntu-certified"]
-        elif args.ready:
-            taglist = TAG_LIST + ["ubuntu-certified", "oem-needs-upload"]
-        else:
-            taglist = TAG_LIST + ["ubuntu-certified"]
+def check_and_update_bug_tags(
+    bug,
+    certified: bool = False,
+    assume_certified: bool = False,
+    update=False,
+    yes=False,
+) -> bool:
+    if update:
+        info("Updating bug tags...")
     else:
-        taglist = TAG_LIST
-    for tag in taglist:
-        if tag not in bug.tags:
-            error(f"'{tag}' is not in the tags.")
-            result = False
-    return result
+        info("Checking bug tags...")
+
+    expected_tags = TAG_LIST
+    unexpected_tags = []
+    if certified or assume_certified:
+        if certified:
+            expected_tags.append("ubuntu-certified")
+        else:
+            unexpected_tags.append("ubuntu-certified")
+        if args.release:
+            expected_tags.append("oem-done-upload")
+            unexpected_tags.append("oem-needs-upload")
+        elif args.ready:
+            expected_tags.append("oem-needs-upload")
+            unexpected_tags.append("oem-done-upload")
+        else:
+            unexpected_tags.append("oem-done-upload")
+            unexpected_tags.append("oem-needs-upload")
+    else:
+        unexpected_tags.append("ubuntu-certified")
+        unexpected_tags.append("oem-done-upload")
+        unexpected_tags.append("oem-needs-upload")
+
+    if not update:
+        result = True
+        for tag in expected_tags:
+            if tag not in bug.tags:
+                error(f"'{tag}' shall be in the tags.")
+                result = False
+        for tag in unexpected_tags:
+            if tag in bug.tags:
+                error(f"'{tag}' shall not be in the tags.")
+                result = False
+        return result
+
+    bug_modified = False
+    tags = copy(bug.tags)
+    for tag in expected_tags:
+        if tag not in bug.tags and yes_or_ask(yes, f"Do you want to add '{tag}' tag?"):
+            bug_modified = True
+            tags.append(tag)
+
+    for tag in bug.tags:
+        if (
+            tag.startswith("oem-scripts-")
+            and tag not in expected_tags
+            or tag in unexpected_tags
+        ):
+            if yes_or_ask(yes, f"Do you want to remove '{tag}' tag?"):
+                bug_modified = True
+                tags.remove(tag)
+
+    if tags != bug.tags:
+        bug.tags = tags
+
+    return bug_modified
 
 
 def check_and_update_bug_attachments(
@@ -1246,8 +1287,10 @@ def handle_bug(lp, args, handler, overwrite_args=None):
         and args.json
         and type(args.json) is dict
         and len(args.json.get("certify-planning", [])) != 0
+        or args.assume_certified
     ):
         certified = True
+        project = args.json["project"]
         for bug_id in args.json["certify-planning"]:
             bug = lp.bugs[bug_id]
             for task in bug.bug_tasks:
@@ -1255,10 +1298,12 @@ def handle_bug(lp, args, handler, overwrite_args=None):
                     if task.status != "Fix Released":
                         certified = False
         series = args.json["series"]
-        if series == "focal" and args.json["project"] != "somerville":
-            meta_name = f"oem-{args.json['project']}.{args.json['group']}-{args.json['platform']}-meta"
+        if series == "focal" and project != "somerville":
+            meta_name = (
+                f"oem-{project}.{args.json['group']}-{args.json['platform']}-meta"
+            )
         else:
-            meta_name = f"oem-{args.json['project']}-{args.json['platform']}-meta"
+            meta_name = f"oem-{project}-{args.json['platform']}-meta"
         json_url = f"https://people.canonical.com/~oem-enablement/oem-meta-packages/{meta_name}-{series}.json"
         req = requests.get(json_url)
         if req.status_code != 200:
@@ -1269,7 +1314,7 @@ def handle_bug(lp, args, handler, overwrite_args=None):
         for k, v in payload[meta_name]["tests"].items():
             if v != "dd443db8729e33c1e20b2d57cc52e152":
                 error(
-                    f"{k} failed for {meta_name} on https://people.canonical.com/~oem-enablement/oem-meta-packages/."
+                    f"{k} failed for {meta_name} on https://people.canonical.com/~oem-enablement/oem-meta-packages/{project}-{series}-summary.html"
                 )
                 err = 1
         if err != 0:
@@ -1291,6 +1336,7 @@ def handle_bug(lp, args, handler, overwrite_args=None):
             "series": args.json["series"],
             "bug_number": bug_number,
             "certified": certified,
+            "assume_certified": args.assume_certified,
             "certified_hardwares": certified_hardwares,
         }
     )

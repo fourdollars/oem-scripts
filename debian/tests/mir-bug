@@ -20,6 +20,8 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # create
+echo "INFO: mir-bug test case #1 ... ERR=$ERR"
+start=$(date +%s)
 mir-bug create -o bug_id somerville bronn "some Dell platforms" --series focal
 BUG_ID=$(cat bug_id)
 lp-api get bugs/"$BUG_ID" > "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json"
@@ -28,13 +30,30 @@ jq -r .description < "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json" | grep focal
 jq -r .description < "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json" | grep 20.04
 lp-bug cleanup --yes "$BUG_ID"
 rm bug_id
+end=$(date +%s)
+echo "INFO: mir-bug test case #1 ... ERR=$ERR took $((end - start)) seconds"
 
+echo "INFO: mir-bug test case #2 ... ERR=$ERR"
+start=$(date +%s)
 mir-bug create -o bug_id somerville tentacool "some Dell platforms" --series jammy
 BUG_ID=$(cat bug_id)
 lp-api get bugs/"$BUG_ID" > "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json"
 jq -r .title < "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json" | grep "\[MIR\]\[jammy\] oem-somerville-tentacool-meta"
 jq -r .description < "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json" | grep jammy
 jq -r .description < "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json" | grep 22.04
+end=$(date +%s)
+echo "INFO: mir-bug test case #2 ... ERR=$ERR took $((end - start)) seconds"
+
+echo "INFO: mir-bug test case #3 ... ERR=$ERR"
+start=$(date +%s)
+mir-bug create -o bug_id somerville tentacool "some Dell platforms" --series jammy
+BUG_ID=$(cat bug_id)
+lp-api get bugs/"$BUG_ID" > "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json"
+jq -r .title < "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json" | grep "\[MIR\]\[jammy\] oem-somerville-tentacool-meta"
+jq -r .description < "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json" | grep jammy
+jq -r .description < "$AUTOPKGTEST_ARTIFACTS/$BUG_ID.json" | grep 22.04
+end=$(date +%s)
+echo "INFO: mir-bug test case #3 ... ERR=$ERR took $((end - start)) seconds"
 
 # check/update
 cat > "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json <<ENDLINE
@@ -63,6 +82,8 @@ cat > "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json <<ENDLINE
 }
 ENDLINE
 
+echo "INFO: mir-bug test case #4 ... ERR=$ERR"
+start=$(date +%s)
 mir-bug update --yes --skip "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
 payload=$(lp-api get bugs/"$BUG_ID")
 for link in $(lp-api .subscriptions_collection_link <<< "$payload" | jq -r '.entries|.[]|.self_link'); do
@@ -73,6 +94,11 @@ for link in $(lp-api .subscriptions_collection_link <<< "$payload" | jq -r '.ent
             ;;
     esac
 done
+end=$(date +%s)
+echo "INFO: mir-bug test case #4 ... ERR=$ERR took $((end - start)) seconds"
+
+echo "INFO: mir-bug test case #5 ... ERR=$ERR"
+start=$(date +%s)
 mir-bug update --yes --skip --ready "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
 payload=$(lp-api get bugs/"$BUG_ID")
 for link in $(lp-api .subscriptions_collection_link <<< "$payload" | jq -r '.entries|.[]|.self_link'); do
@@ -83,13 +109,24 @@ for link in $(lp-api .subscriptions_collection_link <<< "$payload" | jq -r '.ent
             ;;
     esac
 done
+end=$(date +%s)
+echo "INFO: mir-bug test case #5 ... ERR=$ERR took $((end - start)) seconds"
+
+echo "INFO: mir-bug test case #6 ... ERR=$ERR"
+start=$(date +%s)
 mir-bug update --yes --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
 mir-bug check --skip --ready --release "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
 mir-bug update --yes --skip --tz=UTC --ready --release "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
 mir-bug check --skip --tz=UTC --ready --release "$AUTOPKGTEST_ARTIFACTS"/jellyfish-tentacool.json
+end=$(date +%s)
+echo "INFO: mir-bug test case #6 ... ERR=$ERR took $((end - start)) seconds"
 
 # collect
+echo "INFO: mir-bug test case #7 ... ERR=$ERR"
+start=$(date +%s)
 mir-bug collect "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs.json
 mir-bug collect --ubuntu-certified "$AUTOPKGTEST_ARTIFACTS"/oem-meta-mir-bugs-ubuntu-certified.json
+end=$(date +%s)
+echo "INFO: mir-bug test case #7 ... ERR=$ERR took $((end - start)) seconds"
 
 exit "$ERR"
