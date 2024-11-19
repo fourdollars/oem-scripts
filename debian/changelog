@@ -1,3 +1,10 @@
+oem-scripts (2.23) noble; urgency=medium
+
+  * Make oem-image-sbom able to generate the difference.
+  * Provide tracking and tracking for the snap package difference by oem-image-sbom.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Tue, 19 Nov 2024 16:45:13 +0800
+
 oem-scripts (2.22) noble; urgency=medium
 
   * Install compare_manifest.py and sort the scripts list.
