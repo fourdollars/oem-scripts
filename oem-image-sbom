@@ -1,21 +1,42 @@
 #!/usr/bin/env python3
+# Copyright (C) 2024  Canonical Ltd.
+# Author: Shih-Yuan Lee (FourDollars) <sylee@canonical.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import argparse
 import yaml
 from apt import apt_pkg
 
-if __name__ == "__main__":
-    sbom = {}
-    parser = argparse.ArgumentParser(description="Generate SBOM from manifest")
-    parser.add_argument(
-        "--manifest",
-        help="Path to the manifest file",
-        type=str,
-        required=True,
-    )
-    args = parser.parse_args()
 
-    with open(args.manifest, "r") as f:
+def get_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Generate/Compare SBOM from manifest")
+    parser.add_argument(
+        "manifest",
+        help="Path to manifest file",
+        type=str,
+        action="extend",
+        nargs="+",
+    )
+    return parser
+
+
+def get_sbom(filename) -> dict:
+    sbom = {}
+
+    with open(filename, "r") as f:
         manifest = yaml.safe_load(f)
 
     for path in manifest.get("deb", None):
@@ -82,5 +103,81 @@ if __name__ == "__main__":
                 if pkg not in deb["packages"]:
                     deb["packages"].append(pkg)
                     deb["packages"].sort()
+    return sbom
 
-    print(yaml.dump(sbom))
+
+def compare_sbom(first, second):
+    add = {}
+    remove = {}
+    change = {}
+
+    for pkg, fields in first.items():
+        if pkg not in second:
+            remove[pkg] = {"version": fields["version"]}
+            if pkg.startswith("snap:"):
+                for field in ("revision", "tracking"):
+                    if field in fields:
+                        remove[pkg][field] = fields[field]
+        else:
+            ret = apt_pkg.version_compare(fields["version"], second[pkg]["version"])
+            if ret < 0:
+                change[pkg] = {
+                    "version": f"{fields['version']} -> {second[pkg]['version']}"
+                }
+            elif ret > 0:
+                change[pkg] = {
+                    "version": f"{fields['version']} -> {second[pkg]['version']} (WARNING)"
+                }
+            if ret != 0 and pkg.startswith("snap:"):
+                for field in ("revision", "tracking"):
+                    if field in fields:
+                        change[pkg][field] = f"{fields[field]} -> {second[pkg][field]}"
+    for pkg, fields in second.items():
+        if pkg not in first:
+            add[pkg] = {"version": fields["version"]}
+            if pkg.startswith("snap:"):
+                for field in ("revision", "tracking"):
+                    if field in fields:
+                        add[pkg][field] = fields[field]
+
+    diff = {}
+    if add:
+        diff["ADD"] = add
+    if remove:
+        diff["REMOVE"] = remove
+    if change:
+        diff["CHANGE"] = change
+
+    return diff
+
+
+if __name__ == "__main__":
+    parser = get_parser()
+    args = parser.parse_args()
+    if len(args.manifest) == 1 and args.manifest[0].endswith(".manifest"):
+        sbom = get_sbom(args.manifest[0])
+        print(yaml.dump(sbom))
+    elif len(args.manifest) == 2:
+        first = args.manifest[0]
+        second = args.manifest[1]
+        if first.endswith(".sbom"):
+            with open(first, "r") as f:
+                first = yaml.safe_load(f)
+        elif first.endswith(".manifest"):
+            first = get_sbom(first)
+        else:
+            parser.print_help()
+            exit(1)
+        if second.endswith(".sbom"):
+            with open(second, "r") as f:
+                second = yaml.safe_load(f)
+        elif second.endswith(".manifest"):
+            second = get_sbom(second)
+        else:
+            parser.print_help()
+            exit(1)
+        diff = compare_sbom(first, second)
+        print(yaml.dump(diff))
+    else:
+        parser.print_help()
+        exit(1)
