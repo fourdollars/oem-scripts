@@ -1,3 +1,9 @@
+oem-scripts (2.24) noble; urgency=medium
+
+  * Don't show the change of tracking or revision if there is no change.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 20 Nov 2024 10:41:48 +0800
+
 oem-scripts (2.23) noble; urgency=medium
 
   * Make oem-image-sbom able to generate the difference.
