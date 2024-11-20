@@ -131,7 +131,10 @@ def compare_sbom(first, second):
             if ret != 0 and pkg.startswith("snap:"):
                 for field in ("revision", "tracking"):
                     if field in fields:
-                        change[pkg][field] = f"{fields[field]} -> {second[pkg][field]}"
+                        if fields[field] != second[pkg][field]:
+                            change[pkg][field] = f"{fields[field]} -> {second[pkg][field]}"
+                        else:
+                            change[pkg][field] = fields[field]
     for pkg, fields in second.items():
         if pkg not in first:
             add[pkg] = {"version": fields["version"]}
