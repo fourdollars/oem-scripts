@@ -1,3 +1,9 @@
+oem-scripts (2.25) noble; urgency=medium
+
+  * Make mir-bug to support the different debian policy and debhelper versions on different series.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 20 Nov 2024 16:59:15 +0800
+
 oem-scripts (2.24) noble; urgency=medium
 
   * Don't show the change of tracking or revision if there is no change.
