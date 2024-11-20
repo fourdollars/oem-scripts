@@ -416,14 +416,26 @@ debian-tag = {branch}_%(version)s
         platformStr = Platform
         platformsStr = platformStr + "."
 
+    if series == "noble":
+        debian_policy = "4.6.2"
+        debhelper_version = "13"
+    elif series == "jammy":
+        debian_policy = "4.6.0.1"
+        debhelper_version = "13"
+    elif series == "focal":
+        debian_policy = "4.5.0"
+        debhelper_version = "12"
+    else:
+        raise Exception("Unsupported series")
+
     with open("control", "w") as f:
         f.write(
             f"""Source: {meta}
 Section: misc
 Priority: optional
 Maintainer: Commercial Engineering <commercial-engineering@canonical.com>
-Build-Depends: debhelper-compat (= 12), dh-modaliases
-Standards-Version: 4.5.0
+Build-Depends: debhelper-compat (= {debhelper_version}), dh-modaliases
+Standards-Version: {debian_policy}
 Vcs-Git: {git_abbr}
 Vcs-Browser: {git_browser}
 
