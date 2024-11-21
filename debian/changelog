@@ -1,3 +1,9 @@
+oem-scripts (2.26) noble; urgency=medium
+
+  * Deal with Build-Depends and Standards-Version based on different series.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Thu, 21 Nov 2024 15:31:14 +0800
+
 oem-scripts (2.25) noble; urgency=medium
 
   * Make mir-bug to support the different debian policy and debhelper versions on different series.
