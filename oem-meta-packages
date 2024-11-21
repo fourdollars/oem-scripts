@@ -737,6 +737,44 @@ apt-get full-upgrade --yes
     return changed
 
 
+def deal_with_debian_control(git_dir, branch) -> bool:
+    if series == "noble":
+        debian_policy = "4.6.2"
+        debhelper_version = "13"
+    elif series == "jammy":
+        debian_policy = "4.6.0.1"
+        debhelper_version = "13"
+    elif series == "focal":
+        debian_policy = "4.5.0"
+        debhelper_version = "12"
+    else:
+        raise Exception("Unsupported series")
+
+    os.chdir(git_dir)
+    file_path = os.path.join(git_dir, "debian", "control")
+    control = []
+    changed = False
+    with open(file_path, "r") as f:
+        for line in f.readlines():
+            if line.startswith("Build-Depends:"):
+                pattern = r"debhelper-compat \(= .*\)"
+                replacement = f"debhelper-compat (= {debhelper_version})"
+                new_line = re.sub(pattern, replacement, line)
+                if line != new_line:
+                    line = new_line
+                    changed = True
+            elif line.startswith("Standards-Version:"):
+                if line != f"Standards-Version: {debian_policy}\n":
+                    line = f"Standards-Version: {debian_policy}\n"
+                    changed = True
+            control.append(line)
+    if changed:
+        with open(file_path, "w") as f:
+            f.writelines(control)
+        _run_command(["git", "add", "debian/control"])
+    return changed
+
+
 def deal_with_gbp_conf(git_dir, branch) -> bool:
     os.chdir(git_dir)
     file_path = os.path.join(git_dir, "debian", "gbp.conf")
@@ -1781,15 +1819,13 @@ def collect_pkg_info(
             else:
                 pkgInfo[meta_name].new_desc = f"{branding} {market_name}"
             if group:
-                pkgInfo[
-                    meta_name
-                ].old_desc = (
+                pkgInfo[meta_name].old_desc = (
                     f"{project.title()} {group.title()} {codename.title()} platform"
                 )
             else:
-                pkgInfo[
-                    meta_name
-                ].old_desc = f"{project.title()} {codename.title()} platform"
+                pkgInfo[meta_name].old_desc = (
+                    f"{project.title()} {codename.title()} platform"
+                )
         return pkgInfo
 
     debug(json.dumps(json_data, indent=4, sort_keys=True))
@@ -1896,9 +1932,9 @@ def collect_pkg_info(
             if "HP" not in new_desc:
                 new_desc = "HP " + new_desc
             if series == "focal":
-                pkgInfo[
-                    pkg_name
-                ].old_desc = f"Stella {group.title()} {codename.title()} platform"
+                pkgInfo[pkg_name].old_desc = (
+                    f"Stella {group.title()} {codename.title()} platform"
+                )
             else:
                 pkgInfo[pkg_name].old_desc = f"Stella {codename.title()} platform"
             pkgInfo[pkg_name].new_desc = new_desc
@@ -1915,9 +1951,9 @@ def collect_pkg_info(
         if not pkgInfo[pkg_name].new_desc and market_name:
             pkgInfo[pkg_name].new_desc = f"HP {market_name}"
             if series == "focal":
-                pkgInfo[
-                    pkg_name
-                ].old_desc = f"Stella {group.title()} {codename.title()} platform"
+                pkgInfo[pkg_name].old_desc = (
+                    f"Stella {group.title()} {codename.title()} platform"
+                )
             else:
                 pkgInfo[pkg_name].old_desc = f"Stella {codename.title()} platform"
 
@@ -1947,9 +1983,9 @@ def collect_pkg_info(
             if "Lenovo" not in new_desc:
                 new_desc = "Lenovo " + new_desc
             if series == "focal":
-                pkgInfo[
-                    pkg_name
-                ].old_desc = f"Sutton {group.title()} {codename.title()} platform"
+                pkgInfo[pkg_name].old_desc = (
+                    f"Sutton {group.title()} {codename.title()} platform"
+                )
             else:
                 pkgInfo[pkg_name].old_desc = f"Sutton {codename.title()} platform"
             pkgInfo[pkg_name].new_desc = new_desc
@@ -1966,9 +2002,9 @@ def collect_pkg_info(
         if not pkgInfo[pkg_name].new_desc and market_name:
             pkgInfo[pkg_name].new_desc = f"Lenovo {market_name}"
             if series == "focal":
-                pkgInfo[
-                    pkg_name
-                ].old_desc = f"Sutton {group.title()} {codename.title()} platform"
+                pkgInfo[pkg_name].old_desc = (
+                    f"Sutton {group.title()} {codename.title()} platform"
+                )
             else:
                 pkgInfo[pkg_name].old_desc = f"Sutton {codename.title()} platform"
 
@@ -2060,6 +2096,8 @@ def deal_with_meta_git(pkg_name: str, pkg_info: PkgInfo, bootstrap: bool) -> boo
                 messages.append("grub flavour")
             if deal_with_maintainer_scripts(pkg_name, branch, git_dir):
                 messages.append("maintainer scripts")
+        if deal_with_debian_control(git_dir, branch):
+            messages.append("debian/control")
         if project != "sutton" and deal_with_debian_modaliases(git_dir):
             messages.append("debian/modaliases")
         if deal_with_gbp_conf(git_dir, branch):
