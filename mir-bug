@@ -430,7 +430,11 @@ def update_bug(
     check_and_update_bug_subscriptions(lp, bug, update=True, yes=yes)
 
     bug_modified = check_and_update_bug_tags(
-        bug, certified, assume_certified=assume_certified, update=True, yes=yes
+        bug,
+        certified=certified,
+        assume_certified=assume_certified,
+        update=True,
+        yes=yes,
     )
     if bug_modified:
         modified = True
@@ -1289,7 +1293,10 @@ def handle_bug(lp, args, handler, overwrite_args=None):
         and len(args.json.get("certify-planning", [])) != 0
         or args.assume_certified
     ):
-        certified = True
+        if args.json["certify-planning"]:
+            certified = True
+        else:
+            certified = False
         project = args.json["project"]
         for bug_id in args.json["certify-planning"]:
             bug = lp.bugs[bug_id]
@@ -1297,6 +1304,7 @@ def handle_bug(lp, args, handler, overwrite_args=None):
                 if task.bug_target_name == "certify-planning":
                     if task.status != "Fix Released":
                         certified = False
+                        break
         series = args.json["series"]
         if series == "focal" and project != "somerville":
             meta_name = (
