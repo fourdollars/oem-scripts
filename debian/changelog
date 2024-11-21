@@ -1,3 +1,9 @@
+oem-scripts (2.27) noble; urgency=medium
+
+  * Make mir-bug not to tag 'ubuntu-certified' when it is not.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 22 Nov 2024 07:22:40 +0800
+
 oem-scripts (2.26) noble; urgency=medium
 
   * Deal with Build-Depends and Standards-Version based on different series.
