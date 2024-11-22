@@ -781,8 +781,12 @@ def check_and_update_bug_tags(
         else:
             unexpected_tags.append("ubuntu-certified")
         if args.release:
-            expected_tags.append("oem-done-upload")
-            unexpected_tags.append("oem-needs-upload")
+            if update:
+                expected_tags.append("oem-done-upload")
+                unexpected_tags.append("oem-needs-upload")
+            else:
+                expected_tags.append("oem-needs-upload")
+                unexpected_tags.append("oem-done-upload")
         elif args.ready:
             expected_tags.append("oem-needs-upload")
             unexpected_tags.append("oem-done-upload")
