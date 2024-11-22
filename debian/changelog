@@ -1,3 +1,9 @@
+oem-scripts (2.28) noble; urgency=medium
+
+  * mir-bug shall check the oem-needs-upload tag when checking the release instead of the oem-done-upload when updating it.
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Fri, 22 Nov 2024 17:26:18 +0800
+
 oem-scripts (2.27) noble; urgency=medium
 
   * Make mir-bug not to tag 'ubuntu-certified' when it is not.
