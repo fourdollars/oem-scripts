@@ -1116,6 +1116,12 @@ def check_and_update_git_repo(
         if os.path.exists(local_entry):
             # if calling ./mir-bug from source
             entry = local_entry
+
+        if private_meta_bug.isdigit():
+            private_bug_param = "--private-bug"
+        else:
+            private_bug_param = "--jira"
+
         command = [
             entry,
             "-s",
@@ -1126,7 +1132,7 @@ def check_and_update_git_repo(
             platform,
             "--public-bug",
             str(bug.id),
-            "--private-bug",
+            private_bug_param,
             str(private_meta_bug),
         ]
         if market_name:
