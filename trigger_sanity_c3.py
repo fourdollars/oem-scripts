@@ -1,4 +1,26 @@
 #!/usr/bin/env python3
+"""Trigger infrastructure-checkbox-run job on Jenkins.
+
+This script can be used in several ways:
+
+1. Trigger job on a specific CID:
+   - Specify the CID with --cid
+   - Provide --iso-url to provision or --plan to test (or both)
+
+   Example:
+   ./trigger_sanity_c3.py --cid 202411-35996 --iso-url <url>
+   ./trigger_sanity_c3.py --cid 202411-35996 --plan <plan>
+
+2. Trigger job on all compatible CIDs:
+   - Requires both --iso-url and --platform-info-dir, because it will search C3 for machines compatible with the ISO and kernel_meta in platform dir
+   - (Optional) provide --plan to specify the test plan, e.g pc-sanity-smoke-test-24-04
+
+   Example:
+   ./trigger_sanity_c3.py --iso-url <url> --platform-info-dir <dir>
+   ./trigger_sanity_c3.py --iso-url <url> --platform-info-dir <dir> --plan <plan>
+
+Note: When other optional parameters are not provided, Jenkins job will use own defaults.
+"""
 
 import subprocess
 import json
@@ -170,8 +192,13 @@ def is_supported_kernel_meta(platform_info_dir, project, launchpad_tag, kernel_m
 def has_existing_queue(cid):
     """Returns True when machine has existing queues in testflinger."""
     try:
+        logger.info(f"Checking queue status for CID: {cid}...")
         result = subprocess.run(
-            [C3_V2_API_CLI, "--get", f"/api/v2/physicalmachinesview/{cid}"],
+            [
+                C3_V2_API_CLI,
+                "--get",
+                f"/api/v2/physicalmachinesview/{cid}",
+            ],
             capture_output=True,
             text=True,
         )
@@ -264,9 +291,11 @@ def trigger_job(server, job_name, parameters, dry_run=False):
         else:
             server.build_job(job_name, parameters=parameters)
             logger.info(f"Successfully triggered job: {job_name}")
+            return True
+
     except Exception as e:
         logger.error(f"Failed to trigger job {job_name}: {e}")
-        sys.exit(1)
+        return False
 
 
 def parse_arguments():
@@ -274,9 +303,16 @@ def parse_arguments():
         description="Trigger infrastructure-checkbox-run job"
     )
     parser.add_argument(
-        "--platform-info-dir", required=True, help="Path to platform-info directory"
+        "--platform-info-dir",
+        help="Path to platform-info directory (required when --cid is not provided)",
     )
-    parser.add_argument("--iso-url", required=True, help="URL to ISO file")
+    parser.add_argument(
+        "--iso-url", help="URL to ISO file (required when --cid is not provided)"
+    )
+    parser.add_argument(
+        "--cid",
+        help="Specific CID to trigger the job on. If not provided, we search C3 for all compatible machines",
+    )
     parser.add_argument(
         "--job-name",
         default="infrastructure-checkbox-run",
@@ -284,8 +320,7 @@ def parse_arguments():
     )
     parser.add_argument(
         "--plan",
-        default="pc-sanity-smoke-test-24-04",
-        help="Target plan under com.canonical.certification name space (default: pc-sanity-smoke-test-24-04)",
+        help="Target plan under com.canonical.certification name space",
     )
     parser.add_argument(
         "--exclude-task",
@@ -336,7 +371,22 @@ def parse_arguments():
         "--dry-run", action="store_true", help="Run without triggering Jenkins jobs"
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    # Validate arguments
+    if not args.cid:
+        # Run on all compatible machines
+        if not args.iso_url or not args.platform_info_dir:
+            parser.error(
+                "Both --iso-url and --platform-info-dir are required when --cid is not provided"
+            )
+    elif not args.iso_url and not args.plan:
+        # Run on specific CID
+        parser.error(
+            "At least one of --iso-url or --plan must be provided when using --cid"
+        )
+
+    return args
 
 
 def main():
@@ -347,15 +397,16 @@ def main():
     logging.basicConfig(
         level=log_level, format="%(asctime)s - %(levelname)s - %(message)s"
     )
-
-    # Set defined Build Parameters for Jenkins Job
     job_name = "infrastructure-checkbox-run"
-    parameters = {
-        "IMAGE_URL": args.iso_url,
-        "PLAN": args.plan,
-    }
+    parameters = {}
+
+    if args.iso_url:
+        parameters["IMAGE_URL"] = args.iso_url
+    if args.plan:
+        parameters["PLAN"] = args.plan
 
     # Add optional parameters only if they were explicitly passed
+    # If not passed, Jenkins job will use it's default values
     if args.exclude_task:
         parameters["EXCLUDE_TASK"] = args.exclude_task
 
@@ -397,24 +448,34 @@ def main():
     if args.put_dell_embargo:
         parameters["PUT_DELL_EMBARGO"] = "true"
 
-    # Get CIDs which are online in Lab4 (IoT and PC)
-    available_cids = get_linked_labresources()
-    if not available_cids:
-        logger.error("No available CIDs found")
-        sys.exit(1)
-
-    # Get PC CIDs suitable for this ISO provisioning
-    supported_cids = get_supported_cids(
-        available_cids, args.iso_url, args.platform_info_dir
-    )
-    if not supported_cids:
-        logger.error("No supported CIDs found for the given ISO file")
-        sys.exit(1)
-
     jenkins_server = get_jenkins_connection()
-    for cid in supported_cids:
-        parameters["CID"] = cid
+
+    if args.cid:
+        # If single CID is provided, use it directly
+        logger.info(f"Using provided CID: {args.cid}")
+        if not has_existing_queue(args.cid):
+            logger.error("CID does not have testflinger queue")
+            sys.exit(1)
+        parameters["CID"] = args.cid
         trigger_job(jenkins_server, job_name, parameters, args.dry_run)
+    else:
+        # Get CIDs which are online in Lab4 (IoT and PC)
+        available_cids = get_linked_labresources()
+        if not available_cids:
+            logger.error("No available CIDs found")
+            sys.exit(1)
+
+        # Filter PC CIDs suitable for this ISO provisioning
+        supported_cids = get_supported_cids(
+            available_cids, args.iso_url, args.platform_info_dir
+        )
+        if not supported_cids:
+            logger.error("No supported CIDs found for the given ISO file")
+            sys.exit(1)
+
+        for cid in supported_cids:
+            parameters["CID"] = cid
+            trigger_job(jenkins_server, job_name, parameters, args.dry_run)
 
 
 if __name__ == "__main__":
