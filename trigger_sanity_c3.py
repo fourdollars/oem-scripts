@@ -16,13 +16,67 @@ C3_V2_API_CLI = os.path.join(os.path.dirname(__file__), "c3-v2-api.py")
 logger = logging.getLogger("trigger-sanity")
 
 
+def read_config_value(config_file, key):
+    """Read a value from the oem-scripts config file."""
+    if not config_file.exists():
+        return None
+
+    config = configparser.ConfigParser()
+    config.read(config_file)
+
+    try:
+        return config["oem-scripts"][key]
+    except (KeyError, configparser.Error):
+        return None
+
+
+def get_jenkins_connection():
+    # First try environment variables
+    jenkins_url = os.getenv("JENKINS_URL")
+    jenkins_user = os.getenv("JENKINS_USER")
+    jenkins_token = os.getenv("JENKINS_TOKEN")
+
+    # If any credentials are missing, try reading from config file
+    if not all([jenkins_url, jenkins_user, jenkins_token]):
+        if not jenkins_url:
+            jenkins_addr = read_config_value(OEM_SCRIPTS_CONFIG, "jenkins_addr")
+            if jenkins_addr:
+                jenkins_url = f"http://{jenkins_addr}"
+
+        if not jenkins_user:
+            jenkins_user = read_config_value(OEM_SCRIPTS_CONFIG, "jenkins_user")
+
+        if not jenkins_token:
+            jenkins_token = read_config_value(OEM_SCRIPTS_CONFIG, "jenkins_token")
+
+    if not all([jenkins_url, jenkins_user, jenkins_token]):
+        logger.error("Missing Jenkins credentials. Please either:")
+        logger.error(
+            "1. Set JENKINS_URL, JENKINS_USER, and JENKINS_TOKEN environment variables, or"
+        )
+        logger.error("2. Configure in ~/.config/oem-scripts/config.ini:")
+        logger.error("   [oem-scripts]")
+        logger.error("   jenkins_addr = your.jenkins.server")
+        logger.error("   jenkins_user = your_username")
+        logger.error("   jenkins_token = your_api_token")
+        sys.exit(1)
+
+    try:
+        return jenkins.Jenkins(
+            jenkins_url, username=jenkins_user, password=jenkins_token
+        )
+    except Exception as e:
+        logger.error(f"Failed to connect to Jenkins: {e}")
+        sys.exit(1)
+
+
 def clean_json_string(s):
     """Convert Python literal string from subprocess output to valid JSON string."""
     try:
         # First try direct JSON parsing
         return json.loads(s)
     except json.JSONDecodeError:
-        # If that fails, try to evaluate as Python literal and then convert to JSON
+        # Evaluate as Python literal and then convert to JSON
         try:
             return ast.literal_eval(s)
         except (ValueError, SyntaxError) as e:
@@ -87,7 +141,7 @@ def get_linked_labresources():
 
 
 def is_supported_kernel_meta(platform_info_dir, project, launchpad_tag, kernel_meta):
-    """Check if machine supports the specified kernel meta version in platform info."""
+    """Returns True if machine supports the specified kernel_meta version in platform info."""
     platform_info_file = Path(platform_info_dir) / project / f"{launchpad_tag}.json"
     if not platform_info_file.exists():
         logger.warning(f"No platform info found for {launchpad_tag}")
@@ -113,6 +167,31 @@ def is_supported_kernel_meta(platform_info_dir, project, launchpad_tag, kernel_m
         return False
 
 
+def has_existing_queue(cid):
+    """Returns True when machine has existing queues in testflinger."""
+    try:
+        result = subprocess.run(
+            [C3_V2_API_CLI, "--get", f"/api/v2/physicalmachinesview/{cid}"],
+            capture_output=True,
+            text=True,
+        )
+        data = clean_json_string(result.stdout)
+        if not data:
+            logger.warning(f"Failed to fetch queue details for CID: {cid}")
+            return False
+
+        queues = data.get("queues")
+        if queues:
+            logger.debug(f"CID {cid} has existing queues: {queues}")
+            return True
+
+        return False
+
+    except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
+        logger.error(f"Failed to check queue status for CID {cid}: {e}")
+        return False
+
+
 def get_supported_cids(available_cids, iso_url, platform_info_dir):
     """Filter CIDs of machines that support the specified ISO."""
     supported_cids = []
@@ -123,7 +202,7 @@ def get_supported_cids(available_cids, iso_url, platform_info_dir):
     kernel_meta = iso_file.split("-")[3].lower()  # "24.04b"
 
     logger.info(
-        f"Looking for machines for project: {project}, kernel meta: {kernel_meta}"
+        f"Looking for machines for project: {project}, kernel_meta: {kernel_meta}"
     )
     logger.info(f"Checking {len(available_cids)} available CIDs: {available_cids}")
 
@@ -152,9 +231,9 @@ def get_supported_cids(available_cids, iso_url, platform_info_dir):
 
             if arch_name == "x86_64" and is_project_match:
                 tag = data.get("launchpad_tag")
-                if tag:  # Only process if tag exists
+                if tag:
                     logger.debug(
-                        f"CID {cid}: checking kernel meta support for tag {tag}"
+                        f"CID {cid}: checking kernel_meta support for tag {tag}"
                     )
                     if is_supported_kernel_meta(
                         platform_info_dir, project, tag, kernel_meta
@@ -173,60 +252,6 @@ def get_supported_cids(available_cids, iso_url, platform_info_dir):
 
     logger.info(f"Found {len(supported_cids)} supported CIDs: {supported_cids}")
     return supported_cids
-
-
-def read_config_value(config_file, key):
-    """Read a value from the oem-scripts config file."""
-    if not config_file.exists():
-        return None
-
-    config = configparser.ConfigParser()
-    config.read(config_file)
-
-    try:
-        return config["oem-scripts"][key]
-    except (KeyError, configparser.Error):
-        return None
-
-
-def get_jenkins_connection():
-    # First try environment variables
-    jenkins_url = os.getenv("JENKINS_URL")
-    jenkins_user = os.getenv("JENKINS_USER")
-    jenkins_token = os.getenv("JENKINS_TOKEN")
-
-    # If any credentials are missing, try reading from config file
-    if not all([jenkins_url, jenkins_user, jenkins_token]):
-        if not jenkins_url:
-            jenkins_addr = read_config_value(OEM_SCRIPTS_CONFIG, "jenkins_addr")
-            if jenkins_addr:
-                jenkins_url = f"http://{jenkins_addr}"
-
-        if not jenkins_user:
-            jenkins_user = read_config_value(OEM_SCRIPTS_CONFIG, "jenkins_user")
-
-        if not jenkins_token:
-            jenkins_token = read_config_value(OEM_SCRIPTS_CONFIG, "jenkins_token")
-
-    if not all([jenkins_url, jenkins_user, jenkins_token]):
-        logger.error("Missing Jenkins credentials. Please either:")
-        logger.error(
-            "1. Set JENKINS_URL, JENKINS_USER, and JENKINS_TOKEN environment variables, or"
-        )
-        logger.error("2. Configure in ~/.config/oem-scripts/config.ini:")
-        logger.error("   [oem-scripts]")
-        logger.error("   jenkins_addr = your.jenkins.server")
-        logger.error("   jenkins_user = your_username")
-        logger.error("   jenkins_token = your_api_token")
-        sys.exit(1)
-
-    try:
-        return jenkins.Jenkins(
-            jenkins_url, username=jenkins_user, password=jenkins_token
-        )
-    except Exception as e:
-        logger.error(f"Failed to connect to Jenkins: {e}")
-        sys.exit(1)
 
 
 def trigger_job(server, job_name, parameters, dry_run=False):
