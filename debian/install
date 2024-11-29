@@ -21,3 +21,4 @@ local-repo /usr/bin
 image-deploy.sh /usr/bin
 c3-v2-api.py /usr/bin
 put-dell-embargo.sh /usr/bin
+trigger_sanity_c3.py /usr/bin
