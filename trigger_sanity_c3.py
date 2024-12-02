@@ -47,7 +47,7 @@ def read_config_value(config_file, key):
     config.read(config_file)
 
     try:
-        return config["oem-scripts"][key]
+        return config["private"][key]
     except (KeyError, configparser.Error):
         return None
 
@@ -77,7 +77,7 @@ def get_jenkins_connection():
             "1. Set JENKINS_URL, JENKINS_USER, and JENKINS_TOKEN environment variables, or"
         )
         logger.error("2. Configure in ~/.config/oem-scripts/config.ini:")
-        logger.error("   [oem-scripts]")
+        logger.error("   [private]")
         logger.error("   jenkins_addr = your.jenkins.server")
         logger.error("   jenkins_user = your_username")
         logger.error("   jenkins_token = your_api_token")
@@ -274,7 +274,10 @@ def get_supported_cids(available_cids, iso_url, platform_info_dir):
                         platform_info_dir, project, tag, kernel_meta
                     ):
                         if not has_existing_queue(cid):
-                            logger.info(f"Warning: No Testfligner Queues for CID: {cid}. Skip.")
+                            logger.info(
+                                f"Warning: No Testflinger Queues for CID: {cid}. "
+                            )
+                            logger.info("Skip.")
                             continue
                         logger.info(f"Found supported CID: {cid} (tag: {tag})")
                         supported_cids.append(cid)
