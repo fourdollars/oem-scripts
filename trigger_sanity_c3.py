@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Trigger infrastructure-checkbox-run job on Jenkins.
 
-This script can be used in several ways:
+This script can:
 
 1. Trigger job on a specific CID:
    - Specify the CID with --cid
@@ -107,6 +107,12 @@ def clean_json_string(s):
             )
 
 
+def is_ssh_online(ip_address):
+    # TODO: verify ssh can login and not reserved by OneSSH
+    # ssh oem-taipei-bot@ip_address status
+    return True
+
+
 def get_linked_labresources():
     """Get list of available CIDs from linked lab resources."""
     try:
@@ -131,9 +137,11 @@ def get_linked_labresources():
             # Extract CIDs that meet our criteria (role=DUT and has IP)
             results = response_data.get("results", {})
             for cid, data in results.items():
-                if data.get("role") == "DUT" and data.get("ip_address"):
-                    available_cids.append(cid)
-                    logger.debug(f"Added CID: {cid} with IP: {data.get('ip_address')}")
+                ip_address = data.get("ip_address")
+                if data.get("role") == "DUT" and ip_address:
+                    if is_ssh_online(ip_address):
+                        available_cids.append(cid)
+                        logger.debug(f"Added CID: {cid} with IP: {ip_address}")
 
             # Check if there are more pages
             next_page = response_data.get("next")
@@ -265,6 +273,9 @@ def get_supported_cids(available_cids, iso_url, platform_info_dir):
                     if is_supported_kernel_meta(
                         platform_info_dir, project, tag, kernel_meta
                     ):
+                        if not has_existing_queue(cid):
+                            logger.info(f"Warning: No Testfligner Queues for CID: {cid}. Skip.")
+                            continue
                         logger.info(f"Found supported CID: {cid} (tag: {tag})")
                         supported_cids.append(cid)
                 else:
@@ -327,6 +338,7 @@ def parse_arguments():
         help='Tasks to exclude (e.g., ".*audio/alsa_record_playback_automated")',
     )
     parser.add_argument("--additional-ppas", help="Additional PPAs to include")
+    # TODO: verify the multiline strings, may need to use clean_json_string
     parser.add_argument(
         "--plainbox-conf", help="Content of plainbox.conf for checkbox to override"
     )
@@ -405,7 +417,7 @@ def main():
     if args.plan:
         parameters["PLAN"] = args.plan
 
-    # Add optional parameters only if they were explicitly passed
+    # Add optional parameters only if they were passed
     # If not passed, Jenkins job will use it's default values
     if args.exclude_task:
         parameters["EXCLUDE_TASK"] = args.exclude_task
