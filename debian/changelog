@@ -1,3 +1,9 @@
+oem-scripts (2.30) noble; urgency=medium
+
+  * Add trigger_sanity_c3.py to trigger checkbox-run job
+
+ -- Artur Pak <artur.pak@canonical.com>  Tue, 03 Dec 2024 15:19:18 +0800
+
 oem-scripts (2.29) noble; urgency=medium
 
   [ Kai-Chuan Hsieh ]
