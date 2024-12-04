@@ -1,3 +1,10 @@
+oem-scripts (2.31) noble; urgency=medium
+
+  [ Kai-Chuan Hsieh ]
+  * mir-bug: Fix isdigit checking when private bug is LP number
+
+ -- Shih-Yuan Lee (FourDollars) <sylee@canonical.com>  Wed, 04 Dec 2024 14:55:07 +0800
+
 oem-scripts (2.30) noble; urgency=medium
 
   * Add trigger_sanity_c3.py to trigger checkbox-run job
