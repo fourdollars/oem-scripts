@@ -1117,7 +1117,7 @@ def check_and_update_git_repo(
             # if calling ./mir-bug from source
             entry = local_entry
 
-        if private_meta_bug.isdigit():
+        if str(private_meta_bug).isdigit():
             private_bug_param = "--private-bug"
         else:
             private_bug_param = "--jira"
